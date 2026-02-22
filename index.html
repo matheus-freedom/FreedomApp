@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreedomTest Beta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <style>
+      body {
+        background-color: #222222;
+        color: #ffffff;
+        font-family: 'Montserrat', sans-serif;
+        overflow-x: hidden;
+      }
+      
+      /* Elementos Decorativos de Background */
+      .cityscape-bg {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.03;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 0 5%;
+      }
+
+      .landmark {
+        fill: #f7931e;
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+      @keyframes pop {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .animate-pop {
+        animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+      .text-red-500 { color: #ef4444 !important; }
+      .text-green-500 { color: #22c55e !important; }
+      .line-through { text-decoration: line-through !important; }
+      .font-bold { font-weight: 700 !important; }
+      .underline { text-decoration: underline !important; }
+
+      /* Estilos para Feedback de Escrita */
+      .error-text {
+        color: #ef4444 !important;
+        text-decoration: line-through !important;
+        background-color: rgba(239, 68, 68, 0.15);
+        padding: 0 4px;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-right: 2px;
+      }
+      .improvement-text {
+        color: #22c55e !important;
+        font-weight: 800 !important;
+        background-color: rgba(34, 197, 94, 0.15);
+        padding: 0 4px;
+        border-radius: 4px;
+        text-decoration: none !important;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <!-- Cityscape Silhouettes -->
+    <div class="cityscape-bg">
+      <!-- Statue of Liberty (NY) -->
+      <svg class="landmark h-64 w-auto mb-10" viewBox="0 0 100 200">
+        <path d="M50 10 L60 40 L40 40 Z M45 40 H55 V150 H45 Z M30 150 H70 V160 H30 Z M20 160 H80 V180 H20 Z" />
+      </svg>
+      <!-- Big Ben (London) -->
+      <svg class="landmark h-80 w-auto" viewBox="0 0 80 250">
+        <path d="M30 0 L50 0 L50 30 L30 30 Z M20 30 H60 V250 H20 Z M35 45 H45 V55 H35 Z" />
+      </svg>
+      <!-- Opera House (Sydney) -->
+      <svg class="landmark h-48 w-auto mb-5" viewBox="0 0 200 100">
+        <path d="M0 100 Q50 0 100 100 M60 100 Q110 20 160 100 M120 100 Q160 40 200 100 Z" />
+      </svg>
+    </div>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
