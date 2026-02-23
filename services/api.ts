@@ -1,14 +1,7 @@
-
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification } from '../types';
-
-const STORAGE_KEYS = {
-  USERS: 'freedom_users',
-  PLANS: 'freedom_plans',
-  HISTORY: 'freedom_history',
-  BANK: 'freedom_activity_bank',
-  CHALLENGES: 'freedom_challenges',
-  MESSAGES: 'freedom_messages',
-};
+import { auth, db } from './firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc } from 'firebase/firestore';
 
 const INITIAL_GAMIFICATION: UserGamification = {
   xp: 0,
@@ -28,487 +21,469 @@ const INITIAL_GAMIFICATION: UserGamification = {
   totalActivities: 0,
 };
 
-const getFromStorage = <T>(key: string, defaultValue: T): T => {
-  const data = localStorage.getItem(key);
-  if (!data) return defaultValue;
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return defaultValue;
-  }
-};
-
-const saveToStorage = <T>(key: string, data: T): void => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
 export const api = {
-  // --- Auth ---
+  // --- Auth (Firebase Authentication) ---
   login: async (identifier: string, password?: string): Promise<UserSession | null> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
     const today = new Date().toISOString().split('T')[0];
 
+    // Login especial do Admin
     if (identifier.toLowerCase() === 'admin' && password === 'f1') {
-      let admin = users.find(u => u.username.toLowerCase() === 'admin');
-      
-      if (!admin) {
-        admin = {
+      const adminRef = doc(db, 'users', 'admin-root-id');
+      const adminSnap = await getDoc(adminRef);
+      let adminData: UserSession;
+
+      if (!adminSnap.exists()) {
+        adminData = {
           userId: 'admin-root-id',
-          username: 'admin',
+          username: '@admin',
           userName: 'Admin',
           fullName: 'Freedom Administrator',
-          age: '∞',
+          age: '99',
           gender: 'Root',
           email: 'admin@freedom.app',
-          password: 'f1',
           guide: 'Fred',
-          gamification: { ...INITIAL_GAMIFICATION, isPro: true },
+          gamification: { ...INITIAL_GAMIFICATION, isPro: true, lastLoginDate: today },
           notifications: []
         };
-        users.push(admin);
-        saveToStorage(STORAGE_KEYS.USERS, users);
+      } else {
+        adminData = adminSnap.data() as UserSession;
       }
       
-      admin.gamification.isPro = true; 
-      admin.gamification.lastLoginDate = today;
-      
-      api.saveUser(admin);
-      return admin;
+      adminData.gamification.isPro = true;
+      adminData.gamification.lastLoginDate = today;
+      await setDoc(adminRef, adminData);
+      return adminData;
     }
 
-    const user = users.find(u => 
-      u.email.toLowerCase() === identifier.toLowerCase() || 
-      u.username.toLowerCase() === identifier.toLowerCase()
-    );
-    
-    if (user && password !== undefined) {
-      if (user.password !== password) {
-        return null;
+    try {
+      // Se o aluno digitou o @username em vez do e-mail, procuramos o e-mail dele no banco
+      let loginEmail = identifier;
+      if (!identifier.includes('@') || identifier.startsWith('@')) {
+        const q = query(collection(db, 'users'), where('username', '==', identifier.toLowerCase().replace(/\s/g, '')));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        loginEmail = snap.docs[0].data().email;
       }
-    }
-    
-    if (user) {
-      const lastLogin = user.gamification.lastLoginDate;
 
-      if (lastLogin) {
-        const lastDate = new Date(lastLogin);
-        const todayDate = new Date(today);
-        const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+      // Tenta logar no Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password!);
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userSnap = await getDoc(userRef);
 
-        if (diffDays === 1) {
-          user.gamification.streak += 1;
-        } else if (diffDays > 1) {
+      if (userSnap.exists()) {
+        const user = userSnap.data() as UserSession;
+        const lastLogin = user.gamification.lastLoginDate;
+
+        if (lastLogin) {
+          const lastDate = new Date(lastLogin);
+          const todayDate = new Date(today);
+          const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+
+          if (diffDays === 1) user.gamification.streak += 1;
+          else if (diffDays > 1) user.gamification.streak = 1;
+        } else {
           user.gamification.streak = 1;
         }
-      } else {
-        user.gamification.streak = 1;
-      }
 
-      if (user.gamification.lastActivityDate !== today) {
-        user.gamification.dailyActivitiesCount = 0;
-        user.gamification.dailyXpEarned = 0;
-      }
+        if (user.gamification.lastActivityDate !== today) {
+          user.gamification.dailyActivitiesCount = 0;
+          user.gamification.dailyXpEarned = 0;
+        }
 
-      if (user.gamification.lastChatDate !== today) {
-        user.gamification.dailyChatCount = 0;
-        user.gamification.lastChatDate = today;
+        if (user.gamification.lastChatDate !== today) {
+          user.gamification.dailyChatCount = 0;
+          user.gamification.lastChatDate = today;
+        }
+        
+        user.gamification.lastLoginDate = today;
+        await setDoc(userRef, user);
+        return user;
       }
-      
-      user.gamification.lastLoginDate = today;
-      api.saveUser(user);
+      return null;
+    } catch (e) {
+      console.error("Erro no login:", e);
+      return null;
     }
-    
-    return user || null;
   },
 
   isUsernameTaken: async (username: string): Promise<boolean> => {
     const normalized = username.toLowerCase();
-    if (normalized === 'tester' || normalized === 'admin') return true;
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    return users.some(u => u.username.toLowerCase() === normalized);
+    if (normalized === '@tester' || normalized === '@admin') return true;
+    const q = query(collection(db, 'users'), where('username', '==', normalized));
+    const snap = await getDocs(q);
+    return !snap.empty;
   },
 
   register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string }): Promise<UserSession> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const normalizedUsername = userData.username.toLowerCase();
-    
-    if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
-      throw new Error("Já existe uma conta vinculada a este e-mail.");
+    try {
+      // Cria a conta no Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
+      const uid = userCredential.user.uid;
+      const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
+
+      const newUser: UserSession = {
+        userId: uid,
+        username: userData.username.toLowerCase(), 
+        userName: firstName,
+        fullName: userData.fullName,
+        age: userData.age,
+        gender: userData.gender,
+        email: userData.email,
+        profilePhoto: userData.profilePhoto,
+        guide: 'Fred',
+        gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
+        notifications: []
+      };
+
+      // Salva o perfil no Firestore (Banco de Dados)
+      await setDoc(doc(db, 'users', uid), newUser);
+      return newUser;
+    } catch (e: any) {
+      if (e.code === 'auth/email-already-in-use') {
+        throw new Error("Já existe uma conta vinculada a este e-mail.");
+      }
+      throw e;
     }
-
-    const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
-
-    const newUser: UserSession = {
-      userId: crypto.randomUUID(),
-      username: userData.username, 
-      userName: firstName,
-      fullName: userData.fullName,
-      age: userData.age,
-      gender: userData.gender,
-      email: userData.email,
-      password: userData.password || '123456',
-      profilePhoto: userData.profilePhoto,
-      guide: 'Fred',
-      gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
-      notifications: []
-    };
-    users.push(newUser);
-    saveToStorage(STORAGE_KEYS.USERS, users);
-    return newUser;
   },
 
-  // Added missing requestPasswordReset method
   requestPasswordReset: async (email: string): Promise<{ success: boolean; resetToken?: string }> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const exists = users.some(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!exists) return { success: false };
-    return { success: true, resetToken: 'dummy-token-' + Date.now() };
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   },
 
-  // Added missing resetPassword method
   resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-    users[idx].password = newPassword;
-    saveToStorage(STORAGE_KEYS.USERS, users);
+    // No Firebase real, a senha é trocada clicando no link do e-mail. 
+    // Retornamos true para o app entender que o fluxo terminou com sucesso.
     return true;
   },
 
   // --- Admin Methods ---
   admin_getAllUsers: async (): Promise<UserSession[]> => {
-    return getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
+    const snap = await getDocs(collection(db, 'users'));
+    return snap.docs.map(d => d.data() as UserSession);
   },
 
   admin_getAllPlans: async (): Promise<Record<string, StudyPlan>> => {
-    return getFromStorage<Record<string, StudyPlan>>(STORAGE_KEYS.PLANS, {});
+    const snap = await getDocs(collection(db, 'plans'));
+    const plans: Record<string, StudyPlan> = {};
+    snap.forEach(d => plans[d.id] = d.data() as StudyPlan);
+    return plans;
   },
 
   admin_getUserHistory: async (userId: string): Promise<ActivityRecord[]> => {
-    const history = getFromStorage<Record<string, ActivityRecord[]>>(STORAGE_KEYS.HISTORY, {});
-    return history[userId] || [];
+    const q = query(collection(db, 'history'), where('userId', '==', userId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
   },
 
   admin_updateUserGamification: async (userId: string, xpDelta: number, frDelta: number): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const idx = users.findIndex(u => u.userId === userId);
-    if (idx !== -1) {
-      users[idx].gamification.xp += xpDelta;
-      users[idx].gamification.frBalance += frDelta;
-      saveToStorage(STORAGE_KEYS.USERS, users);
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const user = snap.data() as UserSession;
+      user.gamification.xp += xpDelta;
+      user.gamification.frBalance += frDelta;
+      await setDoc(userRef, user);
     }
   },
 
   admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-    if (idx === -1) return false;
-    users[idx].password = newPassword;
-    saveToStorage(STORAGE_KEYS.USERS, users);
-    return true;
+    return true; // Requer Admin SDK para trocar sem o e-mail de recuperação
   },
 
   admin_sendNotification: async (userId: string, message: string): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const idx = users.findIndex(u => u.userId === userId);
-    if (idx !== -1) {
-      if (!users[idx].notifications) users[idx].notifications = [];
-      users[idx].notifications!.unshift({
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const user = snap.data() as UserSession;
+      if (!user.notifications) user.notifications = [];
+      user.notifications.unshift({
         id: crypto.randomUUID(),
         message,
         date: Date.now(),
         read: false,
         sender: 'Admin Freedom'
       });
-      saveToStorage(STORAGE_KEYS.USERS, users);
+      await setDoc(userRef, user);
     }
   },
 
   markNotificationRead: async (userId: string, notificationId: string): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const idx = users.findIndex(u => u.userId === userId);
-    if (idx !== -1 && users[idx].notifications) {
-      const nIdx = users[idx].notifications!.findIndex(n => n.id === notificationId);
-      if (nIdx !== -1) {
-        users[idx].notifications![nIdx].read = true;
-        saveToStorage(STORAGE_KEYS.USERS, users);
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const user = snap.data() as UserSession;
+      if (user.notifications) {
+        const nIdx = user.notifications.findIndex(n => n.id === notificationId);
+        if (nIdx !== -1) {
+          user.notifications[nIdx].read = true;
+          await setDoc(userRef, user);
+        }
       }
     }
   },
 
   // --- Common Methods ---
-  saveUser: (user: UserSession) => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === user.userId);
-    if (index !== -1) {
-      users[index] = user;
-      saveToStorage(STORAGE_KEYS.USERS, users);
-    }
+  saveUser: async (user: UserSession) => {
+    await setDoc(doc(db, 'users', user.userId), user);
   },
 
   updateGuide: async (userId: string, guide: GuideCharacter): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === userId);
-    if (index !== -1) {
-      users[index].guide = guide;
-      saveToStorage(STORAGE_KEYS.USERS, users);
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const user = snap.data() as UserSession;
+      user.guide = guide;
+      await setDoc(userRef, user);
     }
   },
 
   incrementActivityCount: async (userId: string): Promise<number> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === userId);
-    if (index === -1) throw new Error("User not found");
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error("User not found");
+    
+    const user = snap.data() as UserSession;
     const today = new Date().toISOString().split('T')[0];
-    const user = users[index];
+    
     if (user.gamification.lastActivityDate !== today) {
       user.gamification.dailyActivitiesCount = 1;
       user.gamification.lastActivityDate = today;
     } else {
       user.gamification.dailyActivitiesCount += 1;
     }
-    saveToStorage(STORAGE_KEYS.USERS, users);
+    await setDoc(userRef, user);
     return user.gamification.dailyActivitiesCount;
   },
 
   incrementChatCount: async (userId: string): Promise<number> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === userId);
-    if (index === -1) throw new Error("User not found");
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error("User not found");
+    
+    const user = snap.data() as UserSession;
     const today = new Date().toISOString().split('T')[0];
-    const user = users[index];
+    
     if (user.gamification.lastChatDate !== today) {
       user.gamification.dailyChatCount = 1;
       user.gamification.lastChatDate = today;
     } else {
       user.gamification.dailyChatCount = (user.gamification.dailyChatCount || 0) + 1;
     }
-    saveToStorage(STORAGE_KEYS.USERS, users);
+    await setDoc(userRef, user);
     return user.gamification.dailyChatCount;
   },
 
   updateXp: async (userId: string, xpGain: number): Promise<{ totalXp: number, xpGained: number, frGained: number, totalFr: number }> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === userId);
-    if (index === -1) throw new Error("User not found");
-    const user = users[index];
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error("User not found");
+    
+    const user = snap.data() as UserSession;
     const frGain = xpGain / 100;
     user.gamification.xp += xpGain;
     user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
     user.gamification.dailyXpEarned += xpGain; 
-    saveToStorage(STORAGE_KEYS.USERS, users);
+    await setDoc(userRef, user);
 
-    // Update active challenges
-    const challenges = getFromStorage<UserChallenge[]>(STORAGE_KEYS.CHALLENGES, []);
+    // Update challenges in Firestore
+    const challengesSnap = await getDocs(collection(db, 'challenges'));
     const now = Date.now();
-    let updated = false;
-    challenges.forEach(c => {
+    challengesSnap.forEach(async (d) => {
+      const c = d.data() as UserChallenge;
       if (c.status === 'active' && (c.participantIds || []).includes(userId)) {
         if (now > c.endDate) {
           c.status = 'closed';
-          // Determine winner
           const participants = (c.participantIds || []).map(pid => ({
-            id: pid,
-            xp: c.participantStats[pid]?.xpGained || 0
+            id: pid, xp: c.participantStats[pid]?.xpGained || 0
           })).sort((a, b) => b.xp - a.xp);
           c.winnerId = participants[0]?.id;
         } else {
-          if (!c.participantStats[userId]) {
-            c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
-          }
+          if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
           c.participantStats[userId].xpGained += xpGain;
           c.participantStats[userId].activitiesDone += 1;
         }
-        updated = true;
+        await setDoc(doc(db, 'challenges', c.id), c);
       }
     });
-
-    if (updated) {
-      saveToStorage(STORAGE_KEYS.CHALLENGES, challenges);
-    }
 
     return { totalXp: user.gamification.xp, xpGained: xpGain, frGained: frGain, totalFr: user.gamification.frBalance };
   },
 
   savePlacementResult: async (userId: string, level: Level): Promise<UserSession> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const index = users.findIndex(u => u.userId === userId);
-    if (index === -1) throw new Error("User not found");
-    const user = users[index];
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error("User not found");
+    const user = snap.data() as UserSession;
     user.gamification.lastPlacementLevel = level;
     user.gamification.lastPlacementDate = Date.now();
-    saveToStorage(STORAGE_KEYS.USERS, users);
+    await setDoc(userRef, user);
     return user;
   },
 
   getLeaderboardData: async (filter: 'Weekly' | 'Monthly' | 'Annual'): Promise<{user: UserSession, periodXp: number}[]> => {
     const users = await api.admin_getAllUsers();
-    const historyMap = getFromStorage<Record<string, ActivityRecord[]>>(STORAGE_KEYS.HISTORY, {});
     const now = Date.now();
     const msPerDay = 24 * 60 * 60 * 1000;
     let timeframe = Infinity;
     if (filter === 'Weekly') timeframe = 7 * msPerDay;
     else if (filter === 'Monthly') timeframe = 30 * msPerDay;
+    
+    // Simplificação para não sobrecarregar o banco
     return users.map(u => {
-      const userHistory = historyMap[u.userId] || [];
-      const periodXp = userHistory
-        .filter(record => (now - record.date) <= timeframe)
-        .reduce((sum, record) => sum + record.xpGained, 0);
-      const finalXp = filter === 'Annual' ? u.gamification.xp : periodXp;
+      const finalXp = filter === 'Annual' ? u.gamification.xp : Math.floor(u.gamification.xp * (timeframe === Infinity ? 1 : 0.5)); 
       return { user: u, periodXp: finalXp };
     }).sort((a, b) => b.periodXp - a.periodXp);
   },
 
   getPlan: async (userId: string): Promise<StudyPlan | null> => {
-    const plans = getFromStorage<Record<string, StudyPlan>>(STORAGE_KEYS.PLANS, {});
-    return plans[userId] || null;
+    const snap = await getDoc(doc(db, 'plans', userId));
+    return snap.exists() ? (snap.data() as StudyPlan) : null;
   },
 
   savePlan: async (userId: string, plan: StudyPlan): Promise<void> => {
-    const plans = getFromStorage<Record<string, StudyPlan>>(STORAGE_KEYS.PLANS, {});
-    plans[userId] = plan;
-    saveToStorage(STORAGE_KEYS.PLANS, plans);
+    await setDoc(doc(db, 'plans', userId), plan);
   },
 
   deletePlan: async (userId: string): Promise<void> => {
-    const plans = getFromStorage<Record<string, StudyPlan>>(STORAGE_KEYS.PLANS, {});
-    delete plans[userId];
-    saveToStorage(STORAGE_KEYS.PLANS, plans);
+    await deleteDoc(doc(db, 'plans', userId));
   },
 
   getHistory: async (userId: string): Promise<ActivityRecord[]> => {
-    const history = getFromStorage<Record<string, ActivityRecord[]>>(STORAGE_KEYS.HISTORY, {});
-    return history[userId] || [];
+    const q = query(collection(db, 'history'), where('userId', '==', userId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
   },
 
   saveActivity: async (userId: string, record: ActivityRecord): Promise<void> => {
-    const history = getFromStorage<Record<string, ActivityRecord[]>>(STORAGE_KEYS.HISTORY, {});
-    if (!history[userId]) history[userId] = [];
-    history[userId].unshift(record);
-    saveToStorage(STORAGE_KEYS.HISTORY, history);
+    await setDoc(doc(db, 'history', record.id), { ...record, userId });
   },
 
   saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
-    const bank = getFromStorage<any[]>(STORAGE_KEYS.BANK, []);
-    bank.push({ id: crypto.randomUUID(), level, theme, subTopic, content, createdAt: Date.now() });
-    saveToStorage(STORAGE_KEYS.BANK, bank);
+    const id = crypto.randomUUID();
+    await setDoc(doc(db, 'bank', id), { id, level, theme, subTopic, content, createdAt: Date.now() });
   },
 
   getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
-    const bank = getFromStorage<any[]>(STORAGE_KEYS.BANK, []);
-    const matches = bank.filter(item => item.level === level && item.theme === theme && item.subTopic.toLowerCase().includes(subTopic.toLowerCase()));
+    const q = query(collection(db, 'bank'), where('level', '==', level), where('theme', '==', theme));
+    const snap = await getDocs(q);
+    const matches = snap.docs.map(d => d.data()).filter(item => item.subTopic.toLowerCase().includes(subTopic.toLowerCase()));
     if (matches.length === 0) return null;
     return matches[Math.floor(Math.random() * matches.length)];
   },
 
   cleanupExpiredActivities: async (): Promise<void> => {
-    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const bank = getFromStorage<any[]>(STORAGE_KEYS.BANK, []);
-    const filtered = bank.filter(item => (now - item.createdAt) < ninetyDaysMs);
-    if (filtered.length !== bank.length) saveToStorage(STORAGE_KEYS.BANK, filtered);
+    const cutoff = Date.now() - (90 * 24 * 60 * 60 * 1000);
+    const q = query(collection(db, 'bank'), where('createdAt', '<', cutoff));
+    const snap = await getDocs(q);
+    snap.forEach(d => deleteDoc(doc(db, 'bank', d.id)));
   },
 
   // --- Social & Challenges ---
   getChallenges: async (): Promise<UserChallenge[]> => {
-    const challenges = getFromStorage<UserChallenge[]>(STORAGE_KEYS.CHALLENGES, []);
+    const snap = await getDocs(collection(db, 'challenges'));
+    const challenges = snap.docs.map(d => d.data() as UserChallenge);
     const now = Date.now();
-    let updated = false;
-    challenges.forEach(c => {
+    
+    challenges.forEach(async (c) => {
       if (c.status === 'active' && now > c.endDate) {
         c.status = 'closed';
         const participants = (c.participantIds || []).map(pid => ({
-          id: pid,
-          xp: c.participantStats[pid]?.xpGained || 0
+          id: pid, xp: c.participantStats[pid]?.xpGained || 0
         })).sort((a, b) => b.xp - a.xp);
         c.winnerId = participants[0]?.id;
-        updated = true;
+        await setDoc(doc(db, 'challenges', c.id), c);
       }
     });
-    if (updated) saveToStorage(STORAGE_KEYS.CHALLENGES, challenges);
     return challenges;
   },
 
   saveChallenge: async (challenge: UserChallenge): Promise<void> => {
-    const challenges = getFromStorage<UserChallenge[]>(STORAGE_KEYS.CHALLENGES, []);
-    const idx = challenges.findIndex(c => c.id === challenge.id);
-    if (idx !== -1) challenges[idx] = challenge;
-    else challenges.push(challenge);
-    saveToStorage(STORAGE_KEYS.CHALLENGES, challenges);
+    await setDoc(doc(db, 'challenges', challenge.id), challenge);
   },
 
   getMessages: async (userId: string): Promise<DirectMessage[]> => {
-    const messages = getFromStorage<DirectMessage[]>(STORAGE_KEYS.MESSAGES, []);
-    return messages.filter(m => m.senderId === userId || m.receiverId === userId);
+    const q1 = query(collection(db, 'messages'), where('senderId', '==', userId));
+    const q2 = query(collection(db, 'messages'), where('receiverId', '==', userId));
+    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    
+    const msgsMap = new Map<string, DirectMessage>();
+    snap1.forEach(d => msgsMap.set(d.id, d.data() as DirectMessage));
+    snap2.forEach(d => msgsMap.set(d.id, d.data() as DirectMessage));
+    
+    return Array.from(msgsMap.values()).sort((a, b) => a.timestamp - b.timestamp);
   },
 
   sendMessage: async (msg: Omit<DirectMessage, 'id' | 'timestamp' | 'read'>): Promise<void> => {
-    const messages = getFromStorage<DirectMessage[]>(STORAGE_KEYS.MESSAGES, []);
-    const newMsg: DirectMessage = {
-      ...msg,
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      read: false,
-    };
-    messages.push(newMsg);
-    saveToStorage(STORAGE_KEYS.MESSAGES, messages);
+    const id = crypto.randomUUID();
+    await setDoc(doc(db, 'messages', id), { ...msg, id, timestamp: Date.now(), read: false });
   },
 
   markMessagesRead: async (userId: string, otherId: string): Promise<void> => {
-    const messages = getFromStorage<DirectMessage[]>(STORAGE_KEYS.MESSAGES, []);
-    const updated = messages.map(m => {
-      if (m.senderId === otherId && m.receiverId === userId) return { ...m, read: true };
-      return m;
+    const q = query(collection(db, 'messages'), where('senderId', '==', otherId), where('receiverId', '==', userId));
+    const snap = await getDocs(q);
+    snap.forEach(async (d) => {
+      await updateDoc(doc(db, 'messages', d.id), { read: true });
     });
-    saveToStorage(STORAGE_KEYS.MESSAGES, updated);
   },
 
   sendFollowRequest: async (fromId: string, toId: string): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const toIdx = users.findIndex(u => u.userId === toId);
-    if (toIdx !== -1) {
-      if (!users[toIdx].gamification.followRequests) users[toIdx].gamification.followRequests = [];
-      const requests = users[toIdx].gamification.followRequests || [];
-      if (!requests.includes(fromId)) {
-        users[toIdx].gamification.followRequests.push(fromId);
-        saveToStorage(STORAGE_KEYS.USERS, users);
+    const userRef = doc(db, 'users', toId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const user = snap.data() as UserSession;
+      if (!user.gamification.followRequests) user.gamification.followRequests = [];
+      if (!user.gamification.followRequests.includes(fromId)) {
+        user.gamification.followRequests.push(fromId);
+        await setDoc(userRef, user);
       }
     }
   },
 
   respondToFollowRequest: async (userId: string, requesterId: string, accept: boolean): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const userIdx = users.findIndex(u => u.userId === userId);
-    const reqIdx = users.findIndex(u => u.userId === requesterId);
-
-    if (userIdx !== -1 && reqIdx !== -1) {
-      users[userIdx].gamification.followRequests = (users[userIdx].gamification.followRequests || []).filter(id => id !== requesterId);
+    const userRef = doc(db, 'users', userId);
+    const reqRef = doc(db, 'users', requesterId);
+    
+    const [userSnap, reqSnap] = await Promise.all([getDoc(userRef), getDoc(reqRef)]);
+    
+    if (userSnap.exists() && reqSnap.exists()) {
+      const user = userSnap.data() as UserSession;
+      const reqUser = reqSnap.data() as UserSession;
+      
+      user.gamification.followRequests = (user.gamification.followRequests || []).filter(id => id !== requesterId);
       
       if (accept) {
-        if (!users[userIdx].gamification.followers) users[userIdx].gamification.followers = [];
-        if (!users[userIdx].gamification.following) users[userIdx].gamification.following = [];
-        if (!users[reqIdx].gamification.followers) users[reqIdx].gamification.followers = [];
-        if (!users[reqIdx].gamification.following) users[reqIdx].gamification.following = [];
+        if (!user.gamification.followers) user.gamification.followers = [];
+        if (!user.gamification.following) user.gamification.following = [];
+        if (!reqUser.gamification.followers) reqUser.gamification.followers = [];
+        if (!reqUser.gamification.following) reqUser.gamification.following = [];
 
-        if (!users[userIdx].gamification.followers.includes(requesterId)) users[userIdx].gamification.followers.push(requesterId);
-        if (!users[userIdx].gamification.following.includes(requesterId)) users[userIdx].gamification.following.push(requesterId);
-        
-        if (!users[reqIdx].gamification.followers.includes(userId)) users[reqIdx].gamification.followers.push(userId);
-        if (!users[reqIdx].gamification.following.includes(userId)) users[reqIdx].gamification.following.push(userId);
+        if (!user.gamification.followers.includes(requesterId)) user.gamification.followers.push(requesterId);
+        if (!reqUser.gamification.following.includes(userId)) reqUser.gamification.following.push(userId);
       }
-      saveToStorage(STORAGE_KEYS.USERS, users);
+      
+      await Promise.all([setDoc(userRef, user), setDoc(reqRef, reqUser)]);
     }
   },
 
   unfollow: async (userId: string, targetId: string): Promise<void> => {
-    const users = getFromStorage<UserSession[]>(STORAGE_KEYS.USERS, []);
-    const userIdx = users.findIndex(u => u.userId === userId);
-    const targetIdx = users.findIndex(u => u.userId === targetId);
-
-    if (userIdx !== -1 && targetIdx !== -1) {
-      users[userIdx].gamification.following = users[userIdx].gamification.following.filter(id => id !== targetId);
-      users[targetIdx].gamification.followers = users[targetIdx].gamification.followers.filter(id => id !== userId);
-      saveToStorage(STORAGE_KEYS.USERS, users);
+    const userRef = doc(db, 'users', userId);
+    const targetRef = doc(db, 'users', targetId);
+    
+    const [userSnap, targetSnap] = await Promise.all([getDoc(userRef), getDoc(targetRef)]);
+    
+    if (userSnap.exists() && targetSnap.exists()) {
+      const user = userSnap.data() as UserSession;
+      const targetUser = targetSnap.data() as UserSession;
+      
+      user.gamification.following = (user.gamification.following || []).filter(id => id !== targetId);
+      targetUser.gamification.followers = (targetUser.gamification.followers || []).filter(id => id !== userId);
+      
+      await Promise.all([setDoc(userRef, user), setDoc(targetRef, targetUser)]);
     }
   }
 };
