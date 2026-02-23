@@ -21,6 +21,9 @@ const INITIAL_GAMIFICATION: UserGamification = {
   totalActivities: 0,
 };
 
+// 💡 A FUNÇÃO FAXINEIRA: Remove qualquer 'undefined' para o Firebase não travar
+const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
+
 export const api = {
   // --- Auth (Firebase Authentication) ---
   login: async (identifier: string, password?: string): Promise<UserSession | null> => {
@@ -51,21 +54,23 @@ export const api = {
       
       adminData.gamification.isPro = true;
       adminData.gamification.lastLoginDate = today;
-      await setDoc(adminRef, adminData);
+      await setDoc(adminRef, clean(adminData));
       return adminData;
     }
 
     try {
-      // Se o aluno digitou o @username em vez do e-mail, procuramos o e-mail dele no banco
       let loginEmail = identifier;
+      
       if (!identifier.includes('@') || identifier.startsWith('@')) {
-        const q = query(collection(db, 'users'), where('username', '==', identifier.toLowerCase().replace(/\s/g, '')));
+        let searchUsername = identifier.toLowerCase().replace(/\s/g, '');
+        if (searchUsername === '@admin') searchUsername = 'admin';
+
+        const q = query(collection(db, 'users'), where('username', '==', searchUsername));
         const snap = await getDocs(q);
         if (snap.empty) return null;
         loginEmail = snap.docs[0].data().email;
       }
 
-      // Tenta logar no Firebase
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password!);
       const userRef = doc(db, 'users', userCredential.user.uid);
       const userSnap = await getDoc(userRef);
@@ -96,7 +101,7 @@ export const api = {
         }
         
         user.gamification.lastLoginDate = today;
-        await setDoc(userRef, user);
+        await setDoc(userRef, clean(user));
         return user;
       }
       return null;
@@ -108,22 +113,30 @@ export const api = {
 
   isUsernameTaken: async (username: string): Promise<boolean> => {
     const normalized = username.toLowerCase();
-    if (normalized === '@tester' || normalized === '@admin') return true;
-    const q = query(collection(db, 'users'), where('username', '==', normalized));
+    if (normalized === '@tester') return true; 
+    
+    let searchUsername = normalized;
+    if (searchUsername === '@admin') searchUsername = 'admin';
+
+    const q = query(collection(db, 'users'), where('username', '==', searchUsername));
     const snap = await getDocs(q);
     return !snap.empty;
   },
 
   register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string }): Promise<UserSession> => {
     try {
-      // Cria a conta no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
       const uid = userCredential.user.uid;
       const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
 
+      let finalUsername = userData.username.toLowerCase();
+      if (finalUsername === '@admin') {
+        finalUsername = 'admin';
+      }
+
       const newUser: UserSession = {
         userId: uid,
-        username: userData.username.toLowerCase(), 
+        username: finalUsername, 
         userName: firstName,
         fullName: userData.fullName,
         age: userData.age,
@@ -131,12 +144,16 @@ export const api = {
         email: userData.email,
         profilePhoto: userData.profilePhoto,
         guide: 'Fred',
-        gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
+        gamification: { 
+          ...INITIAL_GAMIFICATION, 
+          lastLoginDate: new Date().toISOString().split('T')[0], 
+          streak: 1,
+          isPro: finalUsername === 'admin' 
+        },
         notifications: []
       };
 
-      // Salva o perfil no Firestore (Banco de Dados)
-      await setDoc(doc(db, 'users', uid), newUser);
+      await setDoc(doc(db, 'users', uid), clean(newUser));
       return newUser;
     } catch (e: any) {
       if (e.code === 'auth/email-already-in-use') {
@@ -156,8 +173,6 @@ export const api = {
   },
 
   resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    // No Firebase real, a senha é trocada clicando no link do e-mail. 
-    // Retornamos true para o app entender que o fluxo terminou com sucesso.
     return true;
   },
 
@@ -187,12 +202,12 @@ export const api = {
       const user = snap.data() as UserSession;
       user.gamification.xp += xpDelta;
       user.gamification.frBalance += frDelta;
-      await setDoc(userRef, user);
+      await setDoc(userRef, clean(user));
     }
   },
 
   admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    return true; // Requer Admin SDK para trocar sem o e-mail de recuperação
+    return true; 
   },
 
   admin_sendNotification: async (userId: string, message: string): Promise<void> => {
@@ -208,7 +223,7 @@ export const api = {
         read: false,
         sender: 'Admin Freedom'
       });
-      await setDoc(userRef, user);
+      await setDoc(userRef, clean(user));
     }
   },
 
@@ -221,7 +236,7 @@ export const api = {
         const nIdx = user.notifications.findIndex(n => n.id === notificationId);
         if (nIdx !== -1) {
           user.notifications[nIdx].read = true;
-          await setDoc(userRef, user);
+          await setDoc(userRef, clean(user));
         }
       }
     }
@@ -229,7 +244,7 @@ export const api = {
 
   // --- Common Methods ---
   saveUser: async (user: UserSession) => {
-    await setDoc(doc(db, 'users', user.userId), user);
+    await setDoc(doc(db, 'users', user.userId), clean(user));
   },
 
   updateGuide: async (userId: string, guide: GuideCharacter): Promise<void> => {
@@ -238,7 +253,7 @@ export const api = {
     if (snap.exists()) {
       const user = snap.data() as UserSession;
       user.guide = guide;
-      await setDoc(userRef, user);
+      await setDoc(userRef, clean(user));
     }
   },
 
@@ -256,7 +271,7 @@ export const api = {
     } else {
       user.gamification.dailyActivitiesCount += 1;
     }
-    await setDoc(userRef, user);
+    await setDoc(userRef, clean(user));
     return user.gamification.dailyActivitiesCount;
   },
 
@@ -274,7 +289,7 @@ export const api = {
     } else {
       user.gamification.dailyChatCount = (user.gamification.dailyChatCount || 0) + 1;
     }
-    await setDoc(userRef, user);
+    await setDoc(userRef, clean(user));
     return user.gamification.dailyChatCount;
   },
 
@@ -288,9 +303,8 @@ export const api = {
     user.gamification.xp += xpGain;
     user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
     user.gamification.dailyXpEarned += xpGain; 
-    await setDoc(userRef, user);
+    await setDoc(userRef, clean(user));
 
-    // Update challenges in Firestore
     const challengesSnap = await getDocs(collection(db, 'challenges'));
     const now = Date.now();
     challengesSnap.forEach(async (d) => {
@@ -307,7 +321,7 @@ export const api = {
           c.participantStats[userId].xpGained += xpGain;
           c.participantStats[userId].activitiesDone += 1;
         }
-        await setDoc(doc(db, 'challenges', c.id), c);
+        await setDoc(doc(db, 'challenges', c.id), clean(c));
       }
     });
 
@@ -321,19 +335,17 @@ export const api = {
     const user = snap.data() as UserSession;
     user.gamification.lastPlacementLevel = level;
     user.gamification.lastPlacementDate = Date.now();
-    await setDoc(userRef, user);
+    await setDoc(userRef, clean(user));
     return user;
   },
 
   getLeaderboardData: async (filter: 'Weekly' | 'Monthly' | 'Annual'): Promise<{user: UserSession, periodXp: number}[]> => {
     const users = await api.admin_getAllUsers();
-    const now = Date.now();
     const msPerDay = 24 * 60 * 60 * 1000;
     let timeframe = Infinity;
     if (filter === 'Weekly') timeframe = 7 * msPerDay;
     else if (filter === 'Monthly') timeframe = 30 * msPerDay;
     
-    // Simplificação para não sobrecarregar o banco
     return users.map(u => {
       const finalXp = filter === 'Annual' ? u.gamification.xp : Math.floor(u.gamification.xp * (timeframe === Infinity ? 1 : 0.5)); 
       return { user: u, periodXp: finalXp };
@@ -346,7 +358,7 @@ export const api = {
   },
 
   savePlan: async (userId: string, plan: StudyPlan): Promise<void> => {
-    await setDoc(doc(db, 'plans', userId), plan);
+    await setDoc(doc(db, 'plans', userId), clean(plan));
   },
 
   deletePlan: async (userId: string): Promise<void> => {
@@ -360,12 +372,12 @@ export const api = {
   },
 
   saveActivity: async (userId: string, record: ActivityRecord): Promise<void> => {
-    await setDoc(doc(db, 'history', record.id), { ...record, userId });
+    await setDoc(doc(db, 'history', record.id), clean({ ...record, userId }));
   },
 
   saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
     const id = crypto.randomUUID();
-    await setDoc(doc(db, 'bank', id), { id, level, theme, subTopic, content, createdAt: Date.now() });
+    await setDoc(doc(db, 'bank', id), clean({ id, level, theme, subTopic, content, createdAt: Date.now() }));
   },
 
   getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
@@ -396,14 +408,14 @@ export const api = {
           id: pid, xp: c.participantStats[pid]?.xpGained || 0
         })).sort((a, b) => b.xp - a.xp);
         c.winnerId = participants[0]?.id;
-        await setDoc(doc(db, 'challenges', c.id), c);
+        await setDoc(doc(db, 'challenges', c.id), clean(c));
       }
     });
     return challenges;
   },
 
   saveChallenge: async (challenge: UserChallenge): Promise<void> => {
-    await setDoc(doc(db, 'challenges', challenge.id), challenge);
+    await setDoc(doc(db, 'challenges', challenge.id), clean(challenge));
   },
 
   getMessages: async (userId: string): Promise<DirectMessage[]> => {
@@ -420,7 +432,7 @@ export const api = {
 
   sendMessage: async (msg: Omit<DirectMessage, 'id' | 'timestamp' | 'read'>): Promise<void> => {
     const id = crypto.randomUUID();
-    await setDoc(doc(db, 'messages', id), { ...msg, id, timestamp: Date.now(), read: false });
+    await setDoc(doc(db, 'messages', id), clean({ ...msg, id, timestamp: Date.now(), read: false }));
   },
 
   markMessagesRead: async (userId: string, otherId: string): Promise<void> => {
@@ -439,12 +451,12 @@ export const api = {
       if (!user.gamification.followRequests) user.gamification.followRequests = [];
       if (!user.gamification.followRequests.includes(fromId)) {
         user.gamification.followRequests.push(fromId);
-        await setDoc(userRef, user);
+        await setDoc(userRef, clean(user));
       }
     }
   },
 
-  respondToFollowRequest: async (userId: string, requesterId: string, accept: boolean): Promise<void> => {
+  respondToFollowRequest: async (userId: string, requesterId: string, accept: Promise<void> | boolean): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const reqRef = doc(db, 'users', requesterId);
     
@@ -466,7 +478,7 @@ export const api = {
         if (!reqUser.gamification.following.includes(userId)) reqUser.gamification.following.push(userId);
       }
       
-      await Promise.all([setDoc(userRef, user), setDoc(reqRef, reqUser)]);
+      await Promise.all([setDoc(userRef, clean(user)), setDoc(reqRef, clean(reqUser))]);
     }
   },
 
@@ -483,7 +495,7 @@ export const api = {
       user.gamification.following = (user.gamification.following || []).filter(id => id !== targetId);
       targetUser.gamification.followers = (targetUser.gamification.followers || []).filter(id => id !== userId);
       
-      await Promise.all([setDoc(userRef, user), setDoc(targetRef, targetUser)]);
+      await Promise.all([setDoc(userRef, clean(user)), setDoc(targetRef, clean(targetUser))]);
     }
   }
 };
