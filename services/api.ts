@@ -38,7 +38,7 @@ export const api = {
       if (!adminSnap.exists()) {
         adminData = {
           userId: 'admin-root-id',
-          username: '@admin',
+          username: 'admin', // 💡 CORRIGIDO: Sem o arroba!
           userName: 'Admin',
           fullName: 'Freedom Administrator',
           age: '99',
@@ -50,6 +50,8 @@ export const api = {
         };
       } else {
         adminData = adminSnap.data() as UserSession;
+        // 💡 CORREÇÃO AUTOMÁTICA: Conserta o Firebase se estiver salvo com @
+        adminData.username = 'admin';
       }
       
       adminData.gamification.isPro = true;
