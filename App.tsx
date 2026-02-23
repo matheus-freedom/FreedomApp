@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Header from './components/Header';
 import SelectionScreen from './components/SelectionScreen';
@@ -191,6 +190,9 @@ const App: React.FC = () => {
 
   const handleFinish = async (finalScore: number, total: number) => {
     if (!state.user) return;
+
+    // 💡 A TRANCA: Ativa o carregamento IMEDIATAMENTE para bloquear novos cliques e evitar duplicatas
+    setState(prev => ({ ...prev, status: 'loading' }));
     
     const accuracy = Math.min(1, finalScore / total);
     const rawXp = Math.min(100, Math.round(accuracy * 100));
@@ -558,11 +560,11 @@ const App: React.FC = () => {
         <div className="fixed bottom-0 right-0 z-[200] pointer-events-none">
           <div className="pointer-events-auto">
              <GuideChat 
-               guide={state.user.guide} 
-               userName={state.user.userName} 
-               user={state.user}
-               onUserUpdate={handleUserUpdate}
-               onGenerateActivity={handleStart} 
+                guide={state.user.guide} 
+                userName={state.user.userName} 
+                user={state.user}
+                onUserUpdate={handleUserUpdate}
+                onGenerateActivity={handleStart} 
              />
           </div>
         </div>
