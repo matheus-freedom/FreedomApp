@@ -61,7 +61,6 @@ const App: React.FC = () => {
           const storedUser: UserSession = JSON.parse(savedSession);
           const user = await api.login(storedUser.username, storedUser.password);
           if (user) {
-            // Check for challenge invites
             const challenges = await api.getChallenges();
             const invite = challenges.find(c => c.status === 'active' && (c.pendingInvites || []).includes(user.userId));
             if (invite) setPendingChallenge(invite);
@@ -191,7 +190,6 @@ const App: React.FC = () => {
   const handleFinish = async (finalScore: number, total: number) => {
     if (!state.user) return;
 
-    // 💡 A TRANCA: Ativa o carregamento IMEDIATAMENTE para bloquear novos cliques e evitar duplicatas
     setState(prev => ({ ...prev, status: 'loading' }));
     
     const accuracy = Math.min(1, finalScore / total);
@@ -387,11 +385,12 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* 💡 ALTERAÇÃO AQUI: Texto mudado para "Loading" */}
       {state.status === 'loading' && (
         <div className="fixed inset-0 z-[150] bg-[#222222]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
             <Loader2 className="w-20 h-20 text-[#f7931e] animate-spin mb-6" />
-            <h3 className="text-2xl font-black text-[#f7931e] mb-2 uppercase tracking-tighter">Processando Freedom...</h3>
-            <p className="text-gray-400 max-w-xs text-sm font-medium">Preparando sua atividade personalizada.</p>
+            <h3 className="text-2xl font-black text-[#f7931e] mb-2 uppercase tracking-tighter">Loading...</h3>
+            <p className="text-gray-400 max-w-xs text-sm font-medium">Please wait a moment.</p>
         </div>
       )}
 
