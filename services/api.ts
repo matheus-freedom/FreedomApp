@@ -1,7 +1,7 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification } from '../types';
 import { auth, db } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
 
 const INITIAL_GAMIFICATION: UserGamification = {
   xp: 0,
@@ -24,18 +24,14 @@ const INITIAL_GAMIFICATION: UserGamification = {
 const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
 
 export const api = {
-  // 💡 NOVA FUNÇÃO: Monitora se o usuário ainda está logado no navegador
   subscribeToAuthChanges: (callback: (user: any) => void) => {
     return onAuthStateChanged(auth, callback);
   },
 
-  // 💡 NOVA FUNÇÃO: Busca os dados do aluno pelo ID único (UID)
   getUserProfile: async (uid: string): Promise<UserSession | null> => {
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      return userSnap.data() as UserSession;
-    }
+    if (userSnap.exists()) return userSnap.data() as UserSession;
     return null;
   },
 
@@ -45,55 +41,38 @@ export const api = {
 
   login: async (identifier: string, password?: string): Promise<UserSession | null> => {
     const today = new Date().toISOString().split('T')[0];
-
     if (identifier.toLowerCase() === 'admin' && password === 'f1') {
       const adminRef = doc(db, 'users', 'admin-root-id');
       const adminSnap = await getDoc(adminRef);
       let adminData: UserSession;
-
       if (!adminSnap.exists()) {
         adminData = {
-          userId: 'admin-root-id',
-          username: 'admin',
-          userName: 'Admin',
-          fullName: 'Freedom Administrator',
-          age: '99',
-          gender: 'Root',
-          email: 'admin@freedom.app',
-          guide: 'Fred',
-          gamification: { ...INITIAL_GAMIFICATION, isPro: true, lastLoginDate: today },
-          notifications: []
+          userId: 'admin-root-id', username: 'admin', userName: 'Admin', fullName: 'Freedom Administrator',
+          age: '99', gender: 'Root', email: 'admin@freedom.app', guide: 'Fred',
+          gamification: { ...INITIAL_GAMIFICATION, isPro: true, lastLoginDate: today }, notifications: []
         };
       } else {
         adminData = adminSnap.data() as UserSession;
         adminData.username = 'admin';
       }
-      
       adminData.gamification.isPro = true;
       adminData.gamification.lastLoginDate = today;
       await setDoc(adminRef, clean(adminData));
       return adminData;
     }
-
     try {
       let loginEmail = identifier;
-      
       if (!identifier.includes('@') || identifier.startsWith('@')) {
         let searchUsername = identifier.toLowerCase().replace(/\s/g, '');
         if (searchUsername === '@admin') searchUsername = 'admin';
-
         const q = query(collection(db, 'users'), where('username', '==', searchUsername));
         const snap = await getDocs(q);
         if (snap.empty) return null;
         loginEmail = snap.docs[0].data().email;
       }
-
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password!);
       return await api.getUserProfile(userCredential.user.uid);
-    } catch (e) {
-      console.error("Erro no login:", e);
-      return null;
-    }
+    } catch (e) { return null; }
   },
 
   isUsernameTaken: async (username: string): Promise<boolean> => {
@@ -111,29 +90,14 @@ export const api = {
       const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
       const uid = userCredential.user.uid;
       const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
-
       let finalUsername = userData.username.toLowerCase();
       if (finalUsername === '@admin') finalUsername = 'admin';
-
       const newUser: UserSession = {
-        userId: uid,
-        username: finalUsername, 
-        userName: firstName,
-        fullName: userData.fullName,
-        age: userData.age,
-        gender: userData.gender,
-        email: userData.email,
-        profilePhoto: userData.profilePhoto,
-        guide: 'Fred',
-        gamification: { 
-          ...INITIAL_GAMIFICATION, 
-          lastLoginDate: new Date().toISOString().split('T')[0], 
-          streak: 1,
-          isPro: finalUsername === 'admin' 
-        },
+        userId: uid, username: finalUsername, userName: firstName, fullName: userData.fullName,
+        age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: userData.profilePhoto,
+        guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
         notifications: []
       };
-
       await setDoc(doc(db, 'users', uid), clean(newUser));
       return newUser;
     } catch (e: any) {
@@ -143,17 +107,10 @@ export const api = {
   },
 
   requestPasswordReset: async (email: string): Promise<{ success: boolean; resetToken?: string }> => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true };
-    } catch (e) {
-      return { success: false };
-    }
+    try { await sendPasswordResetEmail(auth, email); return { success: true }; } catch (e) { return { success: false }; }
   },
 
-  resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    return true;
-  },
+  resetPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
 
   admin_getAllUsers: async (): Promise<UserSession[]> => {
     const snap = await getDocs(collection(db, 'users'));
@@ -184,23 +141,13 @@ export const api = {
     }
   },
 
-  admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => {
-    return true; 
-  },
-
   admin_sendNotification: async (userId: string, message: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
       const user = snap.data() as UserSession;
       if (!user.notifications) user.notifications = [];
-      user.notifications.unshift({
-        id: crypto.randomUUID(),
-        message,
-        date: Date.now(),
-        read: false,
-        sender: 'Admin Freedom'
-      });
+      user.notifications.unshift({ id: crypto.randomUUID(), message, date: Date.now(), read: false, sender: 'Admin Freedom' });
       await setDoc(userRef, clean(user));
     }
   },
@@ -212,17 +159,12 @@ export const api = {
       const user = snap.data() as UserSession;
       if (user.notifications) {
         const nIdx = user.notifications.findIndex(n => n.id === notificationId);
-        if (nIdx !== -1) {
-          user.notifications[nIdx].read = true;
-          await setDoc(userRef, clean(user));
-        }
+        if (nIdx !== -1) { user.notifications[nIdx].read = true; await setDoc(userRef, clean(user)); }
       }
     }
   },
 
-  saveUser: async (user: UserSession) => {
-    await setDoc(doc(db, 'users', user.userId), clean(user));
-  },
+  saveUser: async (user: UserSession) => { await setDoc(doc(db, 'users', user.userId), clean(user)); },
 
   updateGuide: async (userId: string, guide: GuideCharacter): Promise<void> => {
     const userRef = doc(db, 'users', userId);
@@ -276,7 +218,6 @@ export const api = {
     user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
     user.gamification.dailyXpEarned += xpGain; 
     await setDoc(userRef, clean(user));
-
     const challengesSnap = await getDocs(collection(db, 'challenges'));
     const now = Date.now();
     challengesSnap.forEach(async (d) => {
@@ -284,9 +225,7 @@ export const api = {
       if (c.status === 'active' && (c.participantIds || []).includes(userId)) {
         if (now > c.endDate) {
           c.status = 'closed';
-          const participants = (c.participantIds || []).map(pid => ({
-            id: pid, xp: c.participantStats[pid]?.xpGained || 0
-          })).sort((a, b) => b.xp - a.xp);
+          const participants = (c.participantIds || []).map(pid => ({ id: pid, xp: c.participantStats[pid]?.xpGained || 0 })).sort((a, b) => b.xp - a.xp);
           c.winnerId = participants[0]?.id;
         } else {
           if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
@@ -296,7 +235,6 @@ export const api = {
         await setDoc(doc(db, 'challenges', c.id), clean(c));
       }
     });
-
     return { totalXp: user.gamification.xp, xpGained: xpGain, frGained: frGain, totalFr: user.gamification.frBalance };
   },
 
@@ -347,16 +285,33 @@ export const api = {
     await setDoc(doc(db, 'history', record.id), clean({ ...record, userId }));
   },
 
+  // 💡 ATUALIZAÇÃO: Banco de Atividades agora salva no FIRESTORE (Nuvem)
   saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
-    const id = crypto.randomUUID();
-    await setDoc(doc(db, 'bank', id), clean({ id, level, theme, subTopic, content, createdAt: Date.now() }));
+    const bankRef = collection(db, 'bank');
+    const activityData = {
+      level,
+      theme,
+      subTopic: subTopic.toLowerCase().trim(),
+      content,
+      createdAt: Date.now()
+    };
+    await addDoc(bankRef, clean(activityData));
   },
 
+  // 💡 ATUALIZAÇÃO: Agora busca no FIRESTORE antes de chamar a IA
   getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
-    const q = query(collection(db, 'bank'), where('level', '==', level), where('theme', '==', theme));
+    const normalizedTopic = subTopic.toLowerCase().trim();
+    const q = query(
+      collection(db, 'bank'), 
+      where('level', '==', level), 
+      where('theme', '==', theme),
+      where('subTopic', '==', normalizedTopic)
+    );
     const snap = await getDocs(q);
-    const matches = snap.docs.map(d => d.data()).filter(item => item.subTopic.toLowerCase().includes(subTopic.toLowerCase()));
-    if (matches.length === 0) return null;
+    if (snap.empty) return null;
+    
+    // Se achou, pega uma aleatória das que já existem com esse tema
+    const matches = snap.docs.map(d => d.data());
     return matches[Math.floor(Math.random() * matches.length)];
   },
 
@@ -364,7 +319,7 @@ export const api = {
     const cutoff = Date.now() - (90 * 24 * 60 * 60 * 1000);
     const q = query(collection(db, 'bank'), where('createdAt', '<', cutoff));
     const snap = await getDocs(q);
-    snap.forEach(d => deleteDoc(doc(db, 'bank', d.id)));
+    snap.forEach(async (d) => await deleteDoc(doc(db, 'bank', d.id)));
   },
 
   getChallenges: async (): Promise<UserChallenge[]> => {
@@ -374,9 +329,7 @@ export const api = {
     challenges.forEach(async (c) => {
       if (c.status === 'active' && now > c.endDate) {
         c.status = 'closed';
-        const participants = (c.participantIds || []).map(pid => ({
-          id: pid, xp: c.participantStats[pid]?.xpGained || 0
-        })).sort((a, b) => b.xp - a.xp);
+        const participants = (c.participantIds || []).map(pid => ({ id: pid, xp: c.participantStats[pid]?.xpGained || 0 })).sort((a, b) => b.xp - a.xp);
         c.winnerId = participants[0]?.id;
         await setDoc(doc(db, 'challenges', c.id), clean(c));
       }
@@ -406,9 +359,7 @@ export const api = {
   markMessagesRead: async (userId: string, otherId: string): Promise<void> => {
     const q = query(collection(db, 'messages'), where('senderId', '==', otherId), where('receiverId', '==', userId));
     const snap = await getDocs(q);
-    snap.forEach(async (d) => {
-      await updateDoc(doc(db, 'messages', d.id), { read: true });
-    });
+    snap.forEach(async (d) => await updateDoc(doc(db, 'messages', d.id), { read: true }));
   },
 
   sendFollowRequest: async (fromId: string, toId: string): Promise<void> => {
@@ -424,7 +375,7 @@ export const api = {
     }
   },
 
-  respondToFollowRequest: async (userId: string, requesterId: string, accept: Promise<void> | boolean): Promise<void> => {
+  respondToFollowRequest: async (userId: string, requesterId: string, accept: boolean): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const reqRef = doc(db, 'users', requesterId);
     const [userSnap, reqSnap] = await Promise.all([getDoc(userRef), getDoc(reqRef)]);
