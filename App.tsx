@@ -22,7 +22,7 @@ import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle } from 'lucide-react';
 
 const DAILY_LIMIT = 8;
-const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutos em milissegundos
+const INACTIVITY_LIMIT = 15 * 60 * 1000; 
 
 const TIER_THRESHOLDS = [
   { tier: UserTier.Starter, min: 0, max: 5000 },
@@ -50,7 +50,6 @@ const App: React.FC = () => {
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 💡 LOGOUT POR INATIVIDADE: Função que executa o logout
   const handleLogout = useCallback(async () => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     localStorage.removeItem('freedom_postgres_session');
@@ -58,7 +57,6 @@ const App: React.FC = () => {
     setState(p => ({ ...p, user: null, status: 'login', studyPlan: null, activityHistory: [] }));
   }, []);
 
-  // 💡 MONITOR DE ATIVIDADE: Reseta o timer sempre que o usuário interage
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (state.user) {
@@ -69,7 +67,6 @@ const App: React.FC = () => {
     }
   }, [state.user, handleLogout]);
 
-  // 💡 EFEITO DE SESSÃO PERSISTENTE: Ouve o Firebase para manter o login
   useEffect(() => {
     const unsubscribe = api.subscribeToAuthChanges(async (firebaseUser) => {
       if (firebaseUser) {
@@ -81,25 +78,15 @@ const App: React.FC = () => {
               api.getHistory(userProfile.userId),
               api.getChallenges()
             ]);
-
             const invite = challenges.find(c => c.status === 'active' && (c.pendingInvites || []).includes(userProfile.userId));
             if (invite) setPendingChallenge(invite);
-
             setState(prev => ({ 
-              ...prev, 
-              user: userProfile, 
-              studyPlan: plan, 
-              activityHistory: history, 
+              ...prev, user: userProfile, studyPlan: plan, activityHistory: history, 
               status: userProfile.username === 'admin' ? (userProfile.guide ? 'selection' : 'guide_selection') : 'keyword_check'
             }));
-          } else {
-            setState(prev => ({ ...prev, status: 'login' }));
-          }
-        } catch (e) {
-          setState(prev => ({ ...prev, status: 'login' }));
-        }
+          } else { setState(prev => ({ ...prev, status: 'login' })); }
+        } catch (e) { setState(prev => ({ ...prev, status: 'login' })); }
       } else {
-        // Verifica se é o admin "manual" f1
         const savedSession = localStorage.getItem('freedom_postgres_session');
         if (savedSession) {
            const storedUser = JSON.parse(savedSession);
@@ -115,11 +102,9 @@ const App: React.FC = () => {
         setState(prev => ({ ...prev, status: 'login' }));
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  // 💡 OUVINTES DE EVENTOS: Mouse, Teclado, Toque
   useEffect(() => {
     if (state.user) {
       window.addEventListener('mousemove', resetInactivityTimer);
@@ -142,6 +127,7 @@ const App: React.FC = () => {
     }
   }, [state.user]);
 
+  // 💡 A MÁGICA DO CACHE: Esta função é usada em TODO o app (Fábrica, Plano e Challenge)
   const handleStart = async (level: Level, theme: Theme, subTopic: string, voiceGender: VoiceGender = 'Female', voiceAccent: VoiceAccent = 'American') => {
     if (!state.user) return;
     const today = new Date().toISOString().split('T')[0];
@@ -150,15 +136,23 @@ const App: React.FC = () => {
       alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje.`);
       return;
     }
+
     setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined }));
     try {
+      // 1. TENTA BUSCAR NO BANCO (GRÁTIS)
       const cached = await api.getRandomActivityFromBank(level, theme, subTopic);
       let content: GeneratedContent;
-      if (cached) content = cached.content;
-      else {
+
+      if (cached) {
+        // Se achou no banco, usa ele e economiza crédito!
+        content = cached.content;
+      } else {
+        // 2. SE NÃO ACHOU, CHAMA A IA (CONSOME CRÉDITO)
         content = await generateQuizContent(level, theme, subTopic, voiceGender, voiceAccent);
+        // 3. SALVA NO BANCO PARA O PRÓXIMO ALUNO (CACHE)
         await api.saveToActivityBank(level, theme, subTopic, content);
       }
+
       if (theme === Theme.Writing) setState(prev => ({ ...prev, status: 'writing', content, score: 0 }));
       else setState(prev => ({ ...prev, status: 'quiz', content, score: 0, currentQuestionIndex: 0 }));
     } catch (error) {
@@ -176,25 +170,15 @@ const App: React.FC = () => {
     const prevTier = calculateTier(state.user.gamification.xp);
     const newTier = calculateTier(totalXp);
     const leveledUp = newTier !== prevTier;
-
     const record: ActivityRecord = {
-      id: crypto.randomUUID(),
-      date: Date.now(),
-      level: state.level!,
-      theme: state.theme!,
-      topic: state.subTopic!,
-      score: finalScore,
-      total: total,
-      type: state.theme === Theme.Writing ? 'writing' : 'quiz',
-      xpGained: xpGained,
-      frGained: frGained
+      id: crypto.randomUUID(), date: Date.now(), level: state.level!, theme: state.theme!,
+      topic: state.subTopic!, score: finalScore, total: total, type: state.theme === Theme.Writing ? 'writing' : 'quiz',
+      xpGained: xpGained, frGained: frGained
     };
-    
     await api.saveActivity(state.user.userId, record);
     const updatedHistory = await api.getHistory(state.user.userId);
     const today = new Date().toISOString().split('T')[0];
     const updatedUser = { ...state.user, gamification: { ...state.user.gamification, xp: totalXp, frBalance: totalFr, dailyXpEarned: state.user.gamification.dailyXpEarned + xpGained, lastXpGainDate: today } };
-
     setState(prev => ({ 
       ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
       user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null
@@ -202,16 +186,13 @@ const App: React.FC = () => {
     if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
   };
 
-  const handleUserUpdate = (updatedUser: UserSession) => {
-    setState(p => ({ ...p, user: updatedUser }));
-  };
+  const handleUserUpdate = (updatedUser: UserSession) => { setState(p => ({ ...p, user: updatedUser })); };
 
   return (
     <div className="min-h-screen bg-[#222222] text-white font-sans selection:bg-[#f7931e] selection:text-[#222222]">
       {state.status !== 'admin_panel' && (
-        <Header onLogout={state.user ? handleLogout : undefined} onHome={state.user ? handleHome : undefined} onOpenChat={state.user ? () => setState(p => ({ ...p, status: 'chat', activeChatUserId: null })) : undefined} user={state.user} />
+        <Header onLogout={handleLogout} onHome={handleHome} onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))} user={state.user} />
       )}
-      
       {showDailyLimitModal && (
         <div className="fixed inset-0 z-[500] bg-[#222222]/95 backdrop-blur-2xl flex flex-col items-center justify-center p-8 text-center animate-fade-in">
             <div className="relative mb-8"><Star className="w-24 h-24 text-yellow-400 animate-pulse" /><PartyPopper className="absolute -top-4 -right-4 w-12 h-12 text-[#f7931e] animate-bounce" /></div>
@@ -220,7 +201,6 @@ const App: React.FC = () => {
             <button onClick={() => { setShowDailyLimitModal(false); handleHome(); }} className="mt-12 px-12 py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black text-xl hover:scale-110 transition-all uppercase tracking-widest shadow-2xl shadow-[#f7931e]/30">Sensacional!</button>
         </div>
       )}
-
       {state.status === 'level_up' && state.newTierReached && (
         <div className="fixed inset-0 z-[300] bg-[#222222]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in">
             <div className="relative mb-8"><PartyPopper className="w-24 h-24 text-yellow-400 animate-bounce" /><Sparkles className="absolute -top-4 -right-4 w-12 h-12 text-[#f7931e] animate-pulse" /></div>
@@ -230,7 +210,6 @@ const App: React.FC = () => {
             <button onClick={() => setState(p => ({ ...p, status: 'results' }))} className="mt-12 px-12 py-5 bg-white text-[#222222] rounded-2xl font-black text-xl hover:scale-110 transition-all uppercase tracking-widest shadow-xl">Ver Resultados</button>
         </div>
       )}
-
       {pendingChallenge && state.user && (
         <div className="fixed inset-0 z-[700] bg-[#222222]/95 backdrop-blur-2xl flex items-center justify-center p-6">
           <div className="bg-[#2a2a2a] w-full max-w-lg rounded-[3rem] border border-white/10 p-10 shadow-2xl text-center animate-pop">
@@ -249,15 +228,12 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-
       {state.status === 'loading' && (
         <div className="fixed inset-0 z-[150] bg-[#222222]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"><Loader2 className="w-20 h-20 text-[#f7931e] animate-spin mb-6" /><h3 className="text-2xl font-black text-[#f7931e] mb-2 uppercase tracking-tighter">Loading...</h3><p className="text-gray-400 max-w-xs text-sm font-medium">Please wait a moment.</p></div>
       )}
-
       {state.status === 'error' && (
         <div className="max-w-md mx-auto mt-20 p-8 bg-[#333333] border-2 border-red-500/30 rounded-3xl text-center animate-pop"><AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" /><p className="text-gray-400 mb-6">{state.errorMessage}</p><button onClick={handleHome} className="w-full py-4 bg-[#f7931e] text-[#222222] font-black rounded-2xl">Voltar ao Início</button></div>
       )}
-
       <main className="container mx-auto px-4">
         {state.status === 'login' && <LoginScreen onLogin={async (user) => {
           setState(p => ({ ...p, status: 'loading' }));
@@ -265,17 +241,13 @@ const App: React.FC = () => {
           localStorage.setItem('freedom_postgres_session', JSON.stringify(user));
           setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, status: user.username === 'admin' ? (user.guide ? 'selection' : 'guide_selection') : 'keyword_check' }));
         }} />}
-
         {state.status === 'keyword_check' && (
           <KeywordScreen onSuccess={(accessType) => { if (state.user) { const updatedUser = { ...state.user, accessType }; setState(p => ({ ...p, user: updatedUser, status: 'guide_selection' })); } }} onLogout={handleLogout} />
         )}
-
         {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, status: 'selection' })); } }} />}
-
         {state.status === 'selection' && state.user && (
           <SelectionScreen user={state.user} onStart={handleStart} onOpenStudyPlan={() => setState(p => ({ ...p, status: state.studyPlan ? 'dashboard' : 'plan_setup' }))} onStartPlacement={() => setState(p => ({ ...p, status: 'placement_test' }))} onOpenActivities={() => setState(p => ({ ...p, status: 'my_activities' }))} onOpenProfile={() => setState(p => ({ ...p, status: 'profile' }))} onOpenAdmin={() => setState(p => ({ ...p, status: 'admin_panel' }))} onOpenChallenges={() => setState(p => ({ ...p, status: 'challenges' }))} onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))} isLoading={false} hasActivePlan={!!state.studyPlan} onUserUpdate={handleUserUpdate} />
         )}
-
         {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} />}
         {state.status === 'chat' && state.user && <ChatScreen user={state.user} onHome={handleHome} activeChatUserId={state.activeChatUserId} />}
         {state.status === 'admin_panel' && state.user?.username.toLowerCase() === 'admin' && <AdminPanel onBack={handleHome} />}
@@ -288,9 +260,7 @@ const App: React.FC = () => {
         {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleHome} />}
         {state.status === 'results' && <ResultsScreen score={state.score} totalQuestions={state.theme === Theme.Writing ? 100 : (state.content?.questions.length || 10)} onRetry={() => setState(p => ({ ...p, status: state.theme === Theme.Writing ? 'writing' : 'quiz' }))} onHome={handleHome} xpGained={state.lastXpGained} frGained={state.lastFrGained} />}
       </main>
-
       <a href="https://wa.me/message/JZDOD5MBRXEAO1" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 left-6 z-50 flex items-center gap-2 text-gray-500 hover:text-[#f7931e] transition-all bg-[#1a1a1a]/50 p-2.5 rounded-xl backdrop-blur-sm group border border-white/5 hover:border-[#f7931e]/30 shadow-2xl" title="Reportar Erro"><AlertTriangle className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline-block animate-fade-in pr-1">Reportar Erro</span></a>
-
       {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'keyword_check' && (
         <div className="fixed bottom-0 right-0 z-[200] pointer-events-none">
           <div className="pointer-events-auto">
