@@ -127,7 +127,6 @@ const App: React.FC = () => {
     }
   }, [state.user]);
 
-  // 💡 A MÁGICA DO CACHE: Esta função é usada em TODO o app (Fábrica, Plano e Challenge)
   const handleStart = async (level: Level, theme: Theme, subTopic: string, voiceGender: VoiceGender = 'Female', voiceAccent: VoiceAccent = 'American') => {
     if (!state.user) return;
     const today = new Date().toISOString().split('T')[0];
@@ -139,17 +138,13 @@ const App: React.FC = () => {
 
     setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined }));
     try {
-      // 1. TENTA BUSCAR NO BANCO (GRÁTIS)
       const cached = await api.getRandomActivityFromBank(level, theme, subTopic);
       let content: GeneratedContent;
 
       if (cached) {
-        // Se achou no banco, usa ele e economiza crédito!
         content = cached.content;
       } else {
-        // 2. SE NÃO ACHOU, CHAMA A IA (CONSOME CRÉDITO)
         content = await generateQuizContent(level, theme, subTopic, voiceGender, voiceAccent);
-        // 3. SALVA NO BANCO PARA O PRÓXIMO ALUNO (CACHE)
         await api.saveToActivityBank(level, theme, subTopic, content);
       }
 
@@ -165,24 +160,44 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, status: 'loading' }));
     const accuracy = Math.min(1, finalScore / total);
     const rawXp = Math.min(100, Math.round(accuracy * 100));
+    
+    // 💡 O 'xpGained' aqui já vem do Firebase com a limitação aplicada. Se ele estourou os 800 diários, isso voltará como 0.
     const { totalXp, xpGained, frGained, totalFr } = await api.updateXp(state.user.userId, rawXp);
+    
     const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
     const prevTier = calculateTier(state.user.gamification.xp);
     const newTier = calculateTier(totalXp);
     const leveledUp = newTier !== prevTier;
+    
     const record: ActivityRecord = {
       id: crypto.randomUUID(), date: Date.now(), level: state.level!, theme: state.theme!,
       topic: state.subTopic!, score: finalScore, total: total, type: state.theme === Theme.Writing ? 'writing' : 'quiz',
       xpGained: xpGained, frGained: frGained
     };
+    
     await api.saveActivity(state.user.userId, record);
     const updatedHistory = await api.getHistory(state.user.userId);
     const today = new Date().toISOString().split('T')[0];
-    const updatedUser = { ...state.user, gamification: { ...state.user.gamification, xp: totalXp, frBalance: totalFr, dailyXpEarned: state.user.gamification.dailyXpEarned + xpGained, lastXpGainDate: today } };
+    
+    // 💡 Atualizamos o State local usando o xpGained real, para ficar igual ao banco
+    const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
+
+    const updatedUser = { 
+      ...state.user, 
+      gamification: { 
+        ...state.user.gamification, 
+        xp: totalXp, 
+        frBalance: totalFr, 
+        dailyXpEarned: newDailyXp, 
+        lastXpGainDate: today 
+      } 
+    };
+    
     setState(prev => ({ 
       ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
       user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null
     }));
+    
     if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
   };
 
