@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Level, Theme, VoiceGender, VoiceAccent, UserTier, UserSession, AdminNotification, AccessType } from '../types';
 import { TOPICS } from '../constants';
@@ -317,12 +316,9 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             <UserIcon className="w-32 h-32 text-white" />
           </div>
           
+          {/* 💡 ALTERAÇÃO AQUI: Removido o bloqueio do isChallengeOnly para acessar o perfil */}
           <div className="relative cursor-pointer shrink-0" onClick={() => {
-            if (isChallengeOnly) {
-              setShowAccessAlert(true);
-            } else {
-              onOpenProfile();
-            }
+            onOpenProfile();
           }}>
             <div className={`w-24 h-24 rounded-full border-4 ${currentTier.color.replace('text-', 'border-')} flex items-center justify-center bg-[#222222] shadow-lg shadow-black/40 overflow-hidden relative group-hover:border-[#f7931e] transition-colors`}>
               {user.profilePhoto ? (
