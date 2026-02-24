@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, ArrowRight, Loader2, User, Calendar, Users, AtSign, AlertCircle, CheckCircle2, UserPlus, HelpCircle, BookOpen, Key, ArrowLeft, Send, Sparkles, Camera } from 'lucide-react';
 import { api } from '../services/api';
@@ -29,13 +28,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [fullName, setFullName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('Masculino');
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  
+  // 💡 MUDANÇA: Agora guardamos o arquivo real da foto
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Reset specific
   const [resetToken, setResetToken] = useState('');
 
-  // Verificar disponibilidade do username em tempo real
   useEffect(() => {
     if (mode !== 'signup' || !username || username.length < 4) {
       setUsernameStatus('idle');
@@ -68,15 +69,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setError("A imagem deve ter no máximo 2MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfilePhoto(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    
+    // 💡 REMOVIDO: O limite de tamanho, pois o Storage aguenta arquivos grandes!
+    setSelectedPhotoFile(file);
+    setProfilePhotoPreview(URL.createObjectURL(file)); // Apenas para mostrar na tela
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -99,6 +95,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         } else if (!username.startsWith('@') || username.length < 3) {
           setError("O nome de usuário deve começar com @ e ter pelo menos 2 caracteres.");
         } else {
+          // 💡 MUDANÇA: Passando o Arquivo Real para a API
           const newUser = await api.register({ 
             username, 
             fullName, 
@@ -106,7 +103,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             gender, 
             email, 
             password,
-            profilePhoto: profilePhoto || undefined 
+            profilePhoto: selectedPhotoFile || undefined 
           });
           onLogin(newUser);
         }
@@ -235,8 +232,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-24 h-24 rounded-full bg-[#222222] border-2 border-dashed border-[#333333] flex items-center justify-center cursor-pointer hover:border-[#f7931e] transition-all overflow-hidden relative group"
                 >
-                  {profilePhoto ? (
-                    <img src={profilePhoto} alt="Preview" className="w-full h-full object-cover" />
+                  {profilePhotoPreview ? (
+                    <img src={profilePhotoPreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex flex-col items-center text-gray-500 group-hover:text-[#f7931e]">
                       <Camera className="w-6 h-6 mb-1" />
