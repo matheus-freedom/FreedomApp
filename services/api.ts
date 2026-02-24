@@ -1,24 +1,14 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification } from '../types';
-import { auth, db } from './firebase';
+import { auth, db, storage } from './firebase'; // 💡 Importou o storage
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // 💡 Ferramentas do Cofre
 
 const INITIAL_GAMIFICATION: UserGamification = {
-  xp: 0,
-  frBalance: 0,
-  streak: 0,
-  lastLoginDate: null,
-  dailyXpEarned: 0,
-  lastXpGainDate: null,
-  dailyActivitiesCount: 0,
-  lastActivityDate: null,
-  isPro: false,
-  dailyChatCount: 0,
-  lastChatDate: null,
-  followers: [],
-  following: [],
-  followRequests: [],
-  totalActivities: 0,
+  xp: 0, frBalance: 0, streak: 0, lastLoginDate: null, dailyXpEarned: 0,
+  lastXpGainDate: null, dailyActivitiesCount: 0, lastActivityDate: null,
+  isPro: false, dailyChatCount: 0, lastChatDate: null, followers: [],
+  following: [], followRequests: [], totalActivities: 0,
 };
 
 const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
@@ -35,8 +25,13 @@ export const api = {
     return null;
   },
 
-  logout: async () => {
-    await signOut(auth);
+  logout: async () => { await signOut(auth); },
+
+  // 💡 NOVA FUNÇÃO: Envia a foto pro Storage e devolve o link
+  uploadProfilePhoto: async (userId: string, file: File): Promise<string> => {
+    const fileRef = ref(storage, `profile_photos/${userId}_${Date.now()}`);
+    await uploadBytes(fileRef, file);
+    return await getDownloadURL(fileRef);
   },
 
   login: async (identifier: string, password?: string): Promise<UserSession | null> => {
@@ -85,16 +80,26 @@ export const api = {
     return !snap.empty;
   },
 
-  register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string }): Promise<UserSession> => {
+  // 💡 MUDANÇA: Agora aceita um Arquivo de imagem para o cadastro
+  register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string | File }): Promise<UserSession> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
       const uid = userCredential.user.uid;
       const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
       let finalUsername = userData.username.toLowerCase();
       if (finalUsername === '@admin') finalUsername = 'admin';
+      
+      // Se for um arquivo, manda pro cofre antes de salvar o perfil
+      let finalPhotoUrl = undefined;
+      if (userData.profilePhoto instanceof File) {
+        finalPhotoUrl = await api.uploadProfilePhoto(uid, userData.profilePhoto);
+      } else if (typeof userData.profilePhoto === 'string') {
+        finalPhotoUrl = userData.profilePhoto;
+      }
+
       const newUser: UserSession = {
         userId: uid, username: finalUsername, userName: firstName, fullName: userData.fullName,
-        age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: userData.profilePhoto,
+        age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: finalPhotoUrl,
         guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
         notifications: []
       };
@@ -285,7 +290,6 @@ export const api = {
     await setDoc(doc(db, 'history', record.id), clean({ ...record, userId }));
   },
 
-  // 💡 ATUALIZAÇÃO: Banco de Atividades agora salva no FIRESTORE (Nuvem)
   saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
     const bankRef = collection(db, 'bank');
     const activityData = {
@@ -298,7 +302,6 @@ export const api = {
     await addDoc(bankRef, clean(activityData));
   },
 
-  // 💡 ATUALIZAÇÃO: Agora busca no FIRESTORE antes de chamar a IA
   getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
     const normalizedTopic = subTopic.toLowerCase().trim();
     const q = query(
@@ -309,8 +312,6 @@ export const api = {
     );
     const snap = await getDocs(q);
     if (snap.empty) return null;
-    
-    // Se achou, pega uma aleatória das que já existem com esse tema
     const matches = snap.docs.map(d => d.data());
     return matches[Math.floor(Math.random() * matches.length)];
   },
