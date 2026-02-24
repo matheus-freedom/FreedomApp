@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { UserSession } from '../types';
 import { api } from '../services/api';
@@ -24,7 +23,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
   const [age, setAge] = useState(user.age);
   const [gender, setGender] = useState(user.gender);
   const [email, setEmail] = useState(user.email);
-  const [profilePhoto, setProfilePhoto] = useState(user.profilePhoto || '');
+  
+  // 💡 MUDANÇA: Separamos a URL atual e o novo Arquivo selecionado
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(user.profilePhoto || '');
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   
   const [isSaving, setIsSaving] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
@@ -72,16 +74,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("A imagem deve ter no máximo 2MB.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfilePhoto(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // 💡 REMOVIDO: Limite de 2MB! O Storage cuida disso agora.
+    setSelectedPhotoFile(file);
+    setProfilePhotoPreview(URL.createObjectURL(file)); // Apenas preview
   };
 
   const handleSave = async () => {
@@ -98,6 +93,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
 
     setIsSaving(true);
     try {
+      // 💡 MUDANÇA: Envia o arquivo para o cofre ANTES de salvar o perfil
+      let finalPhotoUrl = user.profilePhoto;
+      if (selectedPhotoFile) {
+        finalPhotoUrl = await api.uploadProfilePhoto(user.userId, selectedPhotoFile);
+      }
+
       const updatedUser: UserSession = {
         ...user,
         username,
@@ -105,7 +106,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
         age,
         gender,
         email,
-        profilePhoto,
+        profilePhoto: finalPhotoUrl,
         userName: fullName.split(' ')[0] || username.replace('@', '')
       };
       
@@ -158,8 +159,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
           <div className="bg-[#2a2a2a] p-8 rounded-[2.5rem] border border-white/5 shadow-xl flex flex-col items-center">
             <div className="relative group">
               <div className="w-40 h-40 rounded-full border-4 border-[#f7931e] bg-[#222222] overflow-hidden shadow-2xl relative">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                {profilePhotoPreview ? (
+                  <img src={profilePhotoPreview} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-[#333333]">
                     <User className="w-20 h-20 text-gray-500" />
