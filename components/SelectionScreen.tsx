@@ -316,10 +316,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             <UserIcon className="w-32 h-32 text-white" />
           </div>
           
-          {/* 💡 ALTERAÇÃO AQUI: Removido o bloqueio do isChallengeOnly para acessar o perfil */}
-          <div className="relative cursor-pointer shrink-0" onClick={() => {
-            onOpenProfile();
-          }}>
+          {/* 💡 CORREÇÃO: Agora o clique no ícone de perfil SEMPRE abre o modal, sem restrições */}
+          <div className="relative cursor-pointer shrink-0" onClick={() => onOpenProfile()}>
             <div className={`w-24 h-24 rounded-full border-4 ${currentTier.color.replace('text-', 'border-')} flex items-center justify-center bg-[#222222] shadow-lg shadow-black/40 overflow-hidden relative group-hover:border-[#f7931e] transition-colors`}>
               {user.profilePhoto ? (
                 <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
@@ -348,14 +346,9 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   {currentTier.tier}
                 </p>
               </div>
+              {/* 💡 CORREÇÃO: O botão de informações (i) também está liberado para todos */}
               <button 
-                onClick={() => {
-                  if (isChallengeOnly) {
-                    setShowAccessAlert(true);
-                  } else {
-                    setShowTiersModal(true);
-                  }
-                }}
+                onClick={() => setShowTiersModal(true)}
                 className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-[#f7931e] transition-all"
               >
                 <Info className="w-4 h-4" />
