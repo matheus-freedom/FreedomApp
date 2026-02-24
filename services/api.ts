@@ -1,8 +1,8 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification } from '../types';
-import { auth, db, storage } from './firebase'; // 💡 Importou o storage
+import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // 💡 Ferramentas do Cofre
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const INITIAL_GAMIFICATION: UserGamification = {
   xp: 0, frBalance: 0, streak: 0, lastLoginDate: null, dailyXpEarned: 0,
@@ -27,7 +27,6 @@ export const api = {
 
   logout: async () => { await signOut(auth); },
 
-  // 💡 NOVA FUNÇÃO: Envia a foto pro Storage e devolve o link
   uploadProfilePhoto: async (userId: string, file: File): Promise<string> => {
     const fileRef = ref(storage, `profile_photos/${userId}_${Date.now()}`);
     await uploadBytes(fileRef, file);
@@ -80,7 +79,6 @@ export const api = {
     return !snap.empty;
   },
 
-  // 💡 MUDANÇA: Agora aceita um Arquivo de imagem para o cadastro
   register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string | File }): Promise<UserSession> => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
@@ -89,7 +87,6 @@ export const api = {
       let finalUsername = userData.username.toLowerCase();
       if (finalUsername === '@admin') finalUsername = 'admin';
       
-      // Se for um arquivo, manda pro cofre antes de salvar o perfil
       let finalPhotoUrl = undefined;
       if (userData.profilePhoto instanceof File) {
         finalPhotoUrl = await api.uploadProfilePhoto(uid, userData.profilePhoto);
@@ -217,12 +214,34 @@ export const api = {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
     if (!snap.exists()) throw new Error("User not found");
+    
     const user = snap.data() as UserSession;
-    const frGain = xpGain / 100;
-    user.gamification.xp += xpGain;
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 💡 LÓGICA DO LIMITE DIÁRIO (800 XP MÁXIMO)
+    // 1. Zera a contagem se for um novo dia
+    if (user.gamification.lastXpGainDate !== today) {
+      user.gamification.dailyXpEarned = 0;
+      user.gamification.lastXpGainDate = today;
+    }
+
+    const DAILY_XP_LIMIT = 800;
+    let actualXpGain = xpGain;
+
+    // 2. Verifica se o ganho de agora ultrapassa o teto de 800
+    if (user.gamification.dailyXpEarned + xpGain > DAILY_XP_LIMIT) {
+      // 3. Se ultrapassar, dá apenas o que "sobra" até bater o teto (mínimo 0)
+      actualXpGain = Math.max(0, DAILY_XP_LIMIT - user.gamification.dailyXpEarned);
+    }
+
+    const frGain = actualXpGain / 100;
+    
+    user.gamification.xp += actualXpGain;
     user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
-    user.gamification.dailyXpEarned += xpGain; 
+    user.gamification.dailyXpEarned += actualXpGain; 
+    
     await setDoc(userRef, clean(user));
+
     const challengesSnap = await getDocs(collection(db, 'challenges'));
     const now = Date.now();
     challengesSnap.forEach(async (d) => {
@@ -234,13 +253,15 @@ export const api = {
           c.winnerId = participants[0]?.id;
         } else {
           if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
-          c.participantStats[userId].xpGained += xpGain;
+          // 💡 Computa no desafio apenas o XP real ganho, impedindo fraudes lá também
+          c.participantStats[userId].xpGained += actualXpGain; 
           c.participantStats[userId].activitiesDone += 1;
         }
         await setDoc(doc(db, 'challenges', c.id), clean(c));
       }
     });
-    return { totalXp: user.gamification.xp, xpGained: xpGain, frGained: frGain, totalFr: user.gamification.frBalance };
+
+    return { totalXp: user.gamification.xp, xpGained: actualXpGain, frGained: frGain, totalFr: user.gamification.frBalance };
   },
 
   savePlacementResult: async (userId: string, level: Level): Promise<UserSession> => {
