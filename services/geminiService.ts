@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from '@google/genai';
 import { Level, Theme, GeneratedContent, VoiceGender, VoiceAccent, WritingFeedback, StudyPlanInput, StudyPlan, StudyWeek, StudyDay, StudyTask, GuideCharacter, ChatMessage } from '../types';
 
@@ -130,7 +129,7 @@ export const generatePlacementGrammar = async (): Promise<GeneratedContent> => {
     3. Muitos exemplos devem ser impessoais (ex: "The water boils at..."). Se precisar de nomes, varie além de Sarah e Mark usando: [${DIVERSE_NAMES.slice(0, 10).join(", ")}].`;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: "Gere 30 questões de nivelamento de gramática (A1 a C1).",
       config: { systemInstruction, responseMimeType: "application/json", responseSchema: QUIZ_SCHEMA }
     });
@@ -161,7 +160,7 @@ export const generateAdaptivePlacementStep = async (step: Theme, seedLevel: Leve
     4. FOCO EM TEXTOS REAIS E IMPESSOAIS.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: `Gere atividade de nivelamento de ${step} focada no nível ${seedLevel}.`,
       config: { systemInstruction, responseMimeType: "application/json", responseSchema: QUIZ_SCHEMA }
     });
@@ -224,7 +223,7 @@ export const generateQuizContent = async (
     }
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: prompt,
       config: { 
         systemInstruction, 
@@ -257,7 +256,7 @@ export const generateAudioFromText = async (text: string, voiceGender: VoiceGend
       : `Speak with ${voiceAccent} accent: ${cleanText}`;
     
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: "gemini-2.5-flash-preview-tts", // Mantemos o de áudio pois é específico para voz
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseModalities: [Modality.AUDIO],
@@ -313,18 +312,16 @@ export const evaluateWritingExercise = async (userText: string, originalPrompt: 
     };
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: `Prompt: ${originalPrompt}\nTexto: ${userText}`,
       config: { systemInstruction, responseMimeType: "application/json", responseSchema: WRITING_SCHEMA }
     });
     
     const result = JSON.parse(response.text || '{}') as WritingFeedback;
-    // Garante que o score nunca seja nulo ou indefinido
     result.score = result.score || 0;
     return result;
   } catch (error) { 
     console.error("Erro na avaliação de escrita:", error);
-    // Retorno de fallback para não quebrar a aplicação
     return {
       score: 0,
       feedback: "Houve um erro técnico ao processar sua avaliação de escrita. Por favor, tente novamente mais tarde.",
@@ -336,11 +333,10 @@ export const evaluateWritingExercise = async (userText: string, originalPrompt: 
 };
 
 export const generateStudyPlan = async (inputs: StudyPlanInput): Promise<StudyPlan> => {
-  // Easter Challenge Logic
   if (inputs.isChallenge) {
     const startDate = new Date('2026-02-23T00:00:00');
     const endDate = new Date('2026-04-04T00:00:00');
-    const totalDays = 41; // Inclusive
+    const totalDays = 41; 
     const weeks: StudyWeek[] = [];
     const themes = [Theme.Grammar, Theme.Vocabulary, Theme.Reading, Theme.Listening, Theme.Writing, 'Speaking'];
     const dailyCount = inputs.dailyAvailability || 1;
@@ -398,7 +394,6 @@ export const generateStudyPlan = async (inputs: StudyPlanInput): Promise<StudyPl
       }
     }
 
-    // Calculate total tasks
     let totalTasks = 0;
     weeks.forEach(w => w.days.forEach(d => totalTasks += d.tasks.length));
 
@@ -429,7 +424,7 @@ export const generateStudyPlan = async (inputs: StudyPlanInput): Promise<StudyPl
     4. Descrições em Português, focadas e práticas.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: `Gere um plano de estudos completo para nível ${inputs.level}, foco em ${inputs.focusSkill}, duração de ${inputs.duration}.`,
       config: { 
         systemInstruction,
@@ -443,7 +438,6 @@ export const generateStudyPlan = async (inputs: StudyPlanInput): Promise<StudyPl
     
     const result = JSON.parse(jsonText);
     
-    // Calcular total de tarefas
     let totalTasks = 0;
     if (result.weeks) {
       result.weeks.forEach((w: any) => {
@@ -470,7 +464,7 @@ export const chatWithGuide = async (history: ChatMessage[], message: string, use
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const chat = ai.chats.create({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       config: { 
         systemInstruction: `Você é ${guide}, um assistente e professor da plataforma Freedom. Sua personalidade é vibrante, solícita e animada, mas mantendo o profissionalismo de um professor de verdade. Seja divertido e use emojis para incentivar o aluno ${userName}, mas evite ser exageradamente forçado ou repetitivo. Seu objetivo é ajudar com dúvidas gramaticais, vocabulário e dicas de estudo de forma leve e encorajadora.` 
       },
@@ -489,7 +483,7 @@ export const translateWordToPortuguese = async (word: string): Promise<string> =
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: `Traduza para português brasileiro. Retorne APENAS a tradução literal, uma única palavra se possível. Não inclua explicações, sinônimos, exemplos ou pontuação. Palavra: "${cleanWord}"`,
       config: { thinkingConfig: { thinkingBudget: 0 } }
     });
@@ -503,7 +497,7 @@ export const generateWritingExample = async (prompt: string, level: Level): Prom
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash', // 💡 MODELO ATUALIZADO PARA PRODUÇÃO
       contents: `Gere um exemplo de texto perfeito no nível ${level} para: "${prompt}". 
       REGRAS: 
       1. Texto limpo, sem títulos.
