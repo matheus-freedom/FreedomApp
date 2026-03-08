@@ -80,7 +80,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
 
   const isChallengeOnly = user.accessType === AccessType.CHALLENGE_ONLY;
 
-  const isAdmin = user.username.toLowerCase() === 'admin';
+  const isAdmin = user.username.toLowerCase() === 'admin' || user.isAdmin === true;
   const today = new Date().toISOString().split('T')[0];
   const dailyCount = user.gamification.lastActivityDate === today ? user.gamification.dailyActivitiesCount : 0;
   const isLimitReached = !user.gamification.isPro && dailyCount >= DAILY_LIMIT;
@@ -316,7 +316,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             <UserIcon className="w-32 h-32 text-white" />
           </div>
           
-          {/* 💡 CORREÇÃO: Agora o clique no ícone de perfil SEMPRE abre o modal, sem restrições */}
+          {/* 💡 CORREÇÃO: O clique no ícone de perfil SEMPRE abre o modal, sem restrições */}
           <div className="relative cursor-pointer shrink-0" onClick={() => onOpenProfile()}>
             <div className={`w-24 h-24 rounded-full border-4 ${currentTier.color.replace('text-', 'border-')} flex items-center justify-center bg-[#222222] shadow-lg shadow-black/40 overflow-hidden relative group-hover:border-[#f7931e] transition-colors`}>
               {user.profilePhoto ? (
@@ -346,7 +346,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   {currentTier.tier}
                 </p>
               </div>
-              {/* 💡 CORREÇÃO: O botão de informações (i) também está liberado para todos */}
               <button 
                 onClick={() => setShowTiersModal(true)}
                 className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-[#f7931e] transition-all"
@@ -392,431 +391,333 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
 
         <div className="bg-[#2a2a2a] rounded-[2rem] border border-white/5 p-6 shadow-xl flex flex-col justify-between">
           <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
-              <TrendingUp className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <Flame className="w-5 h-5" />
             </div>
             <div className="text-right">
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Ofensiva</p>
-              <div className="flex items-center gap-1 justify-end text-[#f7931e]">
-                <Flame className="w-4 h-4 fill-current" />
-                <span className="text-xs font-black">{user.gamification.streak} Dias</span>
-              </div>
+              <p className="text-xs font-black text-blue-400">Ativa</p>
             </div>
           </div>
-
+          
           <div className="space-y-1">
-            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Ranking Mundial</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-white">#{userRank || '...'}</span>
-              <span className="text-[10px] font-bold text-gray-500 uppercase">Global</span>
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Dias Seguidos</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-white">{user.gamification.streak}</span>
+              <span className="text-gray-500 text-xs font-bold">dias</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        <div className="lg:col-span-2 space-y-8">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <button 
-                onClick={onOpenActivities} 
-                className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#333333] text-[#f7931e] border border-[#f7931e]/30 shadow-lg flex items-center gap-2 hover:bg-[#f7931e] hover:text-[#222222] transition-all"
-              >
-                <BarChart className="w-4 h-4" /> Minhas Atividades
-              </button>
-              <button 
-                onClick={onOpenStudyPlan} 
-                className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#333333] text-gray-300 border border-white/10 shadow-lg flex items-center gap-2 hover:border-[#f7931e] hover:text-[#f7931e] transition-all"
-              >
-                <BookOpen className="w-4 h-4" /> Plano de Estudos
-              </button>
-              
-              <div className="relative group">
-                <button 
-                  onClick={() => {
-                    if (isChallengeOnly) {
-                      setShowAccessAlert(true);
-                    } else {
-                      onStartPlacement();
-                    }
-                  }} 
-                  disabled={!placementCooldownStatus.canTake && !isChallengeOnly}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-black shadow-lg transition-all flex items-center gap-2 ${placementCooldownStatus.canTake || isChallengeOnly ? 'bg-[#f7931e] text-[#222222] shadow-[#f7931e]/20 hover:scale-105' : 'bg-[#333333] text-gray-500 border border-white/5 cursor-not-allowed'}`}
-                >
-                  {placementCooldownStatus.canTake || isChallengeOnly ? <Target className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
-                  Nivelamento
-                </button>
-                {!placementCooldownStatus.canTake && (
-                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-[50] w-48 animate-pop">
-                      <div className="bg-[#1a1a1a] text-white text-[9px] p-3 rounded-xl border border-white/10 shadow-2xl text-center font-bold">
-                         Próximo teste em <span className="text-[#f7931e]">{placementCooldownStatus.daysLeft} dias</span>
-                      </div>
-                   </div>
-                )}
-              </div>
-
-              <button 
-                onClick={() => {
-                  if (isChallengeOnly) {
-                    setShowAccessAlert(true);
-                  } else {
-                    onOpenChallenges();
-                  }
-                }} 
-                className="px-5 py-2.5 rounded-xl text-xs font-black bg-[#333333] text-gray-300 border border-white/10 shadow-lg flex items-center gap-2 hover:border-[#f7931e] hover:text-[#f7931e] transition-all"
-              >
-                <Sword className="w-4 h-4" /> Meus Desafios
-              </button>
-
-              {user.gamification.lastPlacementLevel && (
-                <div className="bg-[#f7931e]/10 border border-[#f7931e]/30 px-4 py-2 rounded-xl flex items-center gap-2 animate-fade-in">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Último Nivelamento:</span>
-                  <span className="text-xs font-black text-[#f7931e]">{user.gamification.lastPlacementLevel}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Fábrica de Exercícios</h2>
-              
-              {!user.gamification.isPro && (
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Meta Diária:</span>
-                    <span className={`text-xs font-black ${dailyCount >= DAILY_LIMIT ? 'text-green-500' : 'text-[#f7931e]'}`}>
-                      {dailyCount} / {DAILY_LIMIT}
-                    </span>
-                  </div>
-                  <div className="w-40 h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
-                    <div 
-                      className={`h-full transition-all duration-700 ${dailyCount >= DAILY_LIMIT ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'bg-[#f7931e]'}`}
-                      style={{ width: `${Math.min(100, (dailyCount / DAILY_LIMIT) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button 
+          onClick={onOpenStudyPlan}
+          className={`p-5 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-center gap-3 group relative overflow-hidden ${hasActivePlan ? 'bg-[#f7931e]/10 border-[#f7931e]/50 hover:bg-[#f7931e]/20' : 'bg-[#2a2a2a] border-white/5 hover:border-[#f7931e]/50'}`}
+        >
+          <div className={`p-4 rounded-2xl ${hasActivePlan ? 'bg-[#f7931e] text-[#222222] shadow-[0_0_20px_rgba(247,147,30,0.4)]' : 'bg-[#333333] text-[#f7931e] group-hover:bg-[#f7931e] group-hover:text-[#222222]'} transition-colors`}>
+            <Calendar className="w-6 h-6" />
           </div>
+          <span className={`text-xs font-black uppercase tracking-widest ${hasActivePlan ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>Meu Plano</span>
+          {hasActivePlan && <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#f7931e] animate-pulse" />}
+        </button>
 
-          <div className="space-y-8 bg-[#2a2a2a] p-8 rounded-3xl border border-[#333333] shadow-xl">
-             {isLimitReached ? (
-              <div className="p-12 text-center space-y-4 bg-[#222222] rounded-[2rem] border border-[#f7931e]/20">
-                <Lock className="w-12 h-12 text-[#f7931e] mx-auto opacity-50" />
-                <div className="space-y-2">
-                  <h4 className="text-xl font-black text-white uppercase tracking-tighter">Meta Diária Batida!</h4>
-                  <p className="text-gray-400 text-sm font-medium leading-relaxed">
-                    Você já concluiu {DAILY_LIMIT} exercícios hoje. Volte amanhã para mais {DAILY_LIMIT} desafios.
-                  </p>
-                </div>
+        <button 
+          onClick={onOpenActivities}
+          className="p-5 bg-[#2a2a2a] rounded-[2rem] border border-white/5 hover:border-[#f7931e]/50 transition-all flex flex-col items-center justify-center gap-3 group"
+        >
+          <div className="p-4 rounded-2xl bg-[#333333] text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+            <BookOpen className="w-6 h-6" />
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-white">Histórico</span>
+        </button>
+
+        <button 
+          onClick={() => {
+            if (isChallengeOnly) {
+              setShowAccessAlert(true);
+              return;
+            }
+            if (placementCooldownStatus.canTake) onStartPlacement();
+          }}
+          className={`p-5 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-3 group relative
+            ${!placementCooldownStatus.canTake ? 'bg-[#222222] border-white/5 opacity-70 cursor-not-allowed' : 'bg-[#2a2a2a] border-white/5 hover:border-[#f7931e]/50'}
+          `}
+        >
+          <div className={`p-4 rounded-2xl transition-colors ${!placementCooldownStatus.canTake ? 'bg-[#333333] text-gray-600' : 'bg-[#333333] text-purple-400 group-hover:bg-purple-500 group-hover:text-white'}`}>
+            <Compass className="w-6 h-6" />
+          </div>
+          <span className={`text-xs font-black uppercase tracking-widest ${!placementCooldownStatus.canTake ? 'text-gray-600' : 'text-gray-400 group-hover:text-white'}`}>Nivelamento</span>
+          
+          {!placementCooldownStatus.canTake && (
+            <div className="absolute inset-0 bg-[#222222]/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem] p-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Clock className="w-4 h-4 text-gray-400 mb-1" />
+              <p className="text-[8px] font-black uppercase text-gray-400">Disponível em</p>
+              <p className="text-[#f7931e] font-black text-xs">{placementCooldownStatus.daysLeft} dias</p>
+            </div>
+          )}
+        </button>
+
+        <button 
+          onClick={onOpenChallenges}
+          className="p-5 bg-[#2a2a2a] rounded-[2rem] border border-white/5 hover:border-[#f7931e]/50 transition-all flex flex-col items-center justify-center gap-3 group"
+        >
+          <div className="p-4 rounded-2xl bg-[#333333] text-red-400 group-hover:bg-red-500 group-hover:text-white transition-colors">
+            <Sword className="w-6 h-6" />
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-white">Desafios</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl">
+            <h3 className="text-xl font-black text-white flex items-center gap-3 mb-6 uppercase tracking-tighter">
+              <Play className="w-6 h-6 text-[#f7931e] fill-current" /> Nova Prática
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                  <BarChart className="w-3 h-3" /> Nível CEFR
+                </label>
+                <select 
+                  value={selectedLevel || ''} 
+                  onChange={(e) => setSelectedLevel(e.target.value as Level)}
+                  className="w-full bg-[#222222] border border-[#444444] text-white p-4 rounded-2xl font-bold appearance-none outline-none focus:border-[#f7931e] focus:ring-1 focus:ring-[#f7931e]/50 transition-all shadow-inner"
+                >
+                  <option value="" disabled>Selecione seu nível</option>
+                  {Object.values(Level).map((lvl) => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-500 uppercase block tracking-widest ml-1">1. Escolha o Nível</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {Object.values(Level).map((lvl) => (
-                      <button 
-                        key={lvl} 
-                        onClick={() => {
-                          if (isChallengeOnly) {
-                            setShowAccessAlert(true);
-                          } else {
-                            setSelectedLevel(lvl);
-                          }
-                        }} 
-                        className={`p-4 rounded-xl font-black text-sm border-2 transition-all ${selectedLevel === lvl ? 'bg-[#f7931e] border-[#f7931e] text-[#222222]' : 'bg-[#222222] border-transparent text-gray-500 hover:border-white/10'}`}
-                      >
-                        {lvl}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                  <Layers className="w-3 h-3" /> Habilidade
+                </label>
+                <select 
+                  value={selectedTheme || ''} 
+                  onChange={(e) => setSelectedTheme(e.target.value as Theme)}
+                  disabled={!selectedLevel}
+                  className="w-full bg-[#222222] border border-[#444444] text-white p-4 rounded-2xl font-bold appearance-none outline-none focus:border-[#f7931e] focus:ring-1 focus:ring-[#f7931e]/50 transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="" disabled>Selecione a habilidade</option>
+                  {availableThemes.map((thm) => (
+                    <option key={thm} value={thm}>{thm}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase block tracking-widest ml-1">2. Habilidade</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {availableThemes.map((thm) => (
-                      <button 
-                        key={thm} 
-                        onClick={() => {
-                          if (isChallengeOnly) {
-                            setShowAccessAlert(true);
-                          } else {
-                            setSelectedTheme(thm);
-                          }
-                        }} 
-                        disabled={!selectedLevel && !isChallengeOnly} 
-                        className={`flex items-center justify-center p-4 rounded-xl border-2 transition-all font-black text-[10px] uppercase tracking-widest ${selectedTheme === thm ? 'bg-[#f7931e] border-[#f7931e] text-[#222222]' : 'bg-[#222222] border-transparent text-gray-500 hover:border-white/10'} disabled:opacity-20`}
-                      >
-                        {thm}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase block tracking-widest ml-1">3. Tópico</label>
+            {selectedLevel && selectedTheme && (
+              <div className="space-y-6 animate-fade-in border-t border-white/5 pt-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                    <Target className="w-3 h-3" /> 
+                    {isMultiSelectTheme ? "Tópicos de Foco (Escolha até 2)" : "Tópico Específico"}
+                  </label>
+                  
                   {isMultiSelectTheme ? (
-                    <div className="space-y-4">
-                       <div className="flex justify-between items-center bg-[#222222] p-4 rounded-2xl border border-white/5">
-                          <p className="text-[10px] text-[#f7931e] font-black uppercase tracking-widest flex items-center gap-2">
-                            <Info className="w-3.5 h-3.5" /> Selecione até duas opções
-                          </p>
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded ${selectedMultiTopics.size === 2 ? 'bg-[#f7931e] text-[#222222]' : 'bg-[#333333] text-gray-500'}`}>
-                            {selectedMultiTopics.size} / 2
-                          </span>
-                       </div>
-                       <div className="bg-[#222222] rounded-2xl border border-white/5 p-4 max-h-72 overflow-y-auto scrollbar-hide space-y-6">
-                          <div className="space-y-3">
-                             <h4 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                <Brain className="w-3 h-3 text-[#f7931e]" /> Gramática
-                             </h4>
-                             <div className="grid grid-cols-1 gap-2">
-                               {grammarTopics.map((topic, idx) => (
-                                 <button
-                                   key={`g-${idx}`}
-                                   onClick={() => {
-                                     if (isChallengeOnly) {
-                                       setShowAccessAlert(true);
-                                     } else {
-                                       toggleMultiTopic(topic);
-                                     }
-                                   }}
-                                   disabled={(!selectedTheme || (selectedMultiTopics.size >= 2 && !selectedMultiTopics.has(topic))) && !isChallengeOnly}
-                                   className={`p-3 rounded-xl border-2 text-left text-[10px] font-bold transition-all flex items-center justify-between group ${selectedMultiTopics.has(topic) ? 'bg-[#f7931e]/10 border-[#f7931e] text-[#f7931e]' : 'bg-[#333333] border-transparent text-gray-500 hover:border-white/10 disabled:opacity-30'}`}
-                                 >
-                                   <span className="truncate pr-2">{topic}</span>
-                                   {selectedMultiTopics.has(topic) && <Check className="w-3 h-3 flex-shrink-0" />}
-                                 </button>
-                               ))}
-                             </div>
-                          </div>
-                          <div className="space-y-3">
-                             <h4 className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                <BookText className="w-3 h-3 text-[#f7931e]" /> Vocabulário
-                             </h4>
-                             <div className="grid grid-cols-1 gap-2">
-                               {vocabTopics.map((topic, idx) => (
-                                 <button
-                                   key={`v-${idx}`}
-                                   onClick={() => {
-                                     if (isChallengeOnly) {
-                                       setShowAccessAlert(true);
-                                     } else {
-                                       toggleMultiTopic(topic);
-                                     }
-                                   }}
-                                   disabled={(!selectedTheme || (selectedMultiTopics.size >= 2 && !selectedMultiTopics.has(topic))) && !isChallengeOnly}
-                                   className={`p-3 rounded-xl border-2 text-left text-[10px] font-bold transition-all flex items-center justify-between group ${selectedMultiTopics.has(topic) ? 'bg-[#f7931e]/10 border-[#f7931e] text-[#f7931e]' : 'bg-[#333333] border-transparent text-gray-500 hover:border-white/10 disabled:opacity-30'}`}
-                                 >
-                                   <span className="truncate pr-2">{topic}</span>
-                                   {selectedMultiTopics.has(topic) && <Check className="w-3 h-3 flex-shrink-0" />}
-                                 </button>
-                               ))}
-                             </div>
-                          </div>
-                       </div>
+                    <div className="bg-[#222222] border border-[#444444] rounded-2xl p-2 max-h-[250px] overflow-y-auto custom-scrollbar shadow-inner">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {grammarTopics.map(topic => (
+                          <button
+                            key={topic}
+                            onClick={() => toggleMultiTopic(topic)}
+                            className={`p-3 rounded-xl text-left text-[11px] font-bold transition-all border ${
+                              selectedMultiTopics.has(topic) 
+                                ? 'bg-[#f7931e]/10 border-[#f7931e] text-[#f7931e]' 
+                                : 'bg-[#333333] border-transparent text-gray-400 hover:text-white hover:bg-[#444444]'
+                            } ${selectedMultiTopics.size >= 2 && !selectedMultiTopics.has(topic) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {topic}
+                          </button>
+                        ))}
+                        {vocabTopics.map(topic => (
+                          <button
+                            key={topic}
+                            onClick={() => toggleMultiTopic(topic)}
+                            className={`p-3 rounded-xl text-left text-[11px] font-bold transition-all border ${
+                              selectedMultiTopics.has(topic) 
+                                ? 'bg-blue-500/10 border-blue-500 text-blue-400' 
+                                : 'bg-[#333333] border-transparent text-gray-400 hover:text-white hover:bg-[#444444]'
+                            } ${selectedMultiTopics.size >= 2 && !selectedMultiTopics.has(topic) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {topic}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <select 
                       value={selectedTopic || ''} 
-                      onChange={(e) => {
-                        if (isChallengeOnly) {
-                          setShowAccessAlert(true);
-                        } else {
-                          setSelectedTopic(e.target.value);
-                        }
-                      }} 
-                      disabled={!selectedTheme && !isChallengeOnly} 
-                      className="w-full bg-[#222222] text-white p-4 rounded-xl border border-white/5 focus:border-[#f7931e] outline-none disabled:opacity-20 text-xs font-bold"
+                      onChange={(e) => setSelectedTopic(e.target.value)}
+                      className="w-full bg-[#222222] border border-[#444444] text-white p-4 rounded-2xl font-bold appearance-none outline-none focus:border-[#f7931e] focus:ring-1 focus:ring-[#f7931e]/50 transition-all shadow-inner"
                     >
-                      <option value="" disabled>Escolha um tópico...</option>
-                      {availableTopics.map((topic, idx) => <option key={idx} value={topic}>{topic}</option>)}
+                      <option value="" disabled>Selecione um tópico específico</option>
+                      {availableTopics.map((topic) => (
+                        <option key={topic} value={topic}>{topic}</option>
+                      ))}
                     </select>
                   )}
                 </div>
 
                 {needsVoiceConfig && (
-                  <div className="space-y-6 pt-6 border-t border-white/5 animate-fade-in">
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-[#f7931e] uppercase block tracking-widest ml-1">
-                        <Mic className="w-3 h-3 inline-block mr-1 mb-0.5" /> Gênero da Voz
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                        <Mic className="w-3 h-3" /> Gênero da Voz
                       </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {(['Female', 'Male'] as VoiceGender[]).map(g => (
-                          <button
-                            key={g}
-                            onClick={() => {
-                              if (isChallengeOnly) {
-                                setShowAccessAlert(true);
-                              } else {
-                                setVoiceGender(g);
-                              }
-                            }}
-                            className={`p-4 rounded-xl font-black text-xs border-2 transition-all flex items-center justify-center gap-2 ${voiceGender === g ? 'bg-[#f7931e] border-[#f7931e] text-[#222222]' : 'bg-[#222222] border-transparent text-gray-500 hover:border-white/10'}`}
-                          >
-                            {g === 'Female' ? 'Feminina' : 'Masculina'}
-                          </button>
-                        ))}
-                      </div>
+                      <select 
+                        value={voiceGender} 
+                        onChange={(e) => setVoiceGender(e.target.value as VoiceGender)}
+                        className="w-full bg-[#222222] border border-[#444444] text-white p-3 rounded-xl font-bold appearance-none outline-none focus:border-[#f7931e] text-xs shadow-inner"
+                      >
+                        <option value="Female">Feminino</option>
+                        <option value="Male">Masculino</option>
+                      </select>
                     </div>
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-[#f7931e] uppercase block tracking-widest ml-1">
-                        <Globe className="w-3 h-3 inline-block mr-1 mb-0.5" /> Sotaque
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                        <Globe className="w-3 h-3" /> Sotaque
                       </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {(['American', 'British', 'Australian', 'Indian'] as VoiceAccent[]).map(a => (
-                          <button
-                            key={a}
-                            onClick={() => {
-                              if (isChallengeOnly) {
-                                setShowAccessAlert(true);
-                              } else {
-                                setVoiceAccent(a);
-                              }
-                            }}
-                            className={`p-3 rounded-xl font-black text-[9px] border-2 transition-all flex items-center justify-center gap-2 ${voiceAccent === a ? 'bg-[#f7931e] border-[#f7931e] text-[#222222]' : 'bg-[#222222] border-transparent text-gray-500 hover:border-white/10'}`}
-                          >
-                            {a === 'American' ? 'EUA' : a === 'British' ? 'UK' : a === 'Australian' ? 'AUS' : 'IND'}
-                          </button>
-                        ))}
-                      </div>
+                      <select 
+                        value={voiceAccent} 
+                        onChange={(e) => setVoiceAccent(e.target.value as VoiceAccent)}
+                        className="w-full bg-[#222222] border border-[#444444] text-white p-3 rounded-xl font-bold appearance-none outline-none focus:border-[#f7931e] text-xs shadow-inner"
+                      >
+                        <option value="American">Americano</option>
+                        <option value="British">Britânico</option>
+                        <option value="Australian">Australiano</option>
+                        <option value="Indian">Indiano</option>
+                      </select>
                     </div>
                   </div>
                 )}
-              </>
+              </div>
+            )}
+
+            <button 
+              onClick={handleStartClick}
+              disabled={!canStart || isLoading}
+              className={`mt-8 w-full py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${
+                canStart && !isLoading
+                  ? 'bg-[#f7931e] text-[#222222] hover:scale-105 shadow-xl shadow-[#f7931e]/20' 
+                  : 'bg-[#333333] text-gray-600 cursor-not-allowed'
+              }`}
+            >
+              {isLoading ? (
+                <><Loader2 className="w-6 h-6 animate-spin" /> Gerando Conteúdo...</>
+              ) : (
+                <><Play className="w-6 h-6 fill-current" /> Iniciar Prática</>
+              )}
+            </button>
+            {isLimitReached && (
+              <p className="text-center text-red-500 text-[10px] font-bold uppercase tracking-widest mt-4 flex items-center justify-center gap-2">
+                <AlertTriangle className="w-3 h-3" /> Limite diário de atividades atingido
+              </p>
+            )}
+            {isChallengeOnly && (
+              <p className="text-center text-red-500 text-[10px] font-bold uppercase tracking-widest mt-4 flex items-center justify-center gap-2">
+                <Lock className="w-3 h-3" /> Crie um Plano de Estudos para acessar
+              </p>
             )}
           </div>
-
-          <button 
-            onClick={handleStartClick} 
-            disabled={isLoading || !canStart} 
-            className={`w-full p-8 rounded-3xl font-black text-xl flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-2xl ${canStart ? 'bg-[#f7931e] text-[#222222]' : 'bg-[#444444] text-gray-600 opacity-50'}`}
-          >
-            {isLoading ? <Loader2 className="w-7 h-7 animate-spin" /> : <><Zap className="w-7 h-7" /> Iniciar Treino</>}
-          </button>
         </div>
 
-        <div className="space-y-8">
-          {/* Freedom Notifications / Avisos */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-              <Bell className="w-6 h-6 text-[#f7931e]" /> Avisos Freedom
+        <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl flex flex-col max-h-[600px]">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
+              <Trophy className="w-5 h-5 text-yellow-400" /> Leaderboard
             </h3>
-            <div className="bg-[#2a2a2a] rounded-3xl border border-white/5 overflow-hidden shadow-xl max-h-60 overflow-y-auto scrollbar-hide">
-              {(!user.notifications || user.notifications.length === 0) ? (
-                <div className="p-8 text-center text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">
-                  Você não tem avisos pendentes.
-                </div>
-              ) : (
-                user.notifications.map((notif) => (
-                  <div key={notif.id} className={`p-4 border-b border-white/5 transition-colors ${notif.read ? 'opacity-60 bg-transparent' : 'bg-[#f7931e]/5'}`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[8px] font-black text-[#f7931e] uppercase tracking-widest">{notif.sender}</span>
-                      <span className="text-[8px] text-gray-500">{new Date(notif.date).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-xs text-gray-300 font-medium mb-3 leading-relaxed">{notif.message}</p>
-                    {!notif.read && (
-                      <button 
-                        onClick={() => {
-                          if (isChallengeOnly) {
-                            setShowAccessAlert(true);
-                          } else {
-                            handleMarkRead(notif.id);
-                          }
-                        }}
-                        className="text-[8px] font-black text-[#f7931e] uppercase hover:underline"
-                      >
-                        Marcar como lido
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+            <select 
+              value={leaderboardFilter}
+              onChange={(e) => setLeaderboardFilter(e.target.value as any)}
+              className="bg-[#222222] border border-white/10 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl p-2 outline-none focus:border-[#f7931e]"
+            >
+              <option value="Weekly">Semana</option>
+              <option value="Monthly">Mês</option>
+              <option value="Annual">Ano</option>
+            </select>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-               <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-                  <Trophy className="w-6 h-6 text-[#f7931e]" /> Ranking
-               </h3>
-               <div className="flex bg-[#222222] rounded-lg p-1 border border-white/5">
-                  {(['Weekly', 'Monthly', 'Annual'] as const).map(f => (
-                    <button 
-                      key={f} 
-                      onClick={() => {
-                        if (isChallengeOnly) {
-                          setShowAccessAlert(true);
-                        } else {
-                          setLeaderboardFilter(f);
-                        }
-                      }}
-                      className={`px-2 py-1 text-[8px] font-black uppercase tracking-tighter rounded-md transition-all ${leaderboardFilter === f ? 'bg-[#f7931e] text-[#222222]' : 'text-gray-500 hover:text-white'}`}
-                    >
-                      {f === 'Weekly' ? 'Sem' : f === 'Monthly' ? 'Mês' : 'Ano'}
-                    </button>
-                  ))}
-               </div>
-            </div>
-            
-            <div className="bg-[#2a2a2a] rounded-3xl border border-[#333333] overflow-hidden shadow-xl">
-              {leaderboardUsers.length === 0 ? (
-                <div className="p-8 text-center text-xs text-gray-500 font-bold italic">Carregando ranking...</div>
-              ) : (
-                leaderboardUsers.slice(0, 5).map((item, idx) => {
-                  const itemTier = getUserTierInfo(item.user.gamification.xp);
-                  return (
-                    <div 
-                      key={item.user.userId} 
-                      onClick={() => {
-                        if (isChallengeOnly) {
-                          setShowAccessAlert(true);
-                        } else {
-                          setViewProfileId(item.user.userId);
-                        }
-                      }}
-                      className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all ${item.user.userId === user.userId ? 'bg-[#f7931e]/5' : ''}`}
-                    >
-                      <span className={`w-6 text-center font-black text-xs ${idx === 0 ? 'text-yellow-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-400' : 'text-gray-500'}`}>
-                        {idx + 1}
-                      </span>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className={`w-10 h-10 rounded-full bg-[#222222] border-2 ${itemTier.color.replace('text-', 'border-')} overflow-hidden shrink-0 flex items-center justify-center relative`}>
-                          {item.user.profilePhoto ? (
-                            <img src={item.user.profilePhoto} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className={`${itemTier.color} scale-75`}>
-                               {itemTier.icon}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <h4 className="text-[11px] font-black text-white truncate uppercase tracking-tighter">
-                            {item.user.userName}
-                          </h4>
-                          <span className="text-[9px] font-bold text-gray-500">{item.periodXp.toLocaleString()} XP</span>
-                        </div>
-                      </div>
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+            {leaderboardUsers.map((lbUser, index) => {
+              const isCurrentUser = lbUser.user.userId === user.userId;
+              let rankStyle = "bg-[#333333] text-gray-400 border-white/5";
+              if (index === 0) rankStyle = "bg-yellow-400/10 text-yellow-400 border-yellow-400/30";
+              else if (index === 1) rankStyle = "bg-slate-300/10 text-slate-300 border-slate-300/30";
+              else if (index === 2) rankStyle = "bg-amber-700/10 text-amber-600 border-amber-700/30";
+
+              return (
+                <div 
+                  key={lbUser.user.userId} 
+                  onClick={() => setViewProfileId(lbUser.user.userId)}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer hover:bg-white/5 ${isCurrentUser ? 'border-[#f7931e]/50 shadow-[0_0_15px_rgba(247,147,30,0.1)]' : rankStyle}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-black text-sm w-4 text-center">
+                      {index + 1}
+                    </span>
+                    <div className="w-10 h-10 rounded-full bg-[#222222] overflow-hidden border border-white/10 flex-shrink-0">
+                      {lbUser.user.profilePhoto ? (
+                        <img src={lbUser.user.profilePhoto} className="w-full h-full object-cover" />
+                      ) : (
+                        <UserIcon className="w-5 h-5 m-auto text-gray-500 mt-2" />
+                      )}
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <div className="max-w-[100px] md:max-w-[120px]">
+                      <p className={`text-xs font-black truncate ${isCurrentUser ? 'text-[#f7931e]' : 'text-white'}`}>
+                        {lbUser.user.username}
+                      </p>
+                      <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{lbUser.user.fullName}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-black text-sm">{lbUser.periodXp.toLocaleString()}</span>
+                    <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">XP</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="pt-4 mt-4 border-t border-white/5 text-center">
+             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+               Sua Posição: <span className="text-[#f7931e]">#{userRank}</span>
+             </p>
           </div>
         </div>
       </div>
 
       {viewProfileId && (
-        <ProfileViewModal 
+        <ProfileViewModal
           currentUser={user}
           targetUserId={viewProfileId}
           onClose={() => setViewProfileId(null)}
-          onOpenChat={onOpenChat}
-          onOpenChallenge={onOpenChallenges}
+          onOpenChat={(id) => { setViewProfileId(null); onOpenChat(id); }}
+          onOpenChallenge={() => { setViewProfileId(null); onOpenChallenges(); }}
           onUserUpdate={onUserUpdate}
         />
       )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #333333;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #f7931e;
+        }
+      `}</style>
     </div>
   );
 };
