@@ -82,7 +82,7 @@ const App: React.FC = () => {
             if (invite) setPendingChallenge(invite);
             setState(prev => ({ 
               ...prev, user: userProfile, studyPlan: plan, activityHistory: history, 
-              status: userProfile.username === 'admin' ? (userProfile.guide ? 'selection' : 'guide_selection') : 'keyword_check'
+              status: (userProfile.username === 'admin' || userProfile.isAdmin) ? (userProfile.guide ? 'selection' : 'guide_selection') : 'keyword_check'
             }));
           } else { setState(prev => ({ ...prev, status: 'login' })); }
         } catch (e) { setState(prev => ({ ...prev, status: 'login' })); }
@@ -161,7 +161,6 @@ const App: React.FC = () => {
     const accuracy = Math.min(1, finalScore / total);
     const rawXp = Math.min(100, Math.round(accuracy * 100));
     
-    // 💡 O 'xpGained' aqui já vem do Firebase com a limitação aplicada. Se ele estourou os 800 diários, isso voltará como 0.
     const { totalXp, xpGained, frGained, totalFr } = await api.updateXp(state.user.userId, rawXp);
     
     const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
@@ -179,7 +178,6 @@ const App: React.FC = () => {
     const updatedHistory = await api.getHistory(state.user.userId);
     const today = new Date().toISOString().split('T')[0];
     
-    // 💡 Atualizamos o State local usando o xpGained real, para ficar igual ao banco
     const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
 
     const updatedUser = { 
@@ -254,7 +252,7 @@ const App: React.FC = () => {
           setState(p => ({ ...p, status: 'loading' }));
           const [plan, history] = await Promise.all([api.getPlan(user.userId), api.getHistory(user.userId)]);
           localStorage.setItem('freedom_postgres_session', JSON.stringify(user));
-          setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, status: user.username === 'admin' ? (user.guide ? 'selection' : 'guide_selection') : 'keyword_check' }));
+          setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, status: (user.username === 'admin' || user.isAdmin) ? (user.guide ? 'selection' : 'guide_selection') : 'keyword_check' }));
         }} />}
         {state.status === 'keyword_check' && (
           <KeywordScreen onSuccess={(accessType) => { if (state.user) { const updatedUser = { ...state.user, accessType }; setState(p => ({ ...p, user: updatedUser, status: 'guide_selection' })); } }} onLogout={handleLogout} />
@@ -265,7 +263,7 @@ const App: React.FC = () => {
         )}
         {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} />}
         {state.status === 'chat' && state.user && <ChatScreen user={state.user} onHome={handleHome} activeChatUserId={state.activeChatUserId} />}
-        {state.status === 'admin_panel' && state.user?.username.toLowerCase() === 'admin' && <AdminPanel onBack={handleHome} />}
+        {state.status === 'admin_panel' && (state.user?.username.toLowerCase() === 'admin' || state.user?.isAdmin) && <AdminPanel onBack={handleHome} />}
         {state.status === 'profile' && state.user && <ProfileScreen user={state.user} onHome={handleHome} onUpdate={handleUserUpdate} />}
         {state.status === 'my_activities' && state.user && <MyActivitiesScreen user={state.user} history={state.activityHistory} onHome={handleHome} onRedoActivity={handleStart} />}
         {state.status === 'placement_test' && <PlacementTestScreen onFinish={handlePlacementFinish} onHome={handleHome} />}
