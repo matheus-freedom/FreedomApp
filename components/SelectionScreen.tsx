@@ -8,7 +8,7 @@ import {
   Layers, Loader2, Volume2, Target, 
   Flame, Zap, Trophy, Crown, Shield, Star, Info, Sparkles,
   TrendingUp, Award, User as UserIcon, Plus, Users, X, Calendar, Search, Clock, Mic2, Globe, BookOpen, Sword,
-  ArrowRight, BarChart, AlertTriangle, Lock, Key, ArrowLeft, Camera, Edit2, HelpCircle, ChevronRight, Mic, BookText, ListChecks, Coins, Gift, Wallet, ArrowUpRight, ShieldAlert, Bell
+  ArrowRight, BarChart, AlertTriangle, Lock, Key, ArrowLeft, Camera, Edit2, HelpCircle, ChevronRight, Mic, BookText, ListChecks, Coins, Gift, Wallet, ArrowUpRight, ShieldAlert, Bell, Compass
 } from 'lucide-react';
 
 interface SelectionScreenProps {
