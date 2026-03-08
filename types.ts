@@ -1,4 +1,3 @@
-
 export enum Level {
   A1 = 'A1',
   A2 = 'A2',
@@ -106,6 +105,7 @@ export interface UserSession {
   gamification: UserGamification;
   notifications?: AdminNotification[];
   accessType?: AccessType;
+  isAdmin?: boolean;
 }
 
 export interface DirectMessage {
