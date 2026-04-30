@@ -1,17 +1,82 @@
-import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification } from '../types';
+import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge } from '../types';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+// ── Helpers de período ────────────────────────────────────────
+
+// Retorna a chave da semana ISO: "2026-W18"
+const getWeekKey = (date: Date = new Date()): string => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+};
+
+// Retorna a chave do mês: "2026-04"
+const getMonthKey = (date: Date = new Date()): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+// Retorna a chave do ano: "2026"
+const getYearKey = (date: Date = new Date()): string =>
+  `${date.getFullYear()}`;
+
+// Label legível da semana: "Semana 18 • 2026"
+const getWeekLabel = (weekKey: string): string => {
+  const [year, week] = weekKey.split('-W');
+  return `Semana ${week} • ${year}`;
+};
+
+// Label legível do mês: "Abril 2026"
+const getMonthLabel = (monthKey: string): string => {
+  const [year, month] = monthKey.split('-');
+  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  return `${months[parseInt(month) - 1]} ${year}`;
+};
+
+// Mensagens de parabéns por posição
+const getCongratulationsMessage = (position: 1 | 2 | 3, weekLabel: string, xp: number): string => {
+  const xpFormatted = xp.toLocaleString('pt-BR');
+  if (position === 1) {
+    return `🏆 Você foi o CAMPEÃO da ${weekLabel}! Incrível — você acumulou ${xpFormatted} XP e liderou todos os alunos da Freedom. Sua dedicação é inspiradora. Continue assim e conquiste mais uma semana no topo! 🚀`;
+  }
+  if (position === 2) {
+    return `🥈 Parabéns! Você ficou em 2º lugar na ${weekLabel}, acumulando ${xpFormatted} XP. Você foi incrível essa semana! Está muito perto do topo — mais uma semana de foco e a coroa é sua! 💪`;
+  }
+  return `🥉 Que semana fantástica! Você ficou em 3º lugar na ${weekLabel} com ${xpFormatted} XP. Seu esforço está valendo a pena — continue praticando e logo você estará no topo do ranking! ⭐`;
+};
 
 const INITIAL_GAMIFICATION: UserGamification = {
   xp: 0, frBalance: 0, streak: 0, lastLoginDate: null, dailyXpEarned: 0,
   lastXpGainDate: null, dailyActivitiesCount: 0, lastActivityDate: null,
   isPro: false, dailyChatCount: 0, lastChatDate: null, followers: [],
   following: [], followRequests: [], totalActivities: 0,
+  // Novos campos de período
+  weeklyXp: 0, monthlyXp: 0, yearlyXp: 0,
+  weeklyActivities: 0, monthlyActivities: 0,
+  lastWeekKey: null, lastMonthKey: null, lastYearKey: null,
+  weeklyBadge: null,
 };
 
 const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
+
+// ── Função para garantir campos novos em usuários antigos ─────
+const ensureNewFields = (gamification: UserGamification): UserGamification => ({
+  ...INITIAL_GAMIFICATION,
+  ...gamification,
+  weeklyXp: gamification.weeklyXp ?? 0,
+  monthlyXp: gamification.monthlyXp ?? 0,
+  yearlyXp: gamification.yearlyXp ?? 0,
+  weeklyActivities: gamification.weeklyActivities ?? 0,
+  monthlyActivities: gamification.monthlyActivities ?? 0,
+  lastWeekKey: gamification.lastWeekKey ?? null,
+  lastMonthKey: gamification.lastMonthKey ?? null,
+  lastYearKey: gamification.lastYearKey ?? null,
+  weeklyBadge: gamification.weeklyBadge ?? null,
+});
 
 export const api = {
   subscribeToAuthChanges: (callback: (user: any) => void) => {
@@ -21,7 +86,12 @@ export const api = {
   getUserProfile: async (uid: string): Promise<UserSession | null> => {
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) return userSnap.data() as UserSession;
+    if (userSnap.exists()) {
+      const data = userSnap.data() as UserSession;
+      // Garante que usuários antigos tenham os novos campos
+      data.gamification = ensureNewFields(data.gamification);
+      return data;
+    }
     return null;
   },
 
@@ -47,6 +117,7 @@ export const api = {
         };
       } else {
         adminData = adminSnap.data() as UserSession;
+        adminData.gamification = ensureNewFields(adminData.gamification);
         adminData.username = 'admin';
       }
       adminData.gamification.isPro = true;
@@ -71,7 +142,7 @@ export const api = {
 
   isUsernameTaken: async (username: string): Promise<boolean> => {
     const normalized = username.toLowerCase();
-    if (normalized === '@tester') return true; 
+    if (normalized === '@tester') return true;
     let searchUsername = normalized;
     if (searchUsername === '@admin') searchUsername = 'admin';
     const q = query(collection(db, 'users'), where('username', '==', searchUsername));
@@ -116,7 +187,11 @@ export const api = {
 
   admin_getAllUsers: async (): Promise<UserSession[]> => {
     const snap = await getDocs(collection(db, 'users'));
-    return snap.docs.map(d => d.data() as UserSession);
+    return snap.docs.map(d => {
+      const data = d.data() as UserSession;
+      data.gamification = ensureNewFields(data.gamification);
+      return data;
+    });
   },
 
   admin_getAllPlans: async (): Promise<Record<string, StudyPlan>> => {
@@ -137,6 +212,7 @@ export const api = {
     const snap = await getDoc(userRef);
     if (snap.exists()) {
       const user = snap.data() as UserSession;
+      user.gamification = ensureNewFields(user.gamification);
       user.gamification.xp += xpDelta;
       user.gamification.frBalance += frDelta;
       await setDoc(userRef, clean(user));
@@ -183,6 +259,7 @@ export const api = {
     const snap = await getDoc(userRef);
     if (!snap.exists()) throw new Error("User not found");
     const user = snap.data() as UserSession;
+    user.gamification = ensureNewFields(user.gamification);
     const today = new Date().toISOString().split('T')[0];
     if (user.gamification.lastActivityDate !== today) {
       user.gamification.dailyActivitiesCount = 1;
@@ -199,6 +276,7 @@ export const api = {
     const snap = await getDoc(userRef);
     if (!snap.exists()) throw new Error("User not found");
     const user = snap.data() as UserSession;
+    user.gamification = ensureNewFields(user.gamification);
     const today = new Date().toISOString().split('T')[0];
     if (user.gamification.lastChatDate !== today) {
       user.gamification.dailyChatCount = 1;
@@ -210,38 +288,71 @@ export const api = {
     return user.gamification.dailyChatCount;
   },
 
+  // ── updateXp: agora registra XP por período e detecta virada ──
   updateXp: async (userId: string, xpGain: number): Promise<{ totalXp: number, xpGained: number, frGained: number, totalFr: number }> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
     if (!snap.exists()) throw new Error("User not found");
     
     const user = snap.data() as UserSession;
+    user.gamification = ensureNewFields(user.gamification);
     const today = new Date().toISOString().split('T')[0];
-    
-    // 💡 LÓGICA DO LIMITE DIÁRIO (800 XP MÁXIMO)
-    // 1. Zera a contagem se for um novo dia
+    const currentWeekKey = getWeekKey();
+    const currentMonthKey = getMonthKey();
+    const currentYearKey = getYearKey();
+
+    // ── Limite diário de 800 XP ───────────────────────────────
     if (user.gamification.lastXpGainDate !== today) {
       user.gamification.dailyXpEarned = 0;
       user.gamification.lastXpGainDate = today;
     }
-
     const DAILY_XP_LIMIT = 800;
     let actualXpGain = xpGain;
-
-    // 2. Verifica se o ganho de agora ultrapassa o teto de 800
     if (user.gamification.dailyXpEarned + xpGain > DAILY_XP_LIMIT) {
-      // 3. Se ultrapassar, dá apenas o que "sobra" até bater o teto (mínimo 0)
       actualXpGain = Math.max(0, DAILY_XP_LIMIT - user.gamification.dailyXpEarned);
     }
 
     const frGain = actualXpGain / 100;
-    
+
+    // ── Detecta virada de semana → salva snapshot ─────────────
+    const prevWeekKey = user.gamification.lastWeekKey;
+    if (prevWeekKey && prevWeekKey !== currentWeekKey) {
+      // Virou semana — salva snapshot e envia notificações
+      await api.saveRankingSnapshot('weekly', prevWeekKey);
+      // Zera contadores semanais
+      user.gamification.weeklyXp = 0;
+      user.gamification.weeklyActivities = 0;
+    }
+
+    // ── Detecta virada de mês → salva snapshot ────────────────
+    const prevMonthKey = user.gamification.lastMonthKey;
+    if (prevMonthKey && prevMonthKey !== currentMonthKey) {
+      await api.saveRankingSnapshot('monthly', prevMonthKey);
+      user.gamification.monthlyXp = 0;
+      user.gamification.monthlyActivities = 0;
+    }
+
+    // ── Detecta virada de ano ─────────────────────────────────
+    if (user.gamification.lastYearKey && user.gamification.lastYearKey !== currentYearKey) {
+      user.gamification.yearlyXp = 0;
+    }
+
+    // ── Atualiza todos os contadores ──────────────────────────
     user.gamification.xp += actualXpGain;
     user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
-    user.gamification.dailyXpEarned += actualXpGain; 
-    
+    user.gamification.dailyXpEarned += actualXpGain;
+    user.gamification.weeklyXp = (user.gamification.weeklyXp || 0) + actualXpGain;
+    user.gamification.monthlyXp = (user.gamification.monthlyXp || 0) + actualXpGain;
+    user.gamification.yearlyXp = (user.gamification.yearlyXp || 0) + actualXpGain;
+    user.gamification.weeklyActivities = (user.gamification.weeklyActivities || 0) + 1;
+    user.gamification.monthlyActivities = (user.gamification.monthlyActivities || 0) + 1;
+    user.gamification.lastWeekKey = currentWeekKey;
+    user.gamification.lastMonthKey = currentMonthKey;
+    user.gamification.lastYearKey = currentYearKey;
+
     await setDoc(userRef, clean(user));
 
+    // ── Atualiza desafios ativos ──────────────────────────────
     const challengesSnap = await getDocs(collection(db, 'challenges'));
     const now = Date.now();
     challengesSnap.forEach(async (d) => {
@@ -253,8 +364,7 @@ export const api = {
           c.winnerId = participants[0]?.id;
         } else {
           if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
-          // 💡 Computa no desafio apenas o XP real ganho, impedindo fraudes lá também
-          c.participantStats[userId].xpGained += actualXpGain; 
+          c.participantStats[userId].xpGained += actualXpGain;
           c.participantStats[userId].activitiesDone += 1;
         }
         await setDoc(doc(db, 'challenges', c.id), clean(c));
@@ -264,28 +374,164 @@ export const api = {
     return { totalXp: user.gamification.xp, xpGained: actualXpGain, frGained: frGain, totalFr: user.gamification.frBalance };
   },
 
+  // ── Salva snapshot do Top 3 de um período ────────────────────
+  saveRankingSnapshot: async (period: 'weekly' | 'monthly', periodKey: string): Promise<void> => {
+    try {
+      const allUsers = await api.admin_getAllUsers();
+      
+      // Ordena pelo XP do período correto
+      const sorted = allUsers
+        .filter(u => u.username.toLowerCase() !== 'admin')
+        .map(u => ({
+          user: u,
+          periodXp: period === 'weekly' ? (u.gamification.weeklyXp || 0) : (u.gamification.monthlyXp || 0),
+          activities: period === 'weekly' ? (u.gamification.weeklyActivities || 0) : (u.gamification.monthlyActivities || 0),
+        }))
+        .filter(u => u.periodXp > 0)
+        .sort((a, b) => b.periodXp - a.periodXp || b.activities - a.activities);
+
+      if (sorted.length === 0) return;
+
+      const top3: RankingEntry[] = sorted.slice(0, 3).map((item, index) => ({
+        userId: item.user.userId,
+        username: item.user.username,
+        fullName: item.user.fullName,
+        profilePhoto: item.user.profilePhoto,
+        xp: item.periodXp,
+        activitiesCount: item.activities,
+        position: (index + 1) as 1 | 2 | 3,
+      }));
+
+      const label = period === 'weekly' ? getWeekLabel(periodKey) : getMonthLabel(periodKey);
+
+      // Calcula datas aproximadas do período
+      const now = new Date();
+      const snapshot: RankingSnapshot = {
+        id: `${period}_${periodKey}`,
+        period,
+        label,
+        startDate: periodKey,
+        endDate: now.toISOString().split('T')[0],
+        top3,
+        savedAt: Date.now(),
+      };
+
+      await setDoc(doc(db, 'ranking_snapshots', snapshot.id), clean(snapshot));
+
+      // Envia notificações e badges apenas para snapshots semanais
+      if (period === 'weekly') {
+        await api.sendRankingNotifications(top3, label);
+      }
+    } catch (e) {
+      console.error('Erro ao salvar snapshot de ranking:', e);
+    }
+  },
+
+  // ── Envia notificações e atribui badges ao Top 3 ─────────────
+  sendRankingNotifications: async (top3: RankingEntry[], weekLabel: string): Promise<void> => {
+    for (const entry of top3) {
+      try {
+        const userRef = doc(db, 'users', entry.userId);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) continue;
+
+        const user = snap.data() as UserSession;
+        user.gamification = ensureNewFields(user.gamification);
+
+        // Atribui badge semanal (coroa)
+        const badge: WeeklyBadge = {
+          position: entry.position,
+          weekLabel,
+          xp: entry.xp,
+          awardedAt: Date.now(),
+        };
+        user.gamification.weeklyBadge = badge;
+
+        // Cria notificação personalizada
+        if (!user.notifications) user.notifications = [];
+        const message = getCongratulationsMessage(entry.position, weekLabel, entry.xp);
+        user.notifications.unshift({
+          id: crypto.randomUUID(),
+          message,
+          date: Date.now(),
+          read: false,
+          sender: '🏆 Freedom Ranking',
+        });
+
+        await setDoc(userRef, clean(user));
+      } catch (e) {
+        console.error(`Erro ao notificar usuário ${entry.userId}:`, e);
+      }
+    }
+  },
+
+  // ── Busca histórico de snapshots de ranking ───────────────────
+  getRankingHistory: async (period: 'weekly' | 'monthly', limitCount: number = 12): Promise<RankingSnapshot[]> => {
+    try {
+      const q = query(
+        collection(db, 'ranking_snapshots'),
+        where('period', '==', period),
+        orderBy('savedAt', 'desc'),
+        limit(limitCount)
+      );
+      const snap = await getDocs(q);
+      return snap.docs.map(d => d.data() as RankingSnapshot);
+    } catch (e) {
+      console.error('Erro ao buscar histórico de ranking:', e);
+      return [];
+    }
+  },
+
+  // ── Leaderboard com XP real por período ──────────────────────
+  getLeaderboardData: async (filter: 'Weekly' | 'Monthly' | 'Annual'): Promise<{user: UserSession, periodXp: number, periodActivities: number}[]> => {
+    const users = await api.admin_getAllUsers();
+    
+    return users
+      .filter(u => u.username.toLowerCase() !== 'admin')
+      .map(u => {
+        let periodXp = 0;
+        let periodActivities = 0;
+
+        if (filter === 'Weekly') {
+          // Usa XP semanal real — só conta se ainda estamos na mesma semana
+          const currentWeekKey = getWeekKey();
+          if (u.gamification.lastWeekKey === currentWeekKey) {
+            periodXp = u.gamification.weeklyXp || 0;
+            periodActivities = u.gamification.weeklyActivities || 0;
+          }
+        } else if (filter === 'Monthly') {
+          const currentMonthKey = getMonthKey();
+          if (u.gamification.lastMonthKey === currentMonthKey) {
+            periodXp = u.gamification.monthlyXp || 0;
+            periodActivities = u.gamification.monthlyActivities || 0;
+          }
+        } else {
+          // Annual — usa XP total acumulado no ano
+          const currentYearKey = getYearKey();
+          if (u.gamification.lastYearKey === currentYearKey) {
+            periodXp = u.gamification.yearlyXp || 0;
+          } else {
+            // Fallback para XP total se não tiver o anual registrado
+            periodXp = u.gamification.xp || 0;
+          }
+          periodActivities = u.gamification.totalActivities || 0;
+        }
+
+        return { user: u, periodXp, periodActivities };
+      })
+      .sort((a, b) => b.periodXp - a.periodXp || b.periodActivities - a.periodActivities);
+  },
+
   savePlacementResult: async (userId: string, level: Level): Promise<UserSession> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
     if (!snap.exists()) throw new Error("User not found");
     const user = snap.data() as UserSession;
+    user.gamification = ensureNewFields(user.gamification);
     user.gamification.lastPlacementLevel = level;
     user.gamification.lastPlacementDate = Date.now();
     await setDoc(userRef, clean(user));
     return user;
-  },
-
-  getLeaderboardData: async (filter: 'Weekly' | 'Monthly' | 'Annual'): Promise<{user: UserSession, periodXp: number}[]> => {
-    const users = await api.admin_getAllUsers();
-    const now = Date.now();
-    const msPerDay = 24 * 60 * 60 * 1000;
-    let timeframe = Infinity;
-    if (filter === 'Weekly') timeframe = 7 * msPerDay;
-    else if (filter === 'Monthly') timeframe = 30 * msPerDay;
-    return users.map(u => {
-      const finalXp = filter === 'Annual' ? u.gamification.xp : Math.floor(u.gamification.xp * (timeframe === Infinity ? 1 : 0.5)); 
-      return { user: u, periodXp: finalXp };
-    }).sort((a, b) => b.periodXp - a.periodXp);
   },
 
   getPlan: async (userId: string): Promise<StudyPlan | null> => {
@@ -313,24 +559,12 @@ export const api = {
 
   saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
     const bankRef = collection(db, 'bank');
-    const activityData = {
-      level,
-      theme,
-      subTopic: subTopic.toLowerCase().trim(),
-      content,
-      createdAt: Date.now()
-    };
-    await addDoc(bankRef, clean(activityData));
+    await addDoc(bankRef, clean({ level, theme, subTopic: subTopic.toLowerCase().trim(), content, createdAt: Date.now() }));
   },
 
   getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
     const normalizedTopic = subTopic.toLowerCase().trim();
-    const q = query(
-      collection(db, 'bank'), 
-      where('level', '==', level), 
-      where('theme', '==', theme),
-      where('subTopic', '==', normalizedTopic)
-    );
+    const q = query(collection(db, 'bank'), where('level', '==', level), where('theme', '==', theme), where('subTopic', '==', normalizedTopic));
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const matches = snap.docs.map(d => d.data());
@@ -428,5 +662,7 @@ export const api = {
       targetUser.gamification.followers = (targetUser.gamification.followers || []).filter(id => id !== userId);
       await Promise.all([setDoc(userRef, clean(user)), setDoc(targetRef, clean(targetUser))]);
     }
-  }
+  },
+
+  admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
 };
