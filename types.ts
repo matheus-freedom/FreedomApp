@@ -63,6 +63,36 @@ export interface GeneratedContent {
   };
 }
 
+// ── Novo: entrada do Top 3 em um snapshot de ranking ──────────
+export interface RankingEntry {
+  userId: string;
+  username: string;
+  fullName: string;
+  profilePhoto?: string;
+  xp: number;
+  activitiesCount: number;
+  position: 1 | 2 | 3;
+}
+
+// ── Novo: snapshot salvo ao virar semana ou mês ───────────────
+export interface RankingSnapshot {
+  id: string;
+  period: 'weekly' | 'monthly';
+  label: string;        // Ex: "Semana 18/2026" ou "Abril 2026"
+  startDate: string;    // YYYY-MM-DD
+  endDate: string;      // YYYY-MM-DD
+  top3: RankingEntry[];
+  savedAt: number;      // timestamp
+}
+
+// ── Novo: badge semanal do usuário ────────────────────────────
+export interface WeeklyBadge {
+  position: 1 | 2 | 3;
+  weekLabel: string;    // Ex: "Semana 18/2026"
+  xp: number;
+  awardedAt: number;    // timestamp
+}
+
 export interface UserGamification {
   xp: number; 
   frBalance: number; 
@@ -77,10 +107,25 @@ export interface UserGamification {
   lastPlacementDate?: number;
   dailyChatCount: number;
   lastChatDate: string | null;
-  followers: string[]; // User IDs
-  following: string[]; // User IDs
-  followRequests: string[]; // User IDs
+  followers: string[];
+  following: string[];
+  followRequests: string[];
   totalActivities: number;
+
+  // ── Novo: XP por período ──────────────────────────────────
+  weeklyXp: number;           // XP acumulado na semana atual
+  monthlyXp: number;          // XP acumulado no mês atual
+  yearlyXp: number;           // XP acumulado no ano atual
+  weeklyActivities: number;   // Atividades feitas na semana atual
+  monthlyActivities: number;  // Atividades feitas no mês atual
+
+  // ── Novo: controle de reset por período ──────────────────
+  lastWeekKey: string | null;   // Ex: "2026-W18"
+  lastMonthKey: string | null;  // Ex: "2026-04"
+  lastYearKey: string | null;   // Ex: "2026"
+
+  // ── Novo: badge semanal (coroa) ───────────────────────────
+  weeklyBadge: WeeklyBadge | null;
 }
 
 export interface AdminNotification {
@@ -139,7 +184,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat';
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -174,12 +219,12 @@ export interface StudyTask {
   relatedTheme?: Theme;
   score?: number;
   totalQuestions?: number;
-  date?: string; // YYYY-MM-DD
+  date?: string;
 }
 
 export interface StudyDay {
   dayName: string;
-  date?: string; // YYYY-MM-DD
+  date?: string;
   tasks: StudyTask[];
 }
 
