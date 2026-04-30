@@ -16,6 +16,7 @@ import ProfileScreen from './components/ProfileScreen';
 import AdminPanel from './components/AdminPanel';
 import ChallengesScreen from './components/ChallengesScreen';
 import ChatScreen from './components/ChatScreen';
+import RankingHistoryScreen from './components/RankingHistoryScreen';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge } from './types';
 import { generateQuizContent } from './services/geminiService';
 import { api } from './services/api';
@@ -199,6 +200,13 @@ const App: React.FC = () => {
     if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
   };
 
+  // ── Corrigido: handlePlacementFinish estava faltando ──────────
+  const handlePlacementFinish = async (level: Level) => {
+    if (!state.user) return;
+    const updatedUser = await api.savePlacementResult(state.user.userId, level);
+    setState(p => ({ ...p, user: updatedUser, status: 'selection' }));
+  };
+
   const handleUserUpdate = (updatedUser: UserSession) => { setState(p => ({ ...p, user: updatedUser })); };
 
   return (
@@ -259,8 +267,23 @@ const App: React.FC = () => {
         )}
         {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, status: 'selection' })); } }} />}
         {state.status === 'selection' && state.user && (
-          <SelectionScreen user={state.user} onStart={handleStart} onOpenStudyPlan={() => setState(p => ({ ...p, status: state.studyPlan ? 'dashboard' : 'plan_setup' }))} onStartPlacement={() => setState(p => ({ ...p, status: 'placement_test' }))} onOpenActivities={() => setState(p => ({ ...p, status: 'my_activities' }))} onOpenProfile={() => setState(p => ({ ...p, status: 'profile' }))} onOpenAdmin={() => setState(p => ({ ...p, status: 'admin_panel' }))} onOpenChallenges={() => setState(p => ({ ...p, status: 'challenges' }))} onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))} isLoading={false} hasActivePlan={!!state.studyPlan} onUserUpdate={handleUserUpdate} />
+          <SelectionScreen
+            user={state.user}
+            onStart={handleStart}
+            onOpenStudyPlan={() => setState(p => ({ ...p, status: state.studyPlan ? 'dashboard' : 'plan_setup' }))}
+            onStartPlacement={() => setState(p => ({ ...p, status: 'placement_test' }))}
+            onOpenActivities={() => setState(p => ({ ...p, status: 'my_activities' }))}
+            onOpenProfile={() => setState(p => ({ ...p, status: 'profile' }))}
+            onOpenAdmin={() => setState(p => ({ ...p, status: 'admin_panel' }))}
+            onOpenChallenges={() => setState(p => ({ ...p, status: 'challenges' }))}
+            onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))}
+            onOpenRankingHistory={() => setState(p => ({ ...p, status: 'ranking_history' }))}
+            isLoading={false}
+            hasActivePlan={!!state.studyPlan}
+            onUserUpdate={handleUserUpdate}
+          />
         )}
+        {state.status === 'ranking_history' && <RankingHistoryScreen onHome={handleHome} />}
         {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} />}
         {state.status === 'chat' && state.user && <ChatScreen user={state.user} onHome={handleHome} activeChatUserId={state.activeChatUserId} />}
         {state.status === 'admin_panel' && (state.user?.username.toLowerCase() === 'admin' || state.user?.isAdmin) && <AdminPanel onBack={handleHome} />}
