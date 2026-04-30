@@ -7,7 +7,7 @@ import {
   Brain, Target, Flame, Zap, Trophy, Crown, Shield, Info, Sparkles,
   User as UserIcon, X, Calendar, Globe, BookOpen, Sword,
   ArrowRight, AlertTriangle, Lock, Wallet, ShieldAlert, Compass, Play,
-  Clock, Mic, Loader2, PenLine
+  Clock, Mic, Loader2, PenLine, History, Activity
 } from 'lucide-react';
 
 interface SelectionScreenProps {
@@ -20,6 +20,7 @@ interface SelectionScreenProps {
   onOpenChallenges: () => void;
   onOpenChat: (userId: string) => void;
   onOpenAdmin?: () => void;
+  onOpenRankingHistory: () => void;
   isLoading: boolean;
   initialLevel?: Level | null;
   initialTheme?: Theme | null;
@@ -60,9 +61,16 @@ const LEVEL_META: Record<string, { icon: string; label: string }> = {
 const formatFR = (value: number) =>
   "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Medalhas do pódio
+const PODIUM_CONFIG: Record<number, { emoji: string; color: string; bg: string; border: string; size: string }> = {
+  1: { emoji: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/50', size: 'w-14 h-14' },
+  2: { emoji: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/50', size: 'w-12 h-12' },
+  3: { emoji: '🥉', color: 'text-amber-600', bg: 'bg-amber-600/10', border: 'border-amber-600/50', size: 'w-12 h-12' },
+};
+
 const SelectionScreen: React.FC<SelectionScreenProps> = ({
   user, onStart, onOpenStudyPlan, onStartPlacement, onOpenActivities,
-  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin,
+  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory,
   isLoading, initialLevel = null, initialTheme = null, initialTopic = null,
   hasActivePlan, onUserUpdate
 }) => {
@@ -74,8 +82,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   const [selectedMultiTopics, setSelectedMultiTopics] = useState<Set<string>>(new Set());
   const [voiceGender, setVoiceGender] = useState<VoiceGender>('Female');
   const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>('American');
-  const [leaderboardUsers, setLeaderboardUsers] = useState<{user: UserSession, periodXp: number}[]>([]);
-  const [leaderboardFilter, setLeaderboardFilter] = useState<'Weekly' | 'Monthly' | 'Annual'>('Annual');
+  const [leaderboardUsers, setLeaderboardUsers] = useState<{user: UserSession, periodXp: number, periodActivities: number}[]>([]);
+  const [leaderboardFilter, setLeaderboardFilter] = useState<'Weekly' | 'Monthly' | 'Annual'>('Weekly');
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showTiersModal, setShowTiersModal] = useState(false);
   const [showAccessAlert, setShowAccessAlert] = useState(false);
@@ -107,13 +115,11 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   }, [selectedLevel, selectedTheme]);
 
   const availableThemes = useMemo(() => Object.values(Theme), []);
-
   const availableTopics = useMemo(() => {
     if (!selectedLevel || !selectedTheme) return [];
     return TOPICS[selectedLevel][selectedTheme] || [];
   }, [selectedLevel, selectedTheme]);
 
-  // Tópicos separados por categoria para Reading/Listening/Writing
   const grammarTopics = useMemo(() => {
     if (!selectedLevel) return [];
     return TOPICS[selectedLevel][Theme.Grammar] || [];
@@ -133,8 +139,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
     return selectedTopic || '';
   }, [selectedTopic, customTopicText, isMultiSelectTheme, selectedMultiTopics]);
 
-  // Para temas normais: precisa de tópico selecionado ou texto personalizado
-  // Para multi-select: pelo menos 1 tópico selecionado, ou tópico personalizado
   const canStart = useMemo(() => {
     if (selectedTopic === CUSTOM_TOPIC_VALUE) return customTopicText.trim().length > 2;
     if (isMultiSelectTheme) return selectedMultiTopics.size > 0;
@@ -156,12 +160,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
 
   const toggleMultiTopic = (topic: string) => {
     const newSet = new Set(selectedMultiTopics);
-    if (newSet.has(topic)) {
-      newSet.delete(topic);
-    } else {
-      if (newSet.size >= 2) return;
-      newSet.add(topic);
-    }
+    if (newSet.has(topic)) { newSet.delete(topic); }
+    else { if (newSet.size >= 2) return; newSet.add(topic); }
     setSelectedMultiTopics(newSet);
   };
 
@@ -208,7 +208,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             <div className="space-y-4">
               <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Bem-vindo(a)!</h3>
               <p className="text-gray-300 text-sm leading-relaxed font-medium">
-                Seja muito bem vindo(a) à plataforma de exercícios da Freedom. Como você não é nosso aluno, algumas funcionalidades estão limitadas, mas o Easter Challenge 40 dias está liberado para você, basta clicar em Plano de estudos, selecionar seu nível e disponibilidade e, em seguida, clicar em Challenge Mode. Good Luck!!
+                Seja muito bem vindo(a) à plataforma de exercícios da Freedom. Como você não é nosso aluno, algumas funcionalidades estão limitadas, mas o Easter Challenge 40 dias está liberado para você!
               </p>
             </div>
             <button onClick={() => { setShowWelcomeModal(false); localStorage.setItem(`welcome_seen_${user.userId}`, 'true'); }}
@@ -270,7 +270,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-[#f7931e]/50 p-8 text-center space-y-6 animate-pop shadow-[0_0_50px_rgba(247,147,30,0.2)]">
             <div className="w-20 h-20 bg-[#f7931e]/10 rounded-full flex items-center justify-center mx-auto"><Lock className="w-10 h-10 text-[#f7931e]" /></div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Limite Diário Atingido</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Parabéns! Você atingiu o máximo de {DAILY_LIMIT} atividades por hoje. Volte amanhã para praticar mais.</p>
+            <p className="text-gray-400 text-sm leading-relaxed">Parabéns! Você atingiu o máximo de {DAILY_LIMIT} atividades por hoje. Volte amanhã.</p>
             <button onClick={() => setShowLimitModal(false)} className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform">Entendido</button>
           </div>
         </div>
@@ -287,6 +287,12 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
               {user.profilePhoto ? <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" /> : <div className={`${currentTier.color} transform scale-125`}>{currentTier.icon}</div>}
             </div>
             <div className="absolute -bottom-1 -right-1 bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded-lg text-[9px] font-black shadow-lg">LV.{currentTierIndex + 1}</div>
+            {/* Badge semanal (coroa) */}
+            {user.gamification.weeklyBadge && (
+              <div className="absolute -top-2 -left-2 text-xl" title={`${user.gamification.weeklyBadge.position}º lugar — ${user.gamification.weeklyBadge.weekLabel}`}>
+                {user.gamification.weeklyBadge.position === 1 ? '👑' : user.gamification.weeklyBadge.position === 2 ? '🥈' : '🥉'}
+              </div>
+            )}
           </div>
           <div className="flex-1 space-y-4 w-full">
             <div className="flex justify-between items-start">
@@ -296,6 +302,12 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   {user.gamification.isPro && <span className="text-[8px] bg-[#f7931e] text-[#222222] px-1.5 py-0.5 rounded-md font-black">{isAdmin ? 'ADMIN' : 'PRO'}</span>}
                 </h3>
                 <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${currentTier.color}`}>{currentTier.tier}</p>
+                {/* Label do badge semanal */}
+                {user.gamification.weeklyBadge && (
+                  <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-0.5">
+                    {user.gamification.weeklyBadge.position === 1 ? '👑' : user.gamification.weeklyBadge.position === 2 ? '🥈' : '🥉'} Campeão — {user.gamification.weeklyBadge.weekLabel}
+                  </p>
+                )}
               </div>
               <button onClick={() => setShowTiersModal(true)} className="p-2 bg-white/5 rounded-xl text-gray-400 hover:text-[#f7931e] transition-all"><Info className="w-4 h-4" /></button>
             </div>
@@ -451,12 +463,9 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                 <p className="text-[10px] font-black text-[#f7931e] uppercase tracking-widest mb-1">Passo 3 de 3</p>
                 <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-1">Escolha o tópico</h3>
                 <p className="text-[11px] text-gray-500 font-bold mb-4">
-                  {isMultiSelectTheme
-                    ? 'Selecione até 2 tópicos para combinar — ou apenas 1 se preferir.'
-                    : 'Selecione o assunto que quer praticar.'}
+                  {isMultiSelectTheme ? 'Selecione até 2 tópicos para combinar — ou apenas 1 se preferir.' : 'Selecione o assunto que quer praticar.'}
                 </p>
 
-                {/* Config de voz */}
                 {needsVoiceConfig && (
                   <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-[#222222] rounded-2xl border border-[#333333]">
                     <div className="space-y-1">
@@ -481,18 +490,13 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                 )}
 
                 <div className="max-h-[260px] overflow-y-auto pr-1 mb-3 space-y-3 custom-scrollbar">
-
-                  {/* Tópicos simples (Gramática, Vocabulário, Business) */}
                   {!isMultiSelectTheme && (
                     <div className="space-y-1.5">
                       {availableTopics.map((topic) => {
                         const isSelected = selectedTopic === topic;
                         return (
-                          <button key={topic}
-                            onClick={() => { setSelectedTopic(topic); setCustomTopicText(''); }}
-                            className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${
-                              isSelected ? 'bg-[#f7931e]/10 border-[#f7931e] text-white' : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-[#f7931e]/50 hover:text-white'
-                            }`}>
+                          <button key={topic} onClick={() => { setSelectedTopic(topic); setCustomTopicText(''); }}
+                            className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${isSelected ? 'bg-[#f7931e]/10 border-[#f7931e] text-white' : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-[#f7931e]/50 hover:text-white'}`}>
                             <span>{topic}</span>
                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isSelected ? 'bg-[#f7931e]' : 'bg-[#444444]'}`} />
                           </button>
@@ -501,27 +505,17 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                     </div>
                   )}
 
-                  {/* Tópicos multi-select com separação por categoria */}
                   {isMultiSelectTheme && (
                     <div className="space-y-4">
-
-                      {/* Categoria: Gramática */}
                       <div>
-                        <p className="text-[9px] font-black text-[#f7931e] uppercase tracking-widest mb-2 flex items-center gap-1">
-                          📐 Gramática
-                        </p>
+                        <p className="text-[9px] font-black text-[#f7931e] uppercase tracking-widest mb-2">📐 Gramática</p>
                         <div className="space-y-1.5">
                           {grammarTopics.map((topic) => {
                             const isSelected = selectedMultiTopics.has(topic);
                             const isDisabled = selectedMultiTopics.size >= 2 && !isSelected;
                             return (
-                              <button key={topic} disabled={isDisabled}
-                                onClick={() => toggleMultiTopic(topic)}
-                                className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${
-                                  isSelected ? 'bg-[#f7931e]/10 border-[#f7931e] text-white'
-                                  : isDisabled ? 'bg-[#222222] border-[#333333] text-gray-700 cursor-not-allowed'
-                                  : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-[#f7931e]/50 hover:text-white'
-                                }`}>
+                              <button key={topic} disabled={isDisabled} onClick={() => toggleMultiTopic(topic)}
+                                className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${isSelected ? 'bg-[#f7931e]/10 border-[#f7931e] text-white' : isDisabled ? 'bg-[#222222] border-[#333333] text-gray-700 cursor-not-allowed' : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-[#f7931e]/50 hover:text-white'}`}>
                                 <span>{topic}</span>
                                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isSelected ? 'bg-[#f7931e]' : 'bg-[#444444]'}`} />
                               </button>
@@ -529,24 +523,15 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                           })}
                         </div>
                       </div>
-
-                      {/* Categoria: Vocabulário */}
                       <div>
-                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          📚 Vocabulário
-                        </p>
+                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2">📚 Vocabulário</p>
                         <div className="space-y-1.5">
                           {vocabTopics.map((topic) => {
                             const isSelected = selectedMultiTopics.has(topic);
                             const isDisabled = selectedMultiTopics.size >= 2 && !isSelected;
                             return (
-                              <button key={topic} disabled={isDisabled}
-                                onClick={() => toggleMultiTopic(topic)}
-                                className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${
-                                  isSelected ? 'bg-blue-500/10 border-blue-500 text-white'
-                                  : isDisabled ? 'bg-[#222222] border-[#333333] text-gray-700 cursor-not-allowed'
-                                  : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-blue-500/50 hover:text-white'
-                                }`}>
+                              <button key={topic} disabled={isDisabled} onClick={() => toggleMultiTopic(topic)}
+                                className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-bold ${isSelected ? 'bg-blue-500/10 border-blue-500 text-white' : isDisabled ? 'bg-[#222222] border-[#333333] text-gray-700 cursor-not-allowed' : 'bg-[#222222] border-[#333333] text-gray-400 hover:border-blue-500/50 hover:text-white'}`}>
                                 <span>{topic}</span>
                                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isSelected ? 'bg-blue-400' : 'bg-[#444444]'}`} />
                               </button>
@@ -557,28 +542,16 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                     </div>
                   )}
 
-                  {/* Tópico Personalizado — sempre aparece no final */}
                   <div className={isMultiSelectTheme ? 'pt-2 border-t border-white/5' : ''}>
-                    {isMultiSelectTheme && (
-                      <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">✨ Personalizado</p>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedTopic(CUSTOM_TOPIC_VALUE);
-                        setSelectedMultiTopics(new Set());
-                      }}
-                      className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-black ${
-                        selectedTopic === CUSTOM_TOPIC_VALUE
-                          ? 'bg-[#f7931e]/10 border-[#f7931e] text-[#f7931e]'
-                          : 'bg-[#222222] border-dashed border-[#f7931e]/40 text-[#f7931e]/70 hover:border-[#f7931e] hover:text-[#f7931e]'
-                      }`}>
+                    {isMultiSelectTheme && <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">✨ Personalizado</p>}
+                    <button onClick={() => { setSelectedTopic(CUSTOM_TOPIC_VALUE); setSelectedMultiTopics(new Set()); }}
+                      className={`w-full text-left px-4 py-3 rounded-xl border-2 flex items-center justify-between transition-all text-xs font-black ${selectedTopic === CUSTOM_TOPIC_VALUE ? 'bg-[#f7931e]/10 border-[#f7931e] text-[#f7931e]' : 'bg-[#222222] border-dashed border-[#f7931e]/40 text-[#f7931e]/70 hover:border-[#f7931e] hover:text-[#f7931e]'}`}>
                       <span className="flex items-center gap-2"><PenLine className="w-3.5 h-3.5" /> Tópico Personalizado</span>
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${selectedTopic === CUSTOM_TOPIC_VALUE ? 'bg-[#f7931e]' : 'bg-[#f7931e]/30'}`} />
                     </button>
                   </div>
                 </div>
 
-                {/* Campo de texto personalizado */}
                 {selectedTopic === CUSTOM_TOPIC_VALUE && (
                   <div className="mb-3 animate-fade-in">
                     <input type="text" autoFocus value={customTopicText} onChange={(e) => setCustomTopicText(e.target.value)}
@@ -588,10 +561,9 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   </div>
                 )}
 
-                {/* Indicador de seleção para multi-select */}
                 {isMultiSelectTheme && selectedMultiTopics.size > 0 && selectedTopic !== CUSTOM_TOPIC_VALUE && (
                   <div className="mb-3 p-3 bg-[#222222] rounded-xl border border-white/5">
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Tópicos selecionados ({selectedMultiTopics.size}/2):</p>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Selecionados ({selectedMultiTopics.size}/2):</p>
                     <div className="flex flex-wrap gap-2">
                       {Array.from(selectedMultiTopics).map(t => (
                         <span key={t} className="px-3 py-1 bg-[#f7931e]/10 border border-[#f7931e]/30 rounded-lg text-[10px] font-black text-[#f7931e]">{t}</span>
@@ -624,11 +596,13 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           </div>
         </div>
 
-        {/* LEADERBOARD */}
-        <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl flex flex-col max-h-[600px]">
-          <div className="flex items-center justify-between mb-6">
+        {/* ── RANKING (antigo Leaderboard) ── */}
+        <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl flex flex-col">
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
-              <Trophy className="w-5 h-5 text-yellow-400" /> Leaderboard
+              <Trophy className="w-5 h-5 text-yellow-400" /> Ranking
             </h3>
             <select value={leaderboardFilter} onChange={(e) => setLeaderboardFilter(e.target.value as any)}
               className="bg-[#222222] border border-white/10 text-gray-400 text-[10px] font-black uppercase rounded-xl p-2 outline-none focus:border-[#f7931e]">
@@ -637,36 +611,130 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
               <option value="Annual">Ano</option>
             </select>
           </div>
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
-            {leaderboardUsers.map((lbUser, index) => {
-              const isCurrentUser = lbUser.user.userId === user.userId;
-              let rankStyle = "bg-[#333333] text-gray-400 border-white/5";
-              if (index === 0) rankStyle = "bg-yellow-400/10 text-yellow-400 border-yellow-400/30";
-              else if (index === 1) rankStyle = "bg-slate-300/10 text-slate-300 border-slate-300/30";
-              else if (index === 2) rankStyle = "bg-amber-700/10 text-amber-600 border-amber-700/30";
-              return (
-                <div key={lbUser.user.userId} onClick={() => setViewProfileId(lbUser.user.userId)}
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer hover:bg-white/5 ${isCurrentUser ? 'border-[#f7931e]/50 shadow-[0_0_15px_rgba(247,147,30,0.1)]' : rankStyle}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="font-black text-sm w-4 text-center">{index + 1}</span>
-                    <div className="w-10 h-10 rounded-full bg-[#222222] overflow-hidden border border-white/10 flex-shrink-0">
-                      {lbUser.user.profilePhoto ? <img src={lbUser.user.profilePhoto} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 m-auto text-gray-500 mt-2" />}
+
+          {/* Label do período */}
+          <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-4">
+            {leaderboardFilter === 'Weekly' ? 'XP acumulado nesta semana' : leaderboardFilter === 'Monthly' ? 'XP acumulado neste mês' : 'XP acumulado neste ano'}
+          </p>
+
+          {/* Pódio — Top 3 */}
+          {leaderboardUsers.filter(u => u.periodXp > 0).length >= 3 && (
+            <div className="flex items-end justify-center gap-3 mb-6 px-2">
+              {/* 2º lugar */}
+              {leaderboardUsers[1] && leaderboardUsers[1].periodXp > 0 && (() => {
+                const u = leaderboardUsers[1];
+                const cfg = PODIUM_CONFIG[2];
+                return (
+                  <div className="flex flex-col items-center gap-2 flex-1">
+                    <span className="text-lg">🥈</span>
+                    <div className={`${cfg.size} rounded-full border-2 ${cfg.border} bg-[#222222] overflow-hidden`}>
+                      {u.user.profilePhoto ? <img src={u.user.profilePhoto} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 m-auto text-gray-500 mt-3" />}
                     </div>
-                    <div className="max-w-[100px] md:max-w-[120px]">
-                      <p className={`text-xs font-black truncate ${isCurrentUser ? 'text-[#f7931e]' : 'text-white'}`}>{lbUser.user.username}</p>
-                      <p className="text-[9px] text-gray-500 font-bold uppercase truncate">{lbUser.user.fullName}</p>
+                    <div className="text-center">
+                      <p className={`text-[10px] font-black truncate max-w-[70px] ${cfg.color}`}>{u.user.username}</p>
+                      <p className="text-[9px] text-gray-500 font-bold">{u.periodXp.toLocaleString()} XP</p>
+                    </div>
+                    <div className={`w-full h-12 ${cfg.bg} border ${cfg.border} rounded-t-xl flex items-center justify-center`}>
+                      <span className={`text-lg font-black ${cfg.color}`}>2</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-black text-sm">{lbUser.periodXp.toLocaleString()}</span>
-                    <p className="text-[8px] text-gray-500 font-black uppercase">XP</p>
+                );
+              })()}
+
+              {/* 1º lugar */}
+              {leaderboardUsers[0] && leaderboardUsers[0].periodXp > 0 && (() => {
+                const u = leaderboardUsers[0];
+                const cfg = PODIUM_CONFIG[1];
+                return (
+                  <div className="flex flex-col items-center gap-2 flex-1">
+                    <span className="text-xl">👑</span>
+                    <div className={`${cfg.size} rounded-full border-2 ${cfg.border} bg-[#222222] overflow-hidden shadow-[0_0_20px_rgba(250,204,21,0.3)]`}>
+                      {u.user.profilePhoto ? <img src={u.user.profilePhoto} className="w-full h-full object-cover" /> : <UserIcon className="w-6 h-6 m-auto text-gray-500 mt-4" />}
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-[10px] font-black truncate max-w-[70px] ${cfg.color}`}>{u.user.username}</p>
+                      <p className="text-[9px] text-gray-500 font-bold">{u.periodXp.toLocaleString()} XP</p>
+                    </div>
+                    <div className={`w-full h-16 ${cfg.bg} border ${cfg.border} rounded-t-xl flex items-center justify-center shadow-[0_0_15px_rgba(250,204,21,0.15)]`}>
+                      <span className={`text-xl font-black ${cfg.color}`}>1</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })()}
+
+              {/* 3º lugar */}
+              {leaderboardUsers[2] && leaderboardUsers[2].periodXp > 0 && (() => {
+                const u = leaderboardUsers[2];
+                const cfg = PODIUM_CONFIG[3];
+                return (
+                  <div className="flex flex-col items-center gap-2 flex-1">
+                    <span className="text-lg">🥉</span>
+                    <div className={`${cfg.size} rounded-full border-2 ${cfg.border} bg-[#222222] overflow-hidden`}>
+                      {u.user.profilePhoto ? <img src={u.user.profilePhoto} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 m-auto text-gray-500 mt-3" />}
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-[10px] font-black truncate max-w-[70px] ${cfg.color}`}>{u.user.username}</p>
+                      <p className="text-[9px] text-gray-500 font-bold">{u.periodXp.toLocaleString()} XP</p>
+                    </div>
+                    <div className={`w-full h-8 ${cfg.bg} border ${cfg.border} rounded-t-xl flex items-center justify-center`}>
+                      <span className={`text-lg font-black ${cfg.color}`}>3</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Lista completa */}
+          <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 max-h-[280px]">
+            {leaderboardUsers.length === 0 || leaderboardUsers.every(u => u.periodXp === 0) ? (
+              <div className="text-center py-8 space-y-2">
+                <Activity className="w-8 h-8 text-gray-700 mx-auto" />
+                <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Nenhuma atividade neste período ainda.</p>
+              </div>
+            ) : (
+              leaderboardUsers.filter(u => u.periodXp > 0).map((lbUser, index) => {
+                const isCurrentUser = lbUser.user.userId === user.userId;
+                let rankStyle = "bg-[#333333] border-white/5";
+                if (index === 0) rankStyle = "bg-yellow-400/5 border-yellow-400/20";
+                else if (index === 1) rankStyle = "bg-slate-300/5 border-slate-300/20";
+                else if (index === 2) rankStyle = "bg-amber-700/5 border-amber-700/20";
+                return (
+                  <div key={lbUser.user.userId} onClick={() => setViewProfileId(lbUser.user.userId)}
+                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer hover:bg-white/5 ${isCurrentUser ? 'border-[#f7931e]/50' : rankStyle}`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-black text-xs w-4 text-center text-gray-500">{index + 1}</span>
+                      <div className="w-8 h-8 rounded-full bg-[#222222] overflow-hidden border border-white/10 flex-shrink-0">
+                        {lbUser.user.profilePhoto ? <img src={lbUser.user.profilePhoto} className="w-full h-full object-cover" /> : <UserIcon className="w-4 h-4 m-auto text-gray-500 mt-2" />}
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-black truncate max-w-[80px] ${isCurrentUser ? 'text-[#f7931e]' : 'text-white'}`}>{lbUser.user.username}</p>
+                        {lbUser.periodActivities > 0 && (
+                          <p className="text-[8px] text-gray-600 font-bold">{lbUser.periodActivities} ativ.</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-black text-xs text-white">{lbUser.periodXp.toLocaleString()}</span>
+                      <p className="text-[8px] text-gray-500 font-black uppercase">XP</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-          <div className="pt-4 mt-4 border-t border-white/5 text-center">
-            <p className="text-[10px] font-black text-gray-500 uppercase">Sua Posição: <span className="text-[#f7931e]">#{userRank}</span></p>
+
+          {/* Footer */}
+          <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
+            {userRank > 0 && leaderboardUsers[userRank - 1]?.periodXp > 0 && (
+              <p className="text-center text-[10px] font-black text-gray-500 uppercase">
+                Sua posição: <span className="text-[#f7931e]">#{userRank}</span>
+              </p>
+            )}
+            <button onClick={onOpenRankingHistory}
+              className="w-full py-3 bg-[#222222] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-[#333333] hover:text-white transition-all border border-white/5">
+              <History className="w-4 h-4" /> Ver Hall da Fama
+            </button>
           </div>
         </div>
       </div>
