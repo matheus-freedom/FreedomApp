@@ -263,7 +263,7 @@ const App: React.FC = () => {
           setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, status: (user.username === 'admin' || user.isAdmin) ? (user.guide ? 'selection' : 'guide_selection') : 'keyword_check' }));
         }} />}
         {state.status === 'keyword_check' && (
-          <KeywordScreen onSuccess={(accessType) => { if (state.user) { const updatedUser = { ...state.user, accessType }; setState(p => ({ ...p, user: updatedUser, status: 'guide_selection' })); } }} onLogout={handleLogout} />
+          <KeywordScreen onSuccess={(accessType) => { if (state.user) { const updatedUser = { ...state.user, accessType }; setState(p => ({ ...p, user: updatedUser, status: updatedUser.guide ? 'selection' : 'guide_selection' })); } }} onLogout={handleLogout} />
         )}
         {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, status: 'selection' })); } }} />}
         {state.status === 'selection' && state.user && (
