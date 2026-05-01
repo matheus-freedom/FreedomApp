@@ -90,6 +90,30 @@ export const api = {
       const data = userSnap.data() as UserSession;
       // Garante que usuários antigos tenham os novos campos
       data.gamification = ensureNewFields(data.gamification);
+
+      // ── Atualiza streak de login ──────────────────────────
+      const today = new Date().toISOString().split('T')[0];
+      const lastLogin = data.gamification.lastLoginDate;
+
+      if (lastLogin !== today) {
+        const lastLoginDate = lastLogin ? new Date(lastLogin) : null;
+        const todayDate = new Date(today);
+        const diffDays = lastLoginDate
+          ? Math.round((todayDate.getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        if (diffDays === 1) {
+          // Logou ontem: incrementa a ofensiva
+          data.gamification.streak = (data.gamification.streak || 0) + 1;
+        } else {
+          // Nunca logou antes ou perdeu a sequência: reinicia em 1
+          data.gamification.streak = 1;
+        }
+
+        data.gamification.lastLoginDate = today;
+        await setDoc(userRef, clean(data));
+      }
+
       return data;
     }
     return null;
