@@ -530,14 +530,11 @@ export const api = {
             periodActivities = u.gamification.monthlyActivities || 0;
           }
         } else {
-          // Annual — usa XP total acumulado no ano
-          const currentYearKey = getYearKey();
-          if (u.gamification.lastYearKey === currentYearKey) {
-            periodXp = u.gamification.yearlyXp || 0;
-          } else {
-            // Fallback para XP total se não tiver o anual registrado
-            periodXp = u.gamification.xp || 0;
-          }
+          // Annual — usa sempre o XP total do usuário.
+          // O yearlyXp só existe desde a atualização do sistema de períodos,
+          // então usuários com XP anterior ficariam com números errados.
+          // Como o app foi lançado em 2026, XP total = XP do ano.
+          periodXp = u.gamification.xp || 0;
           periodActivities = u.gamification.totalActivities || 0;
         }
 
