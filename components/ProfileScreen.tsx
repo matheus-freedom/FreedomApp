@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UserSession } from '../types';
+import { UserSession, GuideCharacter } from '../types';
 import { api } from '../services/api';
 import { 
   ArrowLeft, Camera, User, Mail, Calendar, Users, 
   Check, X, Loader2, AtSign, Shield, Zap, Flame, Star, Layers, Save, Trash2, Coins,
-  Clock, UserCheck, UserX
+  Clock, UserCheck, UserX, Bot
 } from 'lucide-react';
 
 interface ProfileScreenProps {
@@ -23,8 +23,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
   const [age, setAge] = useState(user.age);
   const [gender, setGender] = useState(user.gender);
   const [email, setEmail] = useState(user.email);
-  
-  // 💡 MUDANÇA: Separamos a URL atual e o novo Arquivo selecionado
+  const [selectedGuide, setSelectedGuide] = useState<GuideCharacter>(user.guide || 'Fred');
+
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(user.profilePhoto || '');
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   
@@ -73,10 +73,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // 💡 REMOVIDO: Limite de 2MB! O Storage cuida disso agora.
     setSelectedPhotoFile(file);
-    setProfilePhotoPreview(URL.createObjectURL(file)); // Apenas preview
+    setProfilePhotoPreview(URL.createObjectURL(file));
   };
 
   const handleSave = async () => {
@@ -85,7 +83,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
       setError("Este nome de usuário já está em uso.");
       return;
     }
-
     if (username.length < 4) {
       setError("O nome de usuário deve ser mais longo.");
       return;
@@ -93,10 +90,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
 
     setIsSaving(true);
     try {
-      // 💡 MUDANÇA: Envia o arquivo para o cofre ANTES de salvar o perfil
       let finalPhotoUrl = user.profilePhoto;
       if (selectedPhotoFile) {
         finalPhotoUrl = await api.uploadProfilePhoto(user.userId, selectedPhotoFile);
+      }
+
+      // Atualiza o guide se mudou
+      if (selectedGuide !== user.guide) {
+        await api.updateGuide(user.userId, selectedGuide);
       }
 
       const updatedUser: UserSession = {
@@ -107,6 +108,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
         gender,
         email,
         profilePhoto: finalPhotoUrl,
+        guide: selectedGuide,
         userName: fullName.split(' ')[0] || username.replace('@', '')
       };
       
@@ -189,6 +191,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
             <div className="text-center mt-6">
               <h3 className="text-xl font-black text-white">{username}</h3>
               <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em]">{user.fullName}</p>
+              {/* Badge do guia atual */}
+              <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.guide === 'Fred' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-pink-500/10 border-pink-500/30 text-pink-400'}`}>
+                <Bot className="w-3 h-3" />
+                Guia: {user.guide || 'Fred'}
+              </div>
             </div>
 
             <div className="mt-8 w-full space-y-3">
@@ -219,7 +226,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
             </div>
           </div>
 
-          {/* Follow Requests Section */}
+          {/* Solicitações de follow */}
           {(followRequests.length > 0 || isLoadingRequests) && (
             <div className="bg-[#2a2a2a] p-8 rounded-[2.5rem] border border-white/5 shadow-xl space-y-6">
               <h3 className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-tighter">
@@ -259,6 +266,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
           )}
         </div>
 
+        {/* Formulário de edição */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-[#2a2a2a] p-8 rounded-[2.5rem] border border-white/5 shadow-xl space-y-6">
             <h3 className="text-xl font-black text-white flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
@@ -272,8 +280,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Username */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome de Usuário (Username)</label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome de Usuário</label>
                 <div className="relative">
                   <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input 
@@ -290,6 +299,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
                 </div>
               </div>
 
+              {/* Nome completo */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome Completo</label>
                 <div className="relative">
@@ -303,6 +313,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
                 </div>
               </div>
 
+              {/* E-mail */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
                 <div className="relative">
@@ -316,9 +327,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
                 </div>
               </div>
 
+              {/* Data e gênero */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Data de nascimento</label>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nascimento</label>
                   <input 
                     type="date" 
                     value={age}
@@ -338,6 +350,32 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
                     <option value="Outro">Outro</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Guia de IA — dropdown */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5" /> Assistente de IA (Guia)
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedGuide}
+                    onChange={(e) => setSelectedGuide(e.target.value as GuideCharacter)}
+                    className="w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-4 pl-4 pr-10 focus:border-[#f7931e] outline-none text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="Fred">Fred — Analítico e detalhista, explica gramática em detalhes</option>
+                    <option value="Frida">Frida — Energética e criativa, incentiva você a praticar</option>
+                  </select>
+                  {/* Ícone indicativo da seleção atual */}
+                  <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center ${selectedGuide === 'Fred' ? 'bg-blue-500/20 text-blue-400' : 'bg-pink-500/20 text-pink-400'}`}>
+                    <Bot className="w-3 h-3" />
+                  </div>
+                </div>
+                {selectedGuide !== user.guide && (
+                  <p className="text-[9px] text-[#f7931e] font-black uppercase tracking-widest ml-1 flex items-center gap-1">
+                    ✦ Guia será atualizado ao salvar
+                  </p>
+                )}
               </div>
             </div>
 
