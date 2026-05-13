@@ -10,10 +10,10 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
+      // ── REMOVIDO: process.env.API_KEY e process.env.GEMINI_API_KEY
+      // A chave não vai mais para o bundle do navegador.
+      // Ela fica apenas no servidor (netlify/functions/gemini.js)
+      define: {},
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
