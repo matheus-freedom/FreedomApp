@@ -67,7 +67,7 @@ const QUIZ_SCHEMA = {
 export const generatePlacementGrammar = async (): Promise<GeneratedContent> => {
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: "Gere 30 questões de nivelamento de gramática (A1 a C1).",
       config: {
         systemInstruction: `Você é um avaliador Freedom. Gere 30 questões de nivelamento de gramática rigorosas, de A1 a C1. PROGRESSÃO LINEAR. EXPLICAÇÕES EM PT-BR.`,
@@ -82,7 +82,7 @@ export const generatePlacementGrammar = async (): Promise<GeneratedContent> => {
 export const generateAdaptivePlacementStep = async (step: Theme, seedLevel: Level): Promise<GeneratedContent> => {
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: `Gere atividade de nivelamento de ${step} focada no nível ${seedLevel}.`,
       config: {
         systemInstruction: `Avaliador Freedom. Gere teste de ${step} para nível ${seedLevel}. Gere 10 questões. Explicações em PT-BR.`,
@@ -100,7 +100,7 @@ export const generateQuizContent = async (
 ): Promise<GeneratedContent> => {
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: `Gere 10 questões de ${theme} - ${subTopic} (${level}). Priorize textos objetivos.`,
       config: {
         systemInstruction: `Professor Freedom. Gere atividade de ${theme} sobre ${subTopic} para nível ${level}. Explicações em PT-BR.`,
@@ -146,7 +146,7 @@ export const evaluateWritingExercise = async (
   };
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: `Prompt: ${originalPrompt}\nTexto: ${userText}`,
       config: {
         systemInstruction: `Você é o avaliador de Escrita da Freedom. Analise o texto do aluno para o nível ${level}. Score de 0-100. Feedback em PT-BR. Use <span class="error-text">erro</span> <span class="improvement-text">correção</span> no annotatedHtml.`,
@@ -246,7 +246,7 @@ export const generateStudyPlan = async (inputs: StudyPlanInput): Promise<StudyPl
 
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: `Gere um plano de estudos para nível ${inputs.level}, foco em ${inputs.focusSkill}, duração ${inputs.duration}.`,
       config: {
         systemInstruction: `Arquiteto de Educação Freedom. Plano nível ${inputs.level}, duração ${inputs.duration}, disponibilidade ${inputs.timeAvailable}. Foco: ${inputs.focusSkill}. Descrições em Português.`,
@@ -266,7 +266,7 @@ export const chatWithGuide = async (
 ): Promise<ChatMessage[]> => {
   try {
     const result = await callGemini("chat", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       systemInstruction: `Você é ${guide}, assistente da Freedom. Ajude ${userName} com dúvidas de inglês de forma animada e profissional.`,
       history: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
       message,
@@ -288,7 +288,7 @@ export const translateWordToPortuguese = async (word: string): Promise<string> =
 export const generateWritingExample = async (prompt: string, level: Level): Promise<string> => {
   try {
     const result = await callGemini("generateContent", {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.5-flash",
       contents: `Gere um exemplo de texto perfeito no nível ${level} para: "${prompt}". SEM MARKDOWN. Texto limpo.`,
       config: {},
     });
