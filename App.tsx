@@ -51,6 +51,12 @@ const App: React.FC = () => {
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ── TRAVA ANTI-CLIQUE-DUPLO ───────────────────────────────────
+  // useRef é síncrono: bloqueia instantaneamente, antes mesmo do
+  // React re-renderizar a tela. Diferente do useState, que agenda
+  // a atualização e deixa uma janela de tempo para cliques extras.
+  const isStartingRef = useRef(false);
+
   const handleLogout = useCallback(async () => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     localStorage.removeItem('freedom_postgres_session');
@@ -124,16 +130,27 @@ const App: React.FC = () => {
 
   const handleHome = useCallback(() => {
     if (state.user) {
+      // Libera a trava ao voltar para a tela inicial
+      isStartingRef.current = false;
       setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null }));
     }
   }, [state.user]);
 
   const handleStart = async (level: Level, theme: Theme, subTopic: string, voiceGender: VoiceGender = 'Female', voiceAccent: VoiceAccent = 'American') => {
     if (!state.user) return;
+
+    // ── VERIFICAÇÃO DA TRAVA ──────────────────────────────────────
+    // Se já está processando um clique anterior, ignora completamente.
+    // isStartingRef.current é lido e escrito de forma síncrona,
+    // então não existe janela de tempo para um segundo clique passar.
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+
     const today = new Date().toISOString().split('T')[0];
     const dailyCount = state.user.gamification.lastActivityDate === today ? state.user.gamification.dailyActivitiesCount : 0;
     if (!state.user.gamification.isPro && dailyCount >= DAILY_LIMIT) {
       alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje.`);
+      isStartingRef.current = false;
       return;
     }
 
@@ -152,6 +169,8 @@ const App: React.FC = () => {
       if (theme === Theme.Writing) setState(prev => ({ ...prev, status: 'writing', content, score: 0 }));
       else setState(prev => ({ ...prev, status: 'quiz', content, score: 0, currentQuestionIndex: 0 }));
     } catch (error) {
+      // Em caso de erro, libera a trava para o usuário poder tentar de novo
+      isStartingRef.current = false;
       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : "Erro ao carregar atividade." }));
     }
   };
@@ -200,7 +219,6 @@ const App: React.FC = () => {
     if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
   };
 
-  // ── Corrigido: handlePlacementFinish estava faltando ──────────
   const handlePlacementFinish = async (level: Level) => {
     if (!state.user) return;
     const updatedUser = await api.savePlacementResult(state.user.userId, level);
