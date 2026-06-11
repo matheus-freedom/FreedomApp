@@ -85,7 +85,7 @@ exports.handler = async (event) => {
     if (action === "chat") {
       const { systemInstruction, history, message, model } = payload;
       const chat = ai.chats.create({
-        model: model || "gemini-2.5-flash",
+        model: model || "gemini-3.5-flash",
         config: { systemInstruction },
         history: history || [],
       });
@@ -100,7 +100,7 @@ exports.handler = async (event) => {
     if (action === "translate") {
       const { word } = payload;
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         contents: `Traduza para português brasileiro. Retorne APENAS a tradução literal, uma única palavra se possível. Não inclua explicações. Palavra: "${word}"`,
         config: { thinkingConfig: { thinkingBudget: 0 } },
       });
