@@ -17,13 +17,51 @@ import AdminPanel from './components/AdminPanel';
 import ChallengesScreen from './components/ChallengesScreen';
 import ChatScreen from './components/ChatScreen';
 import RankingHistoryScreen from './components/RankingHistoryScreen';
-import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge } from './types';
+import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
 import { generateQuizContent } from './services/geminiService';
 import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle } from 'lucide-react';
 
 const DAILY_LIMIT = 8;
-const INACTIVITY_LIMIT = 15 * 60 * 1000; 
+const INACTIVITY_LIMIT = 15 * 60 * 1000;
+
+// ── PALAVRA-CHAVE: validade em dias ───────────────────────────
+// O aluno valida a palavra-chave uma vez e não precisa digitar de
+// novo até passarem KEYWORD_VALIDITY_DAYS dias. A data fica gravada
+// no localStorage do navegador (não no Firestore).
+const KEYWORD_VALIDITY_DAYS = 30;
+
+// Verifica se o usuário PRECISA ver a tela de palavra-chave.
+// Retorna true se precisa mostrar, false se pode pular.
+const needsKeywordCheck = (userId: string): boolean => {
+  const lastCheck = localStorage.getItem(`keyword_validated_${userId}`);
+  if (!lastCheck) return true;                 // nunca validou → mostra
+  const lastDate = parseInt(lastCheck, 10);
+  if (isNaN(lastDate)) return true;            // dado corrompido → mostra por segurança
+  const daysSince = (Date.now() - lastDate) / (1000 * 60 * 60 * 24);
+  return daysSince >= KEYWORD_VALIDITY_DAYS;   // passou da validade → mostra de novo
+};
+
+// Recupera o accessType salvo na última validação (para quem pula a tela).
+// Se não houver nada salvo, retorna FULL como padrão seguro.
+const getStoredAccessType = (userId: string): AccessType => {
+  const stored = localStorage.getItem(`keyword_access_${userId}`);
+  if (stored === AccessType.CHALLENGE_ONLY) return AccessType.CHALLENGE_ONLY;
+  return AccessType.FULL;
+};
+
+// Decide o status pós-login de um usuário comum (não-admin),
+// levando em conta se a palavra-chave ainda é necessária.
+const resolvePostLoginStatus = (user: UserSession): AppState['status'] => {
+  if (user.username === 'admin' || user.isAdmin) {
+    return user.guide ? 'selection' : 'guide_selection';
+  }
+  if (needsKeywordCheck(user.userId)) {
+    return 'keyword_check';
+  }
+  // Já validado dentro da validade → segue o destino normal pós-validação
+  return user.guide ? 'selection' : 'guide_selection';
+};
 
 const TIER_THRESHOLDS = [
   { tier: UserTier.Starter, min: 0, max: 5000 },
@@ -87,9 +125,17 @@ const App: React.FC = () => {
             ]);
             const invite = challenges.find(c => c.status === 'active' && (c.pendingInvites || []).includes(userProfile.userId));
             if (invite) setPendingChallenge(invite);
-            setState(prev => ({ 
-              ...prev, user: userProfile, studyPlan: plan, activityHistory: history, 
-              status: (userProfile.username === 'admin' || userProfile.isAdmin) ? (userProfile.guide ? 'selection' : 'guide_selection') : 'keyword_check'
+
+            // Se vai pular a palavra-chave, recupera o accessType salvo
+            // para não deixar a permissão indefinida.
+            const willSkipKeyword = !(userProfile.username === 'admin' || userProfile.isAdmin) && !needsKeywordCheck(userProfile.userId);
+            const recoveredUser = willSkipKeyword
+              ? { ...userProfile, accessType: getStoredAccessType(userProfile.userId) }
+              : userProfile;
+
+            setState(prev => ({
+              ...prev, user: recoveredUser, studyPlan: plan, activityHistory: history,
+              status: resolvePostLoginStatus(userProfile)
             }));
           } else { setState(prev => ({ ...prev, status: 'login' })); }
         } catch (e) { setState(prev => ({ ...prev, status: 'login' })); }
@@ -180,42 +226,42 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, status: 'loading' }));
     const accuracy = Math.min(1, finalScore / total);
     const rawXp = Math.min(100, Math.round(accuracy * 100));
-    
+
     const { totalXp, xpGained, frGained, totalFr } = await api.updateXp(state.user.userId, rawXp);
-    
+
     const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
     const prevTier = calculateTier(state.user.gamification.xp);
     const newTier = calculateTier(totalXp);
     const leveledUp = newTier !== prevTier;
-    
+
     const record: ActivityRecord = {
       id: crypto.randomUUID(), date: Date.now(), level: state.level!, theme: state.theme!,
       topic: state.subTopic!, score: finalScore, total: total, type: state.theme === Theme.Writing ? 'writing' : 'quiz',
       xpGained: xpGained, frGained: frGained
     };
-    
+
     await api.saveActivity(state.user.userId, record);
     const updatedHistory = await api.getHistory(state.user.userId);
     const today = new Date().toISOString().split('T')[0];
-    
+
     const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
 
-    const updatedUser = { 
-      ...state.user, 
-      gamification: { 
-        ...state.user.gamification, 
-        xp: totalXp, 
-        frBalance: totalFr, 
-        dailyXpEarned: newDailyXp, 
-        lastXpGainDate: today 
-      } 
+    const updatedUser = {
+      ...state.user,
+      gamification: {
+        ...state.user.gamification,
+        xp: totalXp,
+        frBalance: totalFr,
+        dailyXpEarned: newDailyXp,
+        lastXpGainDate: today
+      }
     };
-    
-    setState(prev => ({ 
+
+    setState(prev => ({
       ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
       user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null
     }));
-    
+
     if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
   };
 
@@ -278,10 +324,25 @@ const App: React.FC = () => {
           setState(p => ({ ...p, status: 'loading' }));
           const [plan, history] = await Promise.all([api.getPlan(user.userId), api.getHistory(user.userId)]);
           localStorage.setItem('freedom_postgres_session', JSON.stringify(user));
-          setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, status: (user.username === 'admin' || user.isAdmin) ? (user.guide ? 'selection' : 'guide_selection') : 'keyword_check' }));
+
+          // Se vai pular a palavra-chave, recupera o accessType salvo.
+          const willSkipKeyword = !(user.username === 'admin' || user.isAdmin) && !needsKeywordCheck(user.userId);
+          const recoveredUser = willSkipKeyword
+            ? { ...user, accessType: getStoredAccessType(user.userId) }
+            : user;
+
+          setState(p => ({ ...p, user: recoveredUser, studyPlan: plan, activityHistory: history, status: resolvePostLoginStatus(user) }));
         }} />}
         {state.status === 'keyword_check' && (
-          <KeywordScreen onSuccess={(accessType) => { if (state.user) { const updatedUser = { ...state.user, accessType }; setState(p => ({ ...p, user: updatedUser, status: updatedUser.guide ? 'selection' : 'guide_selection' })); } }} onLogout={handleLogout} />
+          <KeywordScreen onSuccess={(accessType) => {
+            if (state.user) {
+              // Carimba a data da validação e o tipo de acesso para os próximos 30 dias.
+              localStorage.setItem(`keyword_validated_${state.user.userId}`, Date.now().toString());
+              localStorage.setItem(`keyword_access_${state.user.userId}`, accessType);
+              const updatedUser = { ...state.user, accessType };
+              setState(p => ({ ...p, user: updatedUser, status: updatedUser.guide ? 'selection' : 'guide_selection' }));
+            }
+          }} onLogout={handleLogout} />
         )}
         {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, status: 'selection' })); } }} />}
         {state.status === 'selection' && state.user && (
