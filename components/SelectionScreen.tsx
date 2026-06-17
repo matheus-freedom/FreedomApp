@@ -61,7 +61,6 @@ const LEVEL_META: Record<string, { icon: string; label: string }> = {
 const formatFR = (value: number) =>
   "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Medalhas do pódio
 const PODIUM_CONFIG: Record<number, { emoji: string; color: string; bg: string; border: string; size: string }> = {
   1: { emoji: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/50', size: 'w-14 h-14' },
   2: { emoji: '🥈', color: 'text-slate-300', bg: 'bg-slate-300/10', border: 'border-slate-300/50', size: 'w-12 h-12' },
@@ -97,6 +96,15 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   const today = new Date().toISOString().split('T')[0];
   const dailyCount = user.gamification.lastActivityDate === today ? user.gamification.dailyActivitiesCount : 0;
   const isLimitReached = !user.gamification.isPro && dailyCount >= DAILY_LIMIT;
+
+  // ── Progresso diário ─────────────────────────────────────────
+  // Percentual de 0 a 100 para a barra
+  const dailyProgressPercent = Math.min(100, Math.round((dailyCount / DAILY_LIMIT) * 100));
+  // Cor muda conforme o progresso: azul → laranja → verde (completo)
+  const dailyProgressColor =
+    dailyCount >= DAILY_LIMIT ? 'bg-green-500' :
+    dailyCount >= Math.ceil(DAILY_LIMIT * 0.5) ? 'bg-[#f7931e]' :
+    'bg-blue-400';
 
   const placementCooldownStatus = useMemo(() => {
     if (!user.gamification.lastPlacementDate) return { canTake: true, daysLeft: 0 };
@@ -173,7 +181,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
     onStart(selectedLevel!, selectedTheme!, finalTopic, voiceGender, voiceAccent);
   };
 
-  // ── Progress Bar ──────────────────────────────────────────────
+  // ── Progress Bar do Wizard (passos 1/2/3) ────────────────────
   const renderProgress = () => (
     <div className="flex items-center gap-2 mb-6">
       {[1, 2, 3].map((s) => (
@@ -287,7 +295,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
               {user.profilePhoto ? <img src={user.profilePhoto} alt="Profile" className="w-full h-full object-cover" /> : <div className={`${currentTier.color} transform scale-125`}>{currentTier.icon}</div>}
             </div>
             <div className="absolute -bottom-1 -right-1 bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded-lg text-[9px] font-black shadow-lg">LV.{currentTierIndex + 1}</div>
-            {/* Badge semanal (coroa) */}
             {user.gamification.weeklyBadge && (
               <div className="absolute -top-2 -left-2 text-xl" title={`${user.gamification.weeklyBadge.position}º lugar — ${user.gamification.weeklyBadge.weekLabel}`}>
                 {user.gamification.weeklyBadge.position === 1 ? '👑' : user.gamification.weeklyBadge.position === 2 ? '🥈' : '🥉'}
@@ -302,7 +309,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   {user.gamification.isPro && <span className="text-[8px] bg-[#f7931e] text-[#222222] px-1.5 py-0.5 rounded-md font-black">{isAdmin ? 'ADMIN' : 'PRO'}</span>}
                 </h3>
                 <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${currentTier.color}`}>{currentTier.tier}</p>
-                {/* Label do badge semanal */}
                 {user.gamification.weeklyBadge && (
                   <p className="text-[9px] font-black text-yellow-400/80 uppercase tracking-widest mt-0.5">
                     {user.gamification.weeklyBadge.position === 1 ? '👑' : user.gamification.weeklyBadge.position === 2 ? '🥈' : '🥉'} Campeão — {user.gamification.weeklyBadge.weekLabel}
@@ -393,9 +399,34 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
         {/* WIZARD */}
         <div className="lg:col-span-2">
           <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl">
-            <h3 className="text-xl font-black text-white flex items-center gap-3 mb-6 uppercase tracking-tighter">
-              <Play className="w-6 h-6 text-[#f7931e] fill-current" /> Nova Prática
-            </h3>
+
+            {/* ── Cabeçalho: título + barra de progresso diário ── */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter shrink-0">
+                <Play className="w-6 h-6 text-[#f7931e] fill-current" /> Iniciar um novo exercício
+              </h3>
+
+              {/* Barra de progresso diário — oculta para PRO/Admin */}
+              {!user.gamification.isPro && (
+                <div className="flex flex-col items-end gap-1.5 min-w-[130px]">
+                  <div className="flex items-center justify-between w-full">
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Hoje</p>
+                    <p className={`text-[11px] font-black ${dailyCount >= DAILY_LIMIT ? 'text-green-400' : 'text-white'}`}>
+                      {dailyCount}/{DAILY_LIMIT}
+                    </p>
+                  </div>
+                  <div className="w-full h-2 bg-[#333333] rounded-full overflow-hidden border border-white/5">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${dailyProgressColor} ${dailyCount >= DAILY_LIMIT ? 'shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}`}
+                      style={{ width: `${dailyProgressPercent}%` }}
+                    />
+                  </div>
+                  {dailyCount >= DAILY_LIMIT && (
+                    <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">Meta concluída! 🎉</p>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* STEP 1 — NÍVEL */}
             {wizardStep === 1 && (
@@ -596,10 +627,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           </div>
         </div>
 
-        {/* ── RANKING (antigo Leaderboard) ── */}
+        {/* ── RANKING ── */}
         <div className="bg-[#2a2a2a] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-xl flex flex-col">
-
-          {/* Header */}
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
               <Trophy className="w-5 h-5 text-yellow-400" /> Ranking
@@ -612,18 +641,14 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             </select>
           </div>
 
-          {/* Label do período */}
           <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-4">
             {leaderboardFilter === 'Weekly' ? 'XP acumulado nesta semana' : leaderboardFilter === 'Monthly' ? 'XP acumulado neste mês' : 'XP acumulado neste ano'}
           </p>
 
-          {/* Pódio — Top 3 */}
           {leaderboardUsers.filter(u => u.periodXp > 0).length >= 3 && (
             <div className="flex items-end justify-center gap-3 mb-6 px-2">
-              {/* 2º lugar */}
               {leaderboardUsers[1] && leaderboardUsers[1].periodXp > 0 && (() => {
-                const u = leaderboardUsers[1];
-                const cfg = PODIUM_CONFIG[2];
+                const u = leaderboardUsers[1]; const cfg = PODIUM_CONFIG[2];
                 return (
                   <div className="flex flex-col items-center gap-2 flex-1">
                     <span className="text-lg">🥈</span>
@@ -640,11 +665,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   </div>
                 );
               })()}
-
-              {/* 1º lugar */}
               {leaderboardUsers[0] && leaderboardUsers[0].periodXp > 0 && (() => {
-                const u = leaderboardUsers[0];
-                const cfg = PODIUM_CONFIG[1];
+                const u = leaderboardUsers[0]; const cfg = PODIUM_CONFIG[1];
                 return (
                   <div className="flex flex-col items-center gap-2 flex-1">
                     <span className="text-xl">👑</span>
@@ -661,11 +683,8 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   </div>
                 );
               })()}
-
-              {/* 3º lugar */}
               {leaderboardUsers[2] && leaderboardUsers[2].periodXp > 0 && (() => {
-                const u = leaderboardUsers[2];
-                const cfg = PODIUM_CONFIG[3];
+                const u = leaderboardUsers[2]; const cfg = PODIUM_CONFIG[3];
                 return (
                   <div className="flex flex-col items-center gap-2 flex-1">
                     <span className="text-lg">🥉</span>
@@ -685,7 +704,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             </div>
           )}
 
-          {/* Lista completa */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 max-h-[280px]">
             {leaderboardUsers.length === 0 || leaderboardUsers.every(u => u.periodXp === 0) ? (
               <div className="text-center py-8 space-y-2">
@@ -724,7 +742,6 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
             )}
           </div>
 
-          {/* Footer */}
           <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
             {userRank > 0 && leaderboardUsers[userRank - 1]?.periodXp > 0 && (
               <p className="text-center text-[10px] font-black text-gray-500 uppercase">
