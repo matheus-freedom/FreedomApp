@@ -21,9 +21,9 @@ const { getStorage } = require("firebase-admin/storage");
 // ── Constantes do nivelamento (espelham as da fundação types.ts) ──
 // Repetidas aqui porque a função roda em Node puro e não importa o
 // bundle do front. Se mudar na fundação, mudar aqui também.
-const QUESTIONS_PER_LEVEL = 5;
+const QUESTIONS_PER_LEVEL = 10;
 const LEVEL_ORDER = ["A1", "A2", "B1", "B2", "C1"];
-const TOTAL_QUESTIONS = QUESTIONS_PER_LEVEL * LEVEL_ORDER.length; // 25
+const TOTAL_QUESTIONS = QUESTIONS_PER_LEVEL * LEVEL_ORDER.length; // 50
 
 // ── Inicialização do Firebase Admin (idêntico ao molde do LPG) ──
 const initFirebase = () => {
@@ -114,8 +114,8 @@ const generateAndUploadAudio = async (ai, bucket, script, jobId, level) => {
 const buildQuestionsPrompt = (skill) => {
   const base = `You are an expert CEFR English examiner. Generate a placement test for the "${skill}" skill.
 Produce EXACTLY ${TOTAL_QUESTIONS} multiple-choice questions: ${QUESTIONS_PER_LEVEL} per CEFR level, in this order: ${LEVEL_ORDER.join(", ")}.
-Difficulty MUST increase strictly with the level. A1 = very basic, C1 = advanced/nuanced.
-Each question has exactly 4 options and one correct answer.
+Difficulty MUST increase strictly and NOTICEABLY with the level. A1 = very basic, C1 = advanced/nuanced. A student at level X should find level X+1 clearly harder.
+Each question has exactly 4 options and one correct answer. The 3 wrong options must be plausible distractors, not obviously wrong.
 
 Return ONLY valid JSON (no markdown, no backticks) in this shape:
 {
@@ -123,7 +123,6 @@ Return ONLY valid JSON (no markdown, no backticks) in this shape:
     {
       "level": "A1",
       "question": "the question in ENGLISH",
-      "questionPT": "tradução do enunciado em português quando ajudar",
       "options": ["opt1","opt2","opt3","opt4"],
       "correctAnswerIndex": 0,
       "explanation": "explicação da resposta correta em PORTUGUÊS BRASILEIRO"
@@ -132,13 +131,35 @@ Return ONLY valid JSON (no markdown, no backticks) in this shape:
 }`;
 
   if (skill === "grammar") {
-    return base + `\nFocus on grammar and usage: tenses, articles, prepositions, conditionals, etc., scaling by level.`;
+    return base + `
+
+This is a GRAMMAR test. CRITICAL REQUIREMENTS:
+- Within EACH level, the ${QUESTIONS_PER_LEVEL} questions MUST cover AT LEAST 8 DIFFERENT grammar topics. Do NOT repeat the same tense or structure across most questions — variety is mandatory. Spread the questions across the topics listed for that level.
+- Use the CEFR grammar progression below. Each level must test structures from ITS OWN band, clearly harder than the previous level:
+
+A1 (basic): verb "to be", present simple, articles (a/an/the), personal pronouns, possessive adjectives, plural nouns, demonstratives (this/that/these/those), prepositions of place (in/on/at), "there is/there are", basic question words (what/where/who).
+
+A2 (elementary): past simple (regular & irregular), present continuous, "going to" future, comparatives and superlatives, countable/uncountable (some/any/much/many), adverbs of frequency, "have to"/"must" (obligation), prepositions of time, object pronouns, "like/love/hate + -ing".
+
+B1 (intermediate): present perfect (for/since/ever/never), past continuous vs past simple, first conditional, "will" vs "going to", modal verbs (should/could/might), reported speech (basic), relative clauses (who/which/that), used to, question tags, "too/enough".
+
+B2 (upper-intermediate): second and third conditionals, passive voice (all tenses), present perfect continuous, past perfect, modals of deduction (must/can't/might have), reported speech (full), relative clauses (defining/non-defining), gerunds vs infinitives, "wish/if only", causative "have/get something done".
+
+C1 (advanced): mixed conditionals, inversion (hardly/no sooner/not only), cleft sentences (it was... / what... ), advanced modals and speculation, subjunctive, participle clauses, ellipsis and substitution, nuanced use of articles, complex passive and reporting structures, discourse markers and cohesion.
+
+Make the C1 questions genuinely challenging even for advanced learners. Make A1 genuinely easy for beginners. The jump in difficulty between bands must be obvious.`;
   }
+
   if (skill === "reading") {
-    return base + `\nThis is a READING test. For EACH level, write a short reading passage appropriate to that level, and base that level's 5 questions on it. Put the passage text in a "readingText" field on EACH of the 5 questions of that level (same text repeated for the 5). Questions test comprehension, inference and vocabulary in context.`;
+    return base + `
+
+This is a READING test. For EACH level, write a short reading passage appropriate to that level (longer and more complex as the level rises), and base that level's ${QUESTIONS_PER_LEVEL} questions on it. Put the passage text in a "readingText" field on EACH of the ${QUESTIONS_PER_LEVEL} questions of that level (same text repeated). Questions test comprehension, inference and vocabulary in context, getting harder by level.`;
   }
+
   // listening
-  return base + `\nThis is a LISTENING test. For EACH level, write a short spoken-style script (a monologue or short dialogue) appropriate to that level, and base that level's 5 questions on it. Put the script in a "listeningScript" field on EACH of the 5 questions of that level (same script repeated for the 5). The student will HEAR this script (not read it). Questions test listening comprehension: detail, gist, inference.`;
+  return base + `
+
+This is a LISTENING test. For EACH level, write a short spoken-style script (a monologue or short dialogue) appropriate to that level (longer and more natural/faster as the level rises), and base that level's ${QUESTIONS_PER_LEVEL} questions on it. Put the script in a "listeningScript" field on EACH of the ${QUESTIONS_PER_LEVEL} questions of that level (same script repeated). The student will HEAR this script (not read it). Questions test listening comprehension: detail, gist, inference.`;
 };
 
 const buildWritingPrompt = () => {
