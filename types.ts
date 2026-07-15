@@ -49,7 +49,7 @@ export enum PlacementSkill {
 // solto espalhado pelo código é a receita para descasamento.
 
 // Quantas questões por nível CEFR dentro de cada habilidade.
-export const QUESTIONS_PER_LEVEL = 5;
+export const QUESTIONS_PER_LEVEL = 10;
 
 // Percentual mínimo de acerto para avançar ao próximo nível (80%).
 export const PLACEMENT_PASS_THRESHOLD = 0.8;
