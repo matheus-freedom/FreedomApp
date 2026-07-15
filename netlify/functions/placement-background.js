@@ -172,10 +172,51 @@ Return ONLY valid JSON (no markdown) in this shape:
 }`;
 };
 
-// ── Extrai JSON de forma tolerante (remove cercas se vierem) ────
+// ── Extrai JSON de forma tolerante e reparadora ────────────────
+// LLMs às vezes devolvem JSON levemente quebrado (vírgula final,
+// texto antes/depois, cercas de markdown). Esta função tenta o
+// parse direto e, se falhar, aplica reparos comuns antes de desistir.
 const parseJson = (text) => {
-  const clean = String(text || "").replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  let clean = String(text || "").replace(/```json|```/g, "").trim();
+
+  // 1ª tentativa: parse direto.
+  try {
+    return JSON.parse(clean);
+  } catch (e) { /* segue para reparo */ }
+
+  // Reparo: recorta do primeiro { ao último } (remove lixo em volta).
+  const firstBrace = clean.indexOf("{");
+  const lastBrace = clean.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    clean = clean.slice(firstBrace, lastBrace + 1);
+  }
+
+  // Reparo: remove vírgulas finais antes de } ou ] (trailing commas).
+  clean = clean.replace(/,\s*([}\]])/g, "$1");
+
+  // 2ª tentativa após reparos.
+  try {
+    return JSON.parse(clean);
+  } catch (e) {
+    // 3ª tentativa: tenta recuperar apenas o array "questions" completo,
+    // truncando na última questão bem-formada (fecha em "}" seguido de "]").
+    const qStart = clean.indexOf('"questions"');
+    if (qStart >= 0) {
+      const arrStart = clean.indexOf("[", qStart);
+      if (arrStart >= 0) {
+        // Encontra o último "}" antes de um "]" ou fim — fecha o array ali.
+        const lastObj = clean.lastIndexOf("}");
+        if (lastObj > arrStart) {
+          const salvaged = clean.slice(arrStart, lastObj + 1) + "]";
+          try {
+            const arr = JSON.parse(salvaged);
+            if (Array.isArray(arr)) return { questions: arr };
+          } catch (e2) { /* desiste */ }
+        }
+      }
+    }
+    throw e;
+  }
 };
 
 // ── Handler ────────────────────────────────────────────────────
@@ -237,16 +278,39 @@ exports.handler = async (event) => {
       let allQuestions = [];
       for (let li = 0; li < LEVEL_ORDER.length; li++) {
         const level = LEVEL_ORDER[li];
-        const resp = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: buildLevelQuestionsPrompt(skill, level),
-          config: {
-            responseMimeType: "application/json",
-            maxOutputTokens: 8192,
-          },
-        });
-        const data = parseJson(resp.text);
-        let levelQs = Array.isArray(data.questions) ? data.questions : [];
+
+        // Retry: até 3 tentativas por nível. LLM pode devolver JSON
+        // quebrado; em vez de derrubar o teste inteiro, tenta de novo.
+        let levelQs = [];
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const resp = await ai.models.generateContent({
+              model: "gemini-3.5-flash",
+              contents: buildLevelQuestionsPrompt(skill, level),
+              config: {
+                responseMimeType: "application/json",
+                maxOutputTokens: 8192,
+              },
+            });
+            const data = parseJson(resp.text);
+            const parsed = Array.isArray(data.questions) ? data.questions : [];
+            // Só aceita se veio uma quantidade razoável (>= metade do pedido).
+            if (parsed.length >= Math.ceil(QUESTIONS_PER_LEVEL / 2)) {
+              levelQs = parsed;
+              break;
+            }
+            lastErr = new Error(`Nível ${level}: veio só ${parsed.length} questões.`);
+          } catch (e) {
+            lastErr = e;
+          }
+        }
+
+        // Se após 3 tentativas ainda falhou, aborta a geração inteira
+        // com erro claro (melhor que gravar um banco incompleto).
+        if (levelQs.length === 0) {
+          throw new Error(`Falha ao gerar o nível ${level} após 3 tentativas. ${lastErr?.message || ""}`);
+        }
 
         // Normaliza, forçando o nível correto (o desta iteração).
         levelQs = levelQs.slice(0, QUESTIONS_PER_LEVEL).map((q) => ({
