@@ -274,7 +274,7 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
       {currentQuestion && (
         <div className="w-full space-y-6">
           <h3 className="text-2xl md:text-3xl font-black text-white leading-tight">{currentQuestion.question}</h3>
-          {currentQuestion.questionPT && (
+          {currentQuestion.questionPT && skill !== PlacementSkill.Grammar && (
             <p className="text-sm text-gray-500 italic font-medium">{currentQuestion.questionPT}</p>
           )}
 
