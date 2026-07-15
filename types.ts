@@ -79,8 +79,16 @@ export interface PlacementQuestion {
   explanation: string;
   // Campos opcionais para reading/listening, que precisam de suporte
   readingText?: string;         // Texto-base (reading)
-  listeningScript?: string;     // Roteiro do áudio (listening)
-  audioData?: string;           // Áudio gerado (listening)
+  listeningScript?: string;     // Roteiro do áudio (listening) — usado
+                                // na GERAÇÃO do TTS, não exibido ao aluno
+  audioUrl?: string;            // URL pública do áudio no Firebase Storage
+                                // (listening). NÃO guardamos o áudio em
+                                // base64 aqui: passaria do teto de 1MB do
+                                // Firestore. O TTS é gerado uma vez por
+                                // variação, sobe pro Storage, e a questão
+                                // guarda só a URL (mesmo padrão das imagens
+                                // do LPG). Custo de IA fixo por variação,
+                                // não por aluno.
 }
 
 // ── Uma variação completa de uma habilidade no trimestre ──────
