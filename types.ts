@@ -310,7 +310,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -328,6 +328,9 @@ export interface AppState {
   activeChatUserId?: string | null;
   // ── Novo: habilidade sendo testada quando o hub abre um teste ──
   activePlacementSkill?: PlacementSkill | null;
+  // ── Novo: resultado a exibir na tela de resultado do nivelamento ──
+  placementResultLevel?: Level | null;
+  placementResultScore?: number | null;
 }
 
 export interface StudyPlanInput {
