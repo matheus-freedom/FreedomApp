@@ -1,856 +1,407 @@
-import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
-import { auth, db, storage } from './firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit, runTransaction } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+export enum Level {
+  A1 = 'A1',
+  A2 = 'A2',
+  B1 = 'B1',
+  B2 = 'B2',
+  C1 = 'C1',
+}
 
-// ── Helpers de período ────────────────────────────────────────
+export enum Theme {
+  Grammar = 'Gramática',
+  Vocabulary = 'Vocabulário',
+  Business = 'Business',
+  Reading = 'Reading',
+  Listening = 'Listening',
+  Writing = 'Escrita',
+}
 
-// Retorna a chave da semana ISO: "2026-W18"
-const getWeekKey = (date: Date = new Date()): string => {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
-};
+export enum UserTier {
+  Starter = 'Freedom Starter',
+  Warrior = 'Freedom Warrior',
+  Genius = 'Freedom Genius',
+  Pro = 'Freedom Pro',
+  Legend = 'Freedom Legend',
+}
 
-// Retorna a chave do mês: "2026-04"
-const getMonthKey = (date: Date = new Date()): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-// Retorna a chave do ano: "2026"
-const getYearKey = (date: Date = new Date()): string =>
-  `${date.getFullYear()}`;
-
-// Label legível da semana: "Semana 18 • 2026"
-const getWeekLabel = (weekKey: string): string => {
-  const [year, week] = weekKey.split('-W');
-  return `Semana ${week} • ${year}`;
-};
-
-// Label legível do mês: "Abril 2026"
-const getMonthLabel = (monthKey: string): string => {
-  const [year, month] = monthKey.split('-');
-  const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  return `${months[parseInt(month) - 1]} ${year}`;
-};
-
-// Mensagens de parabéns por posição
-const getCongratulationsMessage = (position: 1 | 2 | 3, weekLabel: string, xp: number): string => {
-  const xpFormatted = xp.toLocaleString('pt-BR');
-  if (position === 1) {
-    return `🏆 Você foi o CAMPEÃO da ${weekLabel}! Incrível — você acumulou ${xpFormatted} XP e liderou todos os alunos da Freedom. Sua dedicação é inspiradora. Continue assim e conquiste mais uma semana no topo! 🚀`;
-  }
-  if (position === 2) {
-    return `🥈 Parabéns! Você ficou em 2º lugar na ${weekLabel}, acumulando ${xpFormatted} XP. Você foi incrível essa semana! Está muito perto do topo — mais uma semana de foco e a coroa é sua! 💪`;
-  }
-  return `🥉 Que semana fantástica! Você ficou em 3º lugar na ${weekLabel} com ${xpFormatted} XP. Seu esforço está valendo a pena — continue praticando e logo você estará no topo do ranking! ⭐`;
-};
+export enum AccessType {
+  FULL = 'full',
+  CHALLENGE_ONLY = 'challenge_only'
+}
 
 // ══════════════════════════════════════════════════════════════
-// NIVELAMENTO POR HABILIDADE — helpers e constantes
+// NIVELAMENTO POR HABILIDADE — fundação de dados (Etapa 1)
 // ══════════════════════════════════════════════════════════════
 
-// Custo em Freedom Reais (FR$) para refazer UMA habilidade dentro
-// do período de cooldown. A primeira vez de cada habilidade é grátis.
-const PLACEMENT_RETAKE_COST = 10;
+// As quatro habilidades independentes do nivelamento. Enum própria
+// (em vez de reusar Theme) porque o nivelamento tem um conjunto
+// FECHADO e específico — misturar com os temas de prática livre
+// abriria porta para uma habilidade inválida vazar para o teste.
+export enum PlacementSkill {
+  Grammar = 'grammar',
+  Reading = 'reading',
+  Listening = 'listening',
+  Writing = 'writing',
+}
 
-// Dias que uma habilidade fica "bloqueada" para reteste gratuito
-// após ser feita. Cada habilidade tem seu próprio ciclo.
-const PLACEMENT_SKILL_COOLDOWN_DAYS = 30;
+// ── Constantes centrais do nivelamento ────────────────────────
+// Centralizadas aqui para que uma mudança de regra (ex: trocar 80%
+// por 75%) aconteça em UM lugar só, e o app inteiro obedeça. Número
+// solto espalhado pelo código é a receita para descasamento.
 
-// Retorna a chave do trimestre de calendário fixo: "2026-Q3".
-// Jan-Mar = Q1, Abr-Jun = Q2, Jul-Set = Q3, Out-Dez = Q4.
-// É a chave que agrupa as variações do banco de perguntas: todas
-// as questões geradas no mesmo trimestre compartilham esta chave,
-// e o conteúdo se renova naturalmente quando o trimestre vira.
-const getQuarterKey = (date: Date = new Date()): string => {
-  const quarter = Math.floor(date.getMonth() / 3) + 1; // 0-2→1, 3-5→2, etc.
-  return `${date.getFullYear()}-Q${quarter}`;
+// Quantas questões por nível CEFR dentro de cada habilidade.
+export const QUESTIONS_PER_LEVEL = 10;
+
+// Percentual mínimo de acerto para avançar ao próximo nível (80%).
+export const PLACEMENT_PASS_THRESHOLD = 0.8;
+
+// Quantas variações de prova cada habilidade tem por trimestre.
+// O aluno recebe uma sorteada, o que reduz a chance de colagem.
+export const PLACEMENT_VARIATIONS_PER_SKILL = 3;
+
+// A ordem crescente de dificuldade dos níveis dentro do teste.
+// O teste começa em A1 e sobe até C1, parando quando o aluno não
+// atinge o PLACEMENT_PASS_THRESHOLD no nível atual.
+export const PLACEMENT_LEVEL_ORDER: Level[] = [
+  Level.A1, Level.A2, Level.B1, Level.B2, Level.C1,
+];
+
+// ── Uma questão do banco de nivelamento ───────────────────────
+// Carrega o nível CEFR a que pertence, para o front saber a qual
+// bloco de 5 ela corresponde. Para writing, o banco usa o campo
+// writingPrompt do PlacementBankEntry em vez de uma lista destas.
+export interface PlacementQuestion {
+  id: number;
+  level: Level;                 // A qual nível CEFR esta questão pertence
+  question: string;
+  questionPT?: string;          // Enunciado em português, quando útil
+  options: string[];
+  correctAnswerIndex: number;
+  explanation: string;
+  // Campos opcionais para reading/listening, que precisam de suporte
+  readingText?: string;         // Texto-base (reading)
+  listeningScript?: string;     // Roteiro do áudio (listening) — usado
+                                // na GERAÇÃO do TTS, não exibido ao aluno.
+                                // Cinco questões do mesmo nível compartilham
+                                // UM áudio; a URL dele mora em
+                                // PlacementBankEntry.levelAudios, não aqui.
+}
+
+// ── Uma variação completa de uma habilidade no trimestre ──────
+// É o documento salvo na coleção 'placement_bank' do Firestore.
+// O id é determinístico: skill_trimestre_variação (ex:
+// "grammar_2026-Q3_v1"), o que evita duplicatas e permite leitura
+// direta. Para as três habilidades de múltipla escolha, 'questions'
+// traz as 25 questões (5 por nível). Para writing, 'questions' fica
+// vazio e usa-se 'writingPrompt'/'writingPromptPT'.
+export interface PlacementBankEntry {
+  id: string;                   // skill_quarterKey_vN
+  skill: PlacementSkill;
+  quarterKey: string;           // Ex: "2026-Q3"
+  variation: number;            // 1, 2 ou 3
+  questions: PlacementQuestion[];   // 25 para MC; vazio para writing
+  writingPrompt?: string;       // Enunciado de writing (em inglês)
+  writingPromptPT?: string;     // Enunciado de writing (em português)
+  // ── Áudios do listening, um por nível CEFR ────────────────
+  // Usado SÓ por listening. Cada nível tem UM áudio, e as 5
+  // questões daquele nível se referem a ele. Chave = nível
+  // (ex: "A1", "B2"), valor = URL pública no Firebase Storage.
+  // Fica aqui (não na questão) porque o áudio é do bloco de
+  // nível, não de cada questão — evita repetir a mesma URL 5x
+  // e deixa a intenção clara. As outras 3 habilidades ignoram
+  // este campo. Reduz o TTS de 25 para 5 gerações por variação.
+  levelAudios?: { [level: string]: string };
+  createdAt: number;            // timestamp de geração
+}
+
+// ── Resultado de UMA habilidade para um aluno ─────────────────
+// Guarda o nível atingido e a pontuação, mais o completedAt que é
+// a base do cooldown de 30 dias INDEPENDENTE por habilidade.
+export interface SkillPlacementResult {
+  skill: PlacementSkill;
+  level: Level;                 // Nível classificado nesta habilidade
+  score: number;                // Pontuação final (0-100 ou nº de acertos)
+  completedAt: number;          // timestamp — base do cooldown de 30 dias
+  variationUsed?: number;       // Qual variação o aluno respondeu
+  // ── Checkpoint de retomada (regra dos 6 meses) ────────────
+  // Nível de onde o PRÓXIMO teste desta habilidade deve começar,
+  // desde que o aluno não tenha passado 6 meses sem nivelar nada
+  // (aí o relógio global reseta tudo para A1 — ver lastAnyPlacementAt).
+  // Ex: travou em B2 e foi classificado B1 → resumeFromLevel = B2.
+  // Se travou já no A1 → resumeFromLevel = A1 (o chão do sistema).
+  resumeFromLevel?: Level;
+}
+
+// ── Mapa de resultados por habilidade ─────────────────────────
+// Indexado pela PlacementSkill. Uma habilidade AUSENTE do mapa
+// significa "nunca nivelada" — é assim que o app sabe que a
+// primeira vez daquela habilidade é gratuita.
+export type PlacementResults = {
+  [skill in PlacementSkill]?: SkillPlacementResult;
 };
 
-// Monta o ID de um documento do banco de perguntas de forma
-// determinística: sempre a mesma habilidade + trimestre + variação
-// gera o mesmo ID. Isso evita duplicatas e facilita a leitura direta.
-const buildBankId = (skill: PlacementSkill, quarterKey: string, variation: number): string =>
-  `${skill}_${quarterKey}_v${variation}`;
+export type VoiceGender = 'Male' | 'Female';
+export type VoiceAccent = 'American' | 'British' | 'Australian' | 'Indian';
 
-const INITIAL_GAMIFICATION: UserGamification = {
-  xp: 0, frBalance: 0, streak: 0, lastLoginDate: null, dailyXpEarned: 0,
-  lastXpGainDate: null, dailyActivitiesCount: 0, lastActivityDate: null,
-  isPro: false, dailyChatCount: 0, lastChatDate: null, followers: [],
-  following: [], followRequests: [], totalActivities: 0,
-  // Novos campos de período
-  weeklyXp: 0, monthlyXp: 0, yearlyXp: 0,
-  weeklyActivities: 0, monthlyActivities: 0,
-  lastWeekKey: null, lastMonthKey: null, lastYearKey: null,
-  weeklyBadge: null,
-  // Novo: nivelamento por habilidade (mapa vazio = nada nivelado ainda)
-  placementResults: {},
-};
+export interface QuizQuestion {
+  id: number;
+  question: string;
+  questionPT?: string; 
+  options: string[];
+  correctAnswerIndex: number;
+  explanation: string;
+  questionImage?: string;
+}
 
-const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
+export interface WritingFeedback {
+  score: number;
+  feedback: string;
+  annotatedHtml: string;
+  suggestions: string[];
+  recommendedTopics: string[];
+}
 
-// ── Função para garantir campos novos em usuários antigos ─────
-const ensureNewFields = (gamification: UserGamification): UserGamification => ({
-  ...INITIAL_GAMIFICATION,
-  ...gamification,
-  weeklyXp: gamification.weeklyXp ?? 0,
-  monthlyXp: gamification.monthlyXp ?? 0,
-  yearlyXp: gamification.yearlyXp ?? 0,
-  weeklyActivities: gamification.weeklyActivities ?? 0,
-  monthlyActivities: gamification.monthlyActivities ?? 0,
-  lastWeekKey: gamification.lastWeekKey ?? null,
-  lastMonthKey: gamification.lastMonthKey ?? null,
-  lastYearKey: gamification.lastYearKey ?? null,
-  weeklyBadge: gamification.weeklyBadge ?? null,
-  // Nivelamento por habilidade: preserva o existente ou inicia vazio
-  placementResults: gamification.placementResults ?? {},
-});
+export interface GeneratedContent {
+  readingText?: string;
+  listeningScript?: string;
+  audioData?: string;
+  imageData?: string;
+  writingPrompt?: string;
+  writingPromptPT?: string;
+  questions: QuizQuestion[];
+  voiceConfig?: {
+    gender: VoiceGender;
+    accent: VoiceAccent;
+  };
+}
 
-export const api = {
-  subscribeToAuthChanges: (callback: (user: any) => void) => {
-    return onAuthStateChanged(auth, callback);
-  },
+// ── Novo: entrada do Top 3 em um snapshot de ranking ──────────
+export interface RankingEntry {
+  userId: string;
+  username: string;
+  fullName: string;
+  profilePhoto?: string;
+  xp: number;
+  activitiesCount: number;
+  position: 1 | 2 | 3;
+}
 
-  getUserProfile: async (uid: string): Promise<UserSession | null> => {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data() as UserSession;
-      // Garante que usuários antigos tenham os novos campos
-      data.gamification = ensureNewFields(data.gamification);
+// ── Novo: snapshot salvo ao virar semana ou mês ───────────────
+export interface RankingSnapshot {
+  id: string;
+  period: 'weekly' | 'monthly';
+  label: string;        // Ex: "Semana 18/2026" ou "Abril 2026"
+  startDate: string;    // YYYY-MM-DD
+  endDate: string;      // YYYY-MM-DD
+  top3: RankingEntry[];
+  savedAt: number;      // timestamp
+}
 
-      // ── Atualiza streak de login ──────────────────────────
-      const today = new Date().toISOString().split('T')[0];
-      const lastLogin = data.gamification.lastLoginDate;
+// ── Novo: badge semanal do usuário ────────────────────────────
+export interface WeeklyBadge {
+  position: 1 | 2 | 3;
+  weekLabel: string;    // Ex: "Semana 18/2026"
+  xp: number;
+  awardedAt: number;    // timestamp
+}
 
-      if (lastLogin !== today) {
-        const lastLoginDate = lastLogin ? new Date(lastLogin) : null;
-        const todayDate = new Date(today);
-        const diffDays = lastLoginDate
-          ? Math.round((todayDate.getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24))
-          : null;
+export interface UserGamification {
+  xp: number; 
+  frBalance: number; 
+  streak: number;
+  lastLoginDate: string | null;
+  dailyXpEarned: number;
+  lastXpGainDate: string | null;
+  dailyActivitiesCount: number;
+  lastActivityDate: string | null;
+  isPro: boolean;
+  lastPlacementLevel?: Level;      // LEGADO — nivelamento único antigo
+  lastPlacementDate?: number;      // LEGADO — data do nivelamento único
+  dailyChatCount: number;
+  lastChatDate: string | null;
+  followers: string[];
+  following: string[];
+  followRequests: string[];
+  totalActivities: number;
 
-        if (diffDays === 1) {
-          // Logou ontem: incrementa a ofensiva
-          data.gamification.streak = (data.gamification.streak || 0) + 1;
-        } else {
-          // Nunca logou antes ou perdeu a sequência: reinicia em 1
-          data.gamification.streak = 1;
-        }
+  // ── Novo: XP por período ──────────────────────────────────
+  weeklyXp: number;           // XP acumulado na semana atual
+  monthlyXp: number;          // XP acumulado no mês atual
+  yearlyXp: number;           // XP acumulado no ano atual
+  weeklyActivities: number;   // Atividades feitas na semana atual
+  monthlyActivities: number;  // Atividades feitas no mês atual
 
-        data.gamification.lastLoginDate = today;
-        await setDoc(userRef, clean(data));
-      }
+  // ── Novo: controle de reset por período ──────────────────
+  lastWeekKey: string | null;   // Ex: "2026-W18"
+  lastMonthKey: string | null;  // Ex: "2026-04"
+  lastYearKey: string | null;   // Ex: "2026"
 
-      return data;
+  // ── Novo: badge semanal (coroa) ───────────────────────────
+  weeklyBadge: WeeklyBadge | null;
+
+  // ── Novo: nivelamento por habilidade (Etapa 1) ────────────
+  // Mapa indexado por habilidade. Substitui, na prática, o
+  // lastPlacementLevel único (mantido acima como legado por
+  // compatibilidade com perfis já salvos no Firestore).
+  placementResults: PlacementResults;
+
+  // ── Novo: relógio GLOBAL de 6 meses (regra de reset A1) ───
+  // Timestamp do nivelamento mais recente do aluno em QUALQUER
+  // habilidade. É o carimbo que decide o reset global: se hoje -
+  // lastAnyPlacementAt > 6 meses, o próximo reteste de qualquer
+  // habilidade recomeça do A1 (ignora os checkpoints). Se o aluno
+  // fez qualquer nivelamento nesse período, os checkpoints valem.
+  // Ausente/undefined = nunca nivelou nada ainda.
+  lastAnyPlacementAt?: number;
+}
+
+export interface AdminNotification {
+  id: string;
+  message: string;
+  date: number;
+  read: boolean;
+  sender: string;
+}
+
+export interface UserSession {
+  userId: string;
+  username: string; 
+  userName: string; 
+  fullName: string; 
+  age: string;
+  gender: string;
+  email: string;
+  password?: string; 
+  profilePhoto?: string; 
+  guide: GuideCharacter;
+  gamification: UserGamification;
+  notifications?: AdminNotification[];
+  accessType?: AccessType;
+  isAdmin?: boolean;
+}
+
+export interface DirectMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  timestamp: number;
+  read: boolean;
+}
+
+export interface UserChallenge {
+  id: string;
+  name: string;
+  creatorId: string;
+  participantIds: string[];
+  pendingInvites: string[];
+  startDate: number;
+  endDate: number;
+  durationDays: number;
+  focus: string;
+  rules: string;
+  status: 'active' | 'closed';
+  winnerId?: string;
+  participantStats: {
+    [userId: string]: {
+      xpGained: number;
+      activitiesDone: number;
     }
-    return null;
-  },
-
-  logout: async () => { await signOut(auth); },
-
-  uploadProfilePhoto: async (userId: string, file: File): Promise<string> => {
-    const fileRef = ref(storage, `profile_photos/${userId}_${Date.now()}`);
-    await uploadBytes(fileRef, file);
-    return await getDownloadURL(fileRef);
-  },
-
-  login: async (identifier: string, password?: string): Promise<UserSession | null> => {
-    const today = new Date().toISOString().split('T')[0];
-    if (identifier.toLowerCase() === 'admin' && password === 'f1') {
-      const adminRef = doc(db, 'users', 'admin-root-id');
-      const adminSnap = await getDoc(adminRef);
-      let adminData: UserSession;
-      if (!adminSnap.exists()) {
-        adminData = {
-          userId: 'admin-root-id', username: 'admin', userName: 'Admin', fullName: 'Freedom Administrator',
-          age: '99', gender: 'Root', email: 'admin@freedom.app', guide: 'Fred',
-          gamification: { ...INITIAL_GAMIFICATION, isPro: true, lastLoginDate: today }, notifications: []
-        };
-      } else {
-        adminData = adminSnap.data() as UserSession;
-        adminData.gamification = ensureNewFields(adminData.gamification);
-        adminData.username = 'admin';
-      }
-      adminData.gamification.isPro = true;
-      adminData.gamification.lastLoginDate = today;
-      await setDoc(adminRef, clean(adminData));
-      return adminData;
-    }
-    try {
-      let loginEmail = identifier;
-      if (!identifier.includes('@') || identifier.startsWith('@')) {
-        let searchUsername = identifier.toLowerCase().replace(/\s/g, '');
-        if (searchUsername === '@admin') searchUsername = 'admin';
-        const q = query(collection(db, 'users'), where('username', '==', searchUsername));
-        const snap = await getDocs(q);
-        if (snap.empty) return null;
-        loginEmail = snap.docs[0].data().email;
-      }
-      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password!);
-      return await api.getUserProfile(userCredential.user.uid);
-    } catch (e) { return null; }
-  },
-
-  isUsernameTaken: async (username: string): Promise<boolean> => {
-    const normalized = username.toLowerCase();
-    if (normalized === '@tester') return true;
-    let searchUsername = normalized;
-    if (searchUsername === '@admin') searchUsername = 'admin';
-    const q = query(collection(db, 'users'), where('username', '==', searchUsername));
-    const snap = await getDocs(q);
-    return !snap.empty;
-  },
-
-  register: async (userData: { username: string, fullName: string, age: string, gender: string, email: string, password?: string, profilePhoto?: string | File }): Promise<UserSession> => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password || '123456');
-      const uid = userCredential.user.uid;
-      const firstName = userData.fullName.split(' ')[0] || userData.username.replace('@', '');
-      let finalUsername = userData.username.toLowerCase();
-      if (finalUsername === '@admin') finalUsername = 'admin';
-      
-      let finalPhotoUrl = undefined;
-      if (userData.profilePhoto instanceof File) {
-        finalPhotoUrl = await api.uploadProfilePhoto(uid, userData.profilePhoto);
-      } else if (typeof userData.profilePhoto === 'string') {
-        finalPhotoUrl = userData.profilePhoto;
-      }
-
-      const newUser: UserSession = {
-        userId: uid, username: finalUsername, userName: firstName, fullName: userData.fullName,
-        age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: finalPhotoUrl,
-        guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
-        notifications: []
-      };
-      await setDoc(doc(db, 'users', uid), clean(newUser));
-      return newUser;
-    } catch (e: any) {
-      if (e.code === 'auth/email-already-in-use') throw new Error("Já existe uma conta vinculada a este e-mail.");
-      throw e;
-    }
-  },
-
-  requestPasswordReset: async (email: string): Promise<{ success: boolean; resetToken?: string }> => {
-    try { await sendPasswordResetEmail(auth, email); return { success: true }; } catch (e) { return { success: false }; }
-  },
-
-  resetPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
-
-  admin_getAllUsers: async (): Promise<UserSession[]> => {
-    const snap = await getDocs(collection(db, 'users'));
-    return snap.docs.map(d => {
-      const data = d.data() as UserSession;
-      data.gamification = ensureNewFields(data.gamification);
-      return data;
-    });
-  },
-
-  admin_getAllPlans: async (): Promise<Record<string, StudyPlan>> => {
-    const snap = await getDocs(collection(db, 'plans'));
-    const plans: Record<string, StudyPlan> = {};
-    snap.forEach(d => plans[d.id] = d.data() as StudyPlan);
-    return plans;
-  },
-
-  admin_getUserHistory: async (userId: string): Promise<ActivityRecord[]> => {
-    const q = query(collection(db, 'history'), where('userId', '==', userId));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
-  },
-
-  admin_updateUserGamification: async (userId: string, xpDelta: number, frDelta: number): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      user.gamification = ensureNewFields(user.gamification);
-      user.gamification.xp += xpDelta;
-      user.gamification.frBalance += frDelta;
-      await setDoc(userRef, clean(user));
-    }
-  },
-
-  admin_sendNotification: async (userId: string, message: string): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      if (!user.notifications) user.notifications = [];
-      user.notifications.unshift({ id: crypto.randomUUID(), message, date: Date.now(), read: false, sender: 'Admin Freedom' });
-      await setDoc(userRef, clean(user));
-    }
-  },
-
-  markNotificationRead: async (userId: string, notificationId: string): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      if (user.notifications) {
-        const nIdx = user.notifications.findIndex(n => n.id === notificationId);
-        if (nIdx !== -1) { user.notifications[nIdx].read = true; await setDoc(userRef, clean(user)); }
-      }
-    }
-  },
-
-  saveUser: async (user: UserSession) => { await setDoc(doc(db, 'users', user.userId), clean(user)); },
-
-  updateGuide: async (userId: string, guide: GuideCharacter): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      user.guide = guide;
-      await setDoc(userRef, clean(user));
-    }
-  },
-
-  incrementActivityCount: async (userId: string): Promise<number> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
-    if (user.gamification.lastActivityDate !== today) {
-      user.gamification.dailyActivitiesCount = 1;
-      user.gamification.lastActivityDate = today;
-    } else {
-      user.gamification.dailyActivitiesCount += 1;
-    }
-    await setDoc(userRef, clean(user));
-    return user.gamification.dailyActivitiesCount;
-  },
-
-  incrementChatCount: async (userId: string): Promise<number> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
-    if (user.gamification.lastChatDate !== today) {
-      user.gamification.dailyChatCount = 1;
-      user.gamification.lastChatDate = today;
-    } else {
-      user.gamification.dailyChatCount = (user.gamification.dailyChatCount || 0) + 1;
-    }
-    await setDoc(userRef, clean(user));
-    return user.gamification.dailyChatCount;
-  },
-
-  // ── updateXp: agora registra XP por período e detecta virada ──
-  updateXp: async (userId: string, xpGain: number): Promise<{ totalXp: number, xpGained: number, frGained: number, totalFr: number }> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
-    const currentWeekKey = getWeekKey();
-    const currentMonthKey = getMonthKey();
-    const currentYearKey = getYearKey();
-
-    // ── Limite diário de 800 XP ───────────────────────────────
-    if (user.gamification.lastXpGainDate !== today) {
-      user.gamification.dailyXpEarned = 0;
-      user.gamification.lastXpGainDate = today;
-    }
-    const DAILY_XP_LIMIT = 800;
-    let actualXpGain = xpGain;
-    if (user.gamification.dailyXpEarned + xpGain > DAILY_XP_LIMIT) {
-      actualXpGain = Math.max(0, DAILY_XP_LIMIT - user.gamification.dailyXpEarned);
-    }
-
-    const frGain = actualXpGain / 100;
-
-    // ── Detecta virada de semana → salva snapshot ─────────────
-    const prevWeekKey = user.gamification.lastWeekKey;
-    if (prevWeekKey && prevWeekKey !== currentWeekKey) {
-      // Virou semana — salva snapshot e envia notificações
-      await api.saveRankingSnapshot('weekly', prevWeekKey);
-      // Zera contadores semanais
-      user.gamification.weeklyXp = 0;
-      user.gamification.weeklyActivities = 0;
-    }
-
-    // ── Detecta virada de mês → salva snapshot ────────────────
-    const prevMonthKey = user.gamification.lastMonthKey;
-    if (prevMonthKey && prevMonthKey !== currentMonthKey) {
-      await api.saveRankingSnapshot('monthly', prevMonthKey);
-      user.gamification.monthlyXp = 0;
-      user.gamification.monthlyActivities = 0;
-    }
-
-    // ── Detecta virada de ano ─────────────────────────────────
-    if (user.gamification.lastYearKey && user.gamification.lastYearKey !== currentYearKey) {
-      user.gamification.yearlyXp = 0;
-    }
-
-    // ── Atualiza todos os contadores ──────────────────────────
-    user.gamification.xp += actualXpGain;
-    user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
-    user.gamification.dailyXpEarned += actualXpGain;
-    user.gamification.weeklyXp = (user.gamification.weeklyXp || 0) + actualXpGain;
-    user.gamification.monthlyXp = (user.gamification.monthlyXp || 0) + actualXpGain;
-    user.gamification.yearlyXp = (user.gamification.yearlyXp || 0) + actualXpGain;
-    user.gamification.weeklyActivities = (user.gamification.weeklyActivities || 0) + 1;
-    user.gamification.monthlyActivities = (user.gamification.monthlyActivities || 0) + 1;
-    user.gamification.lastWeekKey = currentWeekKey;
-    user.gamification.lastMonthKey = currentMonthKey;
-    user.gamification.lastYearKey = currentYearKey;
-
-    await setDoc(userRef, clean(user));
-
-    // ── Atualiza desafios ativos ──────────────────────────────
-    const challengesSnap = await getDocs(collection(db, 'challenges'));
-    const now = Date.now();
-    challengesSnap.forEach(async (d) => {
-      const c = d.data() as UserChallenge;
-      if (c.status === 'active' && (c.participantIds || []).includes(userId)) {
-        if (now > c.endDate) {
-          c.status = 'closed';
-          const participants = (c.participantIds || []).map(pid => ({ id: pid, xp: c.participantStats[pid]?.xpGained || 0 })).sort((a, b) => b.xp - a.xp);
-          c.winnerId = participants[0]?.id;
-        } else {
-          if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
-          c.participantStats[userId].xpGained += actualXpGain;
-          c.participantStats[userId].activitiesDone += 1;
-        }
-        await setDoc(doc(db, 'challenges', c.id), clean(c));
-      }
-    });
-
-    return { totalXp: user.gamification.xp, xpGained: actualXpGain, frGained: frGain, totalFr: user.gamification.frBalance };
-  },
-
-  // ── Salva snapshot do Top 3 de um período ────────────────────
-  saveRankingSnapshot: async (period: 'weekly' | 'monthly', periodKey: string): Promise<void> => {
-    try {
-      const allUsers = await api.admin_getAllUsers();
-      
-      // Ordena pelo XP do período correto
-      const sorted = allUsers
-        .filter(u => u.username.toLowerCase() !== 'admin')
-        .map(u => ({
-          user: u,
-          periodXp: period === 'weekly' ? (u.gamification.weeklyXp || 0) : (u.gamification.monthlyXp || 0),
-          activities: period === 'weekly' ? (u.gamification.weeklyActivities || 0) : (u.gamification.monthlyActivities || 0),
-        }))
-        .filter(u => u.periodXp > 0)
-        .sort((a, b) => b.periodXp - a.periodXp || b.activities - a.activities);
-
-      if (sorted.length === 0) return;
-
-      const top3: RankingEntry[] = sorted.slice(0, 3).map((item, index) => ({
-        userId: item.user.userId,
-        username: item.user.username,
-        fullName: item.user.fullName,
-        profilePhoto: item.user.profilePhoto,
-        xp: item.periodXp,
-        activitiesCount: item.activities,
-        position: (index + 1) as 1 | 2 | 3,
-      }));
-
-      const label = period === 'weekly' ? getWeekLabel(periodKey) : getMonthLabel(periodKey);
-
-      // Calcula datas aproximadas do período
-      const now = new Date();
-      const snapshot: RankingSnapshot = {
-        id: `${period}_${periodKey}`,
-        period,
-        label,
-        startDate: periodKey,
-        endDate: now.toISOString().split('T')[0],
-        top3,
-        savedAt: Date.now(),
-      };
-
-      await setDoc(doc(db, 'ranking_snapshots', snapshot.id), clean(snapshot));
-
-      // Envia notificações e badges apenas para snapshots semanais
-      if (period === 'weekly') {
-        await api.sendRankingNotifications(top3, label);
-      }
-    } catch (e) {
-      console.error('Erro ao salvar snapshot de ranking:', e);
-    }
-  },
-
-  // ── Envia notificações e atribui badges ao Top 3 ─────────────
-  sendRankingNotifications: async (top3: RankingEntry[], weekLabel: string): Promise<void> => {
-    for (const entry of top3) {
-      try {
-        const userRef = doc(db, 'users', entry.userId);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) continue;
-
-        const user = snap.data() as UserSession;
-        user.gamification = ensureNewFields(user.gamification);
-
-        // Atribui badge semanal (coroa)
-        const badge: WeeklyBadge = {
-          position: entry.position,
-          weekLabel,
-          xp: entry.xp,
-          awardedAt: Date.now(),
-        };
-        user.gamification.weeklyBadge = badge;
-
-        // Cria notificação personalizada
-        if (!user.notifications) user.notifications = [];
-        const message = getCongratulationsMessage(entry.position, weekLabel, entry.xp);
-        user.notifications.unshift({
-          id: crypto.randomUUID(),
-          message,
-          date: Date.now(),
-          read: false,
-          sender: '🏆 Freedom Ranking',
-        });
-
-        await setDoc(userRef, clean(user));
-      } catch (e) {
-        console.error(`Erro ao notificar usuário ${entry.userId}:`, e);
-      }
-    }
-  },
-
-  // ── Busca histórico de snapshots de ranking ───────────────────
-  getRankingHistory: async (period: 'weekly' | 'monthly', limitCount: number = 12): Promise<RankingSnapshot[]> => {
-    try {
-      const q = query(
-        collection(db, 'ranking_snapshots'),
-        where('period', '==', period),
-        orderBy('savedAt', 'desc'),
-        limit(limitCount)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as RankingSnapshot);
-    } catch (e) {
-      console.error('Erro ao buscar histórico de ranking:', e);
-      return [];
-    }
-  },
-
-  // ── Leaderboard com XP real por período ──────────────────────
-  getLeaderboardData: async (filter: 'Weekly' | 'Monthly' | 'Annual'): Promise<{user: UserSession, periodXp: number, periodActivities: number}[]> => {
-    const users = await api.admin_getAllUsers();
-    
-    return users
-      .filter(u => u.username.toLowerCase() !== 'admin')
-      .map(u => {
-        let periodXp = 0;
-        let periodActivities = 0;
-
-        if (filter === 'Weekly') {
-          // Usa XP semanal real — só conta se ainda estamos na mesma semana
-          const currentWeekKey = getWeekKey();
-          if (u.gamification.lastWeekKey === currentWeekKey) {
-            periodXp = u.gamification.weeklyXp || 0;
-            periodActivities = u.gamification.weeklyActivities || 0;
-          }
-        } else if (filter === 'Monthly') {
-          const currentMonthKey = getMonthKey();
-          if (u.gamification.lastMonthKey === currentMonthKey) {
-            periodXp = u.gamification.monthlyXp || 0;
-            periodActivities = u.gamification.monthlyActivities || 0;
-          }
-        } else {
-          // Annual — usa sempre o XP total do usuário.
-          // O yearlyXp só existe desde a atualização do sistema de períodos,
-          // então usuários com XP anterior ficariam com números errados.
-          // Como o app foi lançado em 2026, XP total = XP do ano.
-          periodXp = u.gamification.xp || 0;
-          periodActivities = u.gamification.totalActivities || 0;
-        }
-
-        return { user: u, periodXp, periodActivities };
-      })
-      .sort((a, b) => b.periodXp - a.periodXp || b.periodActivities - a.periodActivities);
-  },
-
-  savePlacementResult: async (userId: string, level: Level): Promise<UserSession> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    user.gamification.lastPlacementLevel = level;
-    user.gamification.lastPlacementDate = Date.now();
-    await setDoc(userRef, clean(user));
-    return user;
-  },
-
-  // ══════════════════════════════════════════════════════════════
-  // NIVELAMENTO POR HABILIDADE (Etapa 2 — camada de dados)
-  // ══════════════════════════════════════════════════════════════
-
-  // ── Ler as variações disponíveis de uma habilidade no trimestre ──
-  // Retorna todas as variações (1-3) já geradas para a habilidade no
-  // trimestre atual. O front usa isto para: (a) saber quantas já
-  // existem, e (b) sortear uma para o aluno responder.
-  getPlacementBankEntries: async (skill: PlacementSkill): Promise<PlacementBankEntry[]> => {
-    const quarterKey = getQuarterKey();
-    const q = query(
-      collection(db, 'placement_bank'),
-      where('skill', '==', skill),
-      where('quarterKey', '==', quarterKey)
-    );
-    const snap = await getDocs(q);
-    return snap.docs
-      .map(d => d.data() as PlacementBankEntry)
-      .sort((a, b) => a.variation - b.variation);
-  },
-
-  // ── Sortear uma variação para o aluno responder ─────────────────
-  // Entre as variações prontas do trimestre, escolhe uma ao acaso.
-  // Retorna null se ainda não houver nenhuma (o front então dispara
-  // a geração via Background Function — isso vem na Etapa 3).
-  getRandomPlacementVariation: async (skill: PlacementSkill): Promise<PlacementBankEntry | null> => {
-    const entries = await api.getPlacementBankEntries(skill);
-    if (entries.length === 0) return null;
-    const idx = Math.floor(Math.random() * entries.length);
-    return entries[idx];
-  },
-
-  // ── Verificar se o banco de uma habilidade precisa de mais variações ──
-  // Regra de "preenchimento gradual": enquanto houver menos de 3
-  // variações no trimestre, o próximo nivelamento daquela habilidade
-  // deve gerar mais uma. Retorna o número da próxima variação a gerar
-  // (1, 2 ou 3) ou null se as três já existem.
-  getNextVariationToGenerate: async (skill: PlacementSkill): Promise<number | null> => {
-    const entries = await api.getPlacementBankEntries(skill);
-    if (entries.length >= PLACEMENT_VARIATIONS_PER_SKILL) return null;
-    // A próxima variação é o menor número de 1..3 ainda ausente
-    const existing = new Set(entries.map(e => e.variation));
-    for (let v = 1; v <= PLACEMENT_VARIATIONS_PER_SKILL; v++) {
-      if (!existing.has(v)) return v;
-    }
-    return null;
-  },
-
-  // ── Gravar uma variação no banco (chamada pela Background Function) ──
-  // Escreve o conjunto de questões (ou o prompt de writing) no Firestore.
-  // O ID é determinístico (skill_trimestre_variação), então regerar a
-  // mesma variação sobrescreve em vez de duplicar. Na Etapa 3, quem
-  // chama isto é a Background Function via Admin SDK; aqui deixamos a
-  // função pronta para uso a partir do cliente também, se necessário.
-  savePlacementBankEntry: async (entry: PlacementBankEntry): Promise<void> => {
-    const id = entry.id || buildBankId(entry.skill, entry.quarterKey, entry.variation);
-    const ref = doc(db, 'placement_bank', id);
-    await setDoc(ref, clean({ ...entry, id }));
-  },
-
-  // ── Estado de nivelamento de uma habilidade para um usuário ─────
-  // Retorna se o aluno pode fazer a habilidade de graça, se precisa
-  // pagar (dentro do cooldown de 30 dias), e os dados do último
-  // resultado. É o que o dashboard da Etapa 4 usa para pintar cada
-  // habilidade em um dos três estados (nunca feita / paga / livre).
-  getSkillPlacementStatus: (user: UserSession, skill: PlacementSkill): {
-    state: 'never' | 'cooldown' | 'free_again';
-    result: SkillPlacementResult | null;
-    daysLeft: number;
-    retakeCost: number;
-  } => {
-    const results = user.gamification.placementResults || {};
-    const result = results[skill] || null;
-    if (!result) {
-      return { state: 'never', result: null, daysLeft: 0, retakeCost: 0 };
-    }
-    const daysSince = (Date.now() - result.completedAt) / (1000 * 60 * 60 * 24);
-    if (daysSince >= PLACEMENT_SKILL_COOLDOWN_DAYS) {
-      return { state: 'free_again', result, daysLeft: 0, retakeCost: 0 };
-    }
-    return {
-      state: 'cooldown',
-      result,
-      daysLeft: Math.ceil(PLACEMENT_SKILL_COOLDOWN_DAYS - daysSince),
-      retakeCost: PLACEMENT_RETAKE_COST,
-    };
-  },
-
-  // ── Salvar o resultado de UMA habilidade ────────────────────────
-  // Grava o nível atingido, pontuação e timestamp (base do cooldown).
-  // Usa transação para não sobrescrever, por engano, resultados de
-  // outras habilidades gravados quase ao mesmo tempo.
-  saveSkillPlacementResult: async (
-    userId: string,
-    skill: PlacementSkill,
-    result: SkillPlacementResult
-  ): Promise<UserSession> => {
-    const userRef = doc(db, 'users', userId);
-    return await runTransaction(db, async (tx) => {
-      const snap = await tx.get(userRef);
-      if (!snap.exists()) throw new Error("Usuário não encontrado.");
-      const user = snap.data() as UserSession;
-      user.gamification = ensureNewFields(user.gamification);
-      const results = { ...(user.gamification.placementResults || {}) };
-      results[skill] = result;
-      user.gamification.placementResults = results;
-      tx.set(userRef, clean(user));
-      return user;
-    });
-  },
-
-  // ── Cobrar FR$10 para refazer uma habilidade (ATÔMICO) ──────────
-  // Desconta o saldo SOMENTE se houver saldo suficiente, numa única
-  // transação indivisível. Retorna o novo saldo em caso de sucesso.
-  // Se o saldo for insuficiente, lança erro e NADA é descontado.
-  // A validação real de "pode ou não pagar" acontece aqui e não só
-  // no front — mesmo tendo combinado validação leve no cliente, o
-  // desconto em si precisa ser atômico para nunca furar o saldo.
-  chargePlacementRetake: async (userId: string, skill: PlacementSkill): Promise<{ newBalance: number }> => {
-    const userRef = doc(db, 'users', userId);
-    return await runTransaction(db, async (tx) => {
-      const snap = await tx.get(userRef);
-      if (!snap.exists()) throw new Error("Usuário não encontrado.");
-      const user = snap.data() as UserSession;
-      user.gamification = ensureNewFields(user.gamification);
-      const balance = user.gamification.frBalance || 0;
-      if (balance < PLACEMENT_RETAKE_COST) {
-        throw new Error(`Saldo insuficiente. Você tem FR$ ${balance.toFixed(2)} e o reteste custa FR$ ${PLACEMENT_RETAKE_COST.toFixed(2)}.`);
-      }
-      user.gamification.frBalance = balance - PLACEMENT_RETAKE_COST;
-      tx.set(userRef, clean(user));
-      return { newBalance: user.gamification.frBalance };
-    });
-  },
-
-  getPlan: async (userId: string): Promise<StudyPlan | null> => {
-    const snap = await getDoc(doc(db, 'plans', userId));
-    return snap.exists() ? (snap.data() as StudyPlan) : null;
-  },
-
-  savePlan: async (userId: string, plan: StudyPlan): Promise<void> => {
-    await setDoc(doc(db, 'plans', userId), clean(plan));
-  },
-
-  deletePlan: async (userId: string): Promise<void> => {
-    await deleteDoc(doc(db, 'plans', userId));
-  },
-
-  getHistory: async (userId: string): Promise<ActivityRecord[]> => {
-    const q = query(collection(db, 'history'), where('userId', '==', userId));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
-  },
-
-  saveActivity: async (userId: string, record: ActivityRecord): Promise<void> => {
-    await setDoc(doc(db, 'history', record.id), clean({ ...record, userId }));
-  },
-
-  saveToActivityBank: async (level: Level, theme: Theme, subTopic: string, content: GeneratedContent): Promise<void> => {
-    const bankRef = collection(db, 'bank');
-    await addDoc(bankRef, clean({ level, theme, subTopic: subTopic.toLowerCase().trim(), content, createdAt: Date.now() }));
-  },
-
-  getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
-    const normalizedTopic = subTopic.toLowerCase().trim();
-    const q = query(collection(db, 'bank'), where('level', '==', level), where('theme', '==', theme), where('subTopic', '==', normalizedTopic));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const matches = snap.docs.map(d => d.data());
-    return matches[Math.floor(Math.random() * matches.length)];
-  },
-
-  cleanupExpiredActivities: async (): Promise<void> => {
-    const cutoff = Date.now() - (90 * 24 * 60 * 60 * 1000);
-    const q = query(collection(db, 'bank'), where('createdAt', '<', cutoff));
-    const snap = await getDocs(q);
-    snap.forEach(async (d) => await deleteDoc(doc(db, 'bank', d.id)));
-  },
-
-  getChallenges: async (): Promise<UserChallenge[]> => {
-    const snap = await getDocs(collection(db, 'challenges'));
-    const challenges = snap.docs.map(d => d.data() as UserChallenge);
-    const now = Date.now();
-    challenges.forEach(async (c) => {
-      if (c.status === 'active' && now > c.endDate) {
-        c.status = 'closed';
-        const participants = (c.participantIds || []).map(pid => ({ id: pid, xp: c.participantStats[pid]?.xpGained || 0 })).sort((a, b) => b.xp - a.xp);
-        c.winnerId = participants[0]?.id;
-        await setDoc(doc(db, 'challenges', c.id), clean(c));
-      }
-    });
-    return challenges;
-  },
-
-  saveChallenge: async (challenge: UserChallenge): Promise<void> => {
-    await setDoc(doc(db, 'challenges', challenge.id), clean(challenge));
-  },
-
-  getMessages: async (userId: string): Promise<DirectMessage[]> => {
-    const q1 = query(collection(db, 'messages'), where('senderId', '==', userId));
-    const q2 = query(collection(db, 'messages'), where('receiverId', '==', userId));
-    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-    const msgsMap = new Map<string, DirectMessage>();
-    snap1.forEach(d => msgsMap.set(d.id, d.data() as DirectMessage));
-    snap2.forEach(d => msgsMap.set(d.id, d.data() as DirectMessage));
-    return Array.from(msgsMap.values()).sort((a, b) => a.timestamp - b.timestamp);
-  },
-
-  sendMessage: async (msg: Omit<DirectMessage, 'id' | 'timestamp' | 'read'>): Promise<void> => {
-    const id = crypto.randomUUID();
-    await setDoc(doc(db, 'messages', id), clean({ ...msg, id, timestamp: Date.now(), read: false }));
-  },
-
-  markMessagesRead: async (userId: string, otherId: string): Promise<void> => {
-    const q = query(collection(db, 'messages'), where('senderId', '==', otherId), where('receiverId', '==', userId));
-    const snap = await getDocs(q);
-    snap.forEach(async (d) => await updateDoc(doc(db, 'messages', d.id), { read: true }));
-  },
-
-  sendFollowRequest: async (fromId: string, toId: string): Promise<void> => {
-    const userRef = doc(db, 'users', toId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      if (!user.gamification.followRequests) user.gamification.followRequests = [];
-      if (!user.gamification.followRequests.includes(fromId)) {
-        user.gamification.followRequests.push(fromId);
-        await setDoc(userRef, clean(user));
-      }
-    }
-  },
-
-  respondToFollowRequest: async (userId: string, requesterId: string, accept: boolean): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const reqRef = doc(db, 'users', requesterId);
-    const [userSnap, reqSnap] = await Promise.all([getDoc(userRef), getDoc(reqRef)]);
-    if (userSnap.exists() && reqSnap.exists()) {
-      const user = userSnap.data() as UserSession;
-      const reqUser = reqSnap.data() as UserSession;
-      user.gamification.followRequests = (user.gamification.followRequests || []).filter(id => id !== requesterId);
-      if (accept) {
-        if (!user.gamification.followers) user.gamification.followers = [];
-        if (!user.gamification.following) user.gamification.following = [];
-        if (!reqUser.gamification.followers) reqUser.gamification.followers = [];
-        if (!reqUser.gamification.following) reqUser.gamification.following = [];
-        if (!user.gamification.followers.includes(requesterId)) user.gamification.followers.push(requesterId);
-        if (!reqUser.gamification.following.includes(userId)) reqUser.gamification.following.push(userId);
-      }
-      await Promise.all([setDoc(userRef, clean(user)), setDoc(reqRef, clean(reqUser))]);
-    }
-  },
-
-  unfollow: async (userId: string, targetId: string): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const targetRef = doc(db, 'users', targetId);
-    const [userSnap, targetSnap] = await Promise.all([getDoc(userRef), getDoc(targetRef)]);
-    if (userSnap.exists() && targetSnap.exists()) {
-      const user = userSnap.data() as UserSession;
-      const targetUser = targetSnap.data() as UserSession;
-      user.gamification.following = (user.gamification.following || []).filter(id => id !== targetId);
-      targetUser.gamification.followers = (targetUser.gamification.followers || []).filter(id => id !== userId);
-      await Promise.all([setDoc(userRef, clean(user)), setDoc(targetRef, clean(targetUser))]);
-    }
-  },
-
-  admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
-};
+  };
+}
+
+export interface AppState {
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
+  user: UserSession | null;
+  level: Level | null;
+  theme: Theme | null;
+  subTopic: string | null;
+  content: GeneratedContent | null;
+  currentQuestionIndex: 0;
+  score: number;
+  errorMessage?: string;
+  studyPlan: StudyPlan | null;
+  activityHistory: ActivityRecord[];
+  activeTaskId?: string;
+  lastXpGained?: number;
+  lastFrGained?: number;
+  newTierReached?: UserTier | null;
+  activeChatUserId?: string | null;
+  // ── Novo: habilidade sendo testada quando o hub abre um teste ──
+  activePlacementSkill?: PlacementSkill | null;
+  // ── Novo: resultado a exibir na tela de resultado do nivelamento ──
+  placementResultLevel?: Level | null;
+  placementResultScore?: number | null;
+}
+
+export interface StudyPlanInput {
+  level: Level;
+  timeAvailable: string;
+  dailyAvailability?: number;
+  focusSkill: string;
+  duration: string;
+  isChallenge?: boolean;
+  customFocus?: string;
+}
+
+export interface StudyTask {
+  id: string;
+  description: string;
+  isCompleted: boolean;
+  relatedTheme?: Theme;
+  score?: number;
+  totalQuestions?: number;
+  date?: string;
+}
+
+export interface StudyDay {
+  dayName: string;
+  date?: string;
+  tasks: StudyTask[];
+}
+
+export interface StudyWeek {
+  weekNumber: number;
+  days: StudyDay[];
+}
+
+export interface StudyPlan {
+  id: string;
+  createdAt: number;
+  inputs: StudyPlanInput;
+  weeks: StudyWeek[];
+  totalTasks: number;
+  completedTasks: number;
+  isChallenge?: boolean;
+  challengeStartDate?: string;
+  challengeEndDate?: string;
+  lives?: number;
+  lastCompletedDate?: string;
+  lastPenaltyCheckDate?: string;
+}
+
+export type GuideCharacter = 'Fred' | 'Frida';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+  isActivityLink?: boolean;
+  activityParams?: {
+    level: Level;
+    theme: Theme;
+    topic: string;
+  };
+}
+
+export interface ActivityRecord {
+  id: string;
+  date: number;
+  level: Level;
+  theme: Theme;
+  topic: string;
+  score: number;
+  total: number;
+  type: 'quiz' | 'writing' | 'placement';
+  xpGained: number; 
+  frGained: number; 
+}
