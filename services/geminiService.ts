@@ -3,6 +3,9 @@ import {
   WritingFeedback, StudyPlanInput, StudyPlan, StudyWeek,
   StudyDay, StudyTask, GuideCharacter, ChatMessage
 } from '../types';
+import { db } from './firebase';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { PlacementSkill } from '../types';
 
 const FUNCTION_URL = import.meta.env.DEV
   ? "http://localhost:8888/.netlify/functions/gemini"
@@ -294,4 +297,105 @@ export const generateWritingExample = async (prompt: string, level: Level): Prom
     });
     return result.text?.trim() || "";
   } catch { return ""; }
+};
+
+// ══════════════════════════════════════════════════════════════
+// NIVELAMENTO POR HABILIDADE (Etapa 3 — disparo + polling)
+// Conversa com a Background Function placement-background:
+// gera jobId, dispara, faz polling em placement_jobs/{jobId} até
+// status "done", e devolve o bankId para o chamador ler o banco.
+// ══════════════════════════════════════════════════════════════
+
+// URL da Background Function (diferente da função síncrona 'gemini').
+const PLACEMENT_FUNCTION_URL = import.meta.env.DEV
+  ? "http://localhost:8888/.netlify/functions/placement-background"
+  : "/.netlify/functions/placement-background";
+
+// Gera um id único compatível com todos os navegadores.
+const generateJobId = (): string =>
+  Date.now().toString(36) + Math.random().toString(36).substring(2, 12);
+
+// Chave do trimestre atual — MESMA lógica do api.ts (2026-Q3).
+// Repetida aqui porque este serviço precisa dela para montar o disparo.
+const getQuarterKeyClient = (date: Date = new Date()): string => {
+  const quarter = Math.floor(date.getMonth() / 3) + 1;
+  return `${date.getFullYear()}-Q${quarter}`;
+};
+
+// ── Dispara a geração de UMA variação e aguarda por polling ──────
+// Usado quando o banco daquela habilidade ainda não tem as 3 variações
+// (preenchimento gradual). Dispara a Background Function e fica olhando
+// placement_jobs/{jobId} até o resultado. Não devolve as questões
+// diretamente — quando termina, o chamador lê do placement_bank.
+export const generatePlacementVariation = async (
+  skill: PlacementSkill,
+  variation: number,
+  onProgress?: (message: string) => void,
+  timeoutMs = 300_000 // 5 minutos — a função de background tem folga de 15
+): Promise<{ bankId: string }> => {
+  const jobId = generateJobId();
+  const quarterKey = getQuarterKeyClient();
+
+  onProgress?.("Preparando seu teste...");
+
+  // 1. Dispara a Background Function (retorna 202 quase instantâneo).
+  const response = await fetch(PLACEMENT_FUNCTION_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jobId, skill, quarterKey, variation }),
+  });
+
+  // Background functions respondem 202 (Accepted) sem corpo útil.
+  // Só checamos que o disparo foi aceito; o resultado vem pelo Firestore.
+  if (!response.ok && response.status !== 202) {
+    const err = await response.json().catch(() => ({ error: "Erro ao iniciar a geração." }));
+    throw new Error(err.error || `HTTP ${response.status}`);
+  }
+
+  // 2. Polling em placement_jobs/{jobId}.
+  const startedAt = Date.now();
+  const pollInterval = 3_000;
+
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      if (Date.now() - startedAt > timeoutMs) {
+        reject(new Error("A geração do teste demorou demais. Tente novamente."));
+        return;
+      }
+      try {
+        const jobRef = doc(db, "placement_jobs", jobId);
+        const jobSnap = await getDoc(jobRef);
+
+        if (!jobSnap.exists()) {
+          setTimeout(poll, pollInterval);
+          return;
+        }
+
+        const jobData = jobSnap.data() as any;
+
+        if (jobData.status === "working") {
+          // Ainda gerando — continua o polling sem apagar o carimbo.
+          onProgress?.("Gerando as questões do seu nível...");
+          setTimeout(poll, pollInterval);
+          return;
+        }
+
+        // Terminou (done ou error): limpa o carimbo efêmero.
+        deleteDoc(jobRef).catch(() => {});
+
+        if (jobData.status === "error") {
+          reject(new Error(jobData.error || "Erro ao gerar o teste."));
+          return;
+        }
+
+        // status === "done"
+        resolve({ bankId: jobData.bankId });
+      } catch (e) {
+        // Erro transitório de rede no polling — tenta de novo.
+        setTimeout(poll, pollInterval);
+      }
+    };
+    // Primeira checagem após 4s (dá tempo da função iniciar e carimbar).
+    setTimeout(poll, 4_000);
+  });
 };
