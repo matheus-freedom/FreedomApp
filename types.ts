@@ -28,6 +28,98 @@ export enum AccessType {
   CHALLENGE_ONLY = 'challenge_only'
 }
 
+// ══════════════════════════════════════════════════════════════
+// NIVELAMENTO POR HABILIDADE — fundação de dados (Etapa 1)
+// ══════════════════════════════════════════════════════════════
+
+// As quatro habilidades independentes do nivelamento. Enum própria
+// (em vez de reusar Theme) porque o nivelamento tem um conjunto
+// FECHADO e específico — misturar com os temas de prática livre
+// abriria porta para uma habilidade inválida vazar para o teste.
+export enum PlacementSkill {
+  Grammar = 'grammar',
+  Reading = 'reading',
+  Listening = 'listening',
+  Writing = 'writing',
+}
+
+// ── Constantes centrais do nivelamento ────────────────────────
+// Centralizadas aqui para que uma mudança de regra (ex: trocar 80%
+// por 75%) aconteça em UM lugar só, e o app inteiro obedeça. Número
+// solto espalhado pelo código é a receita para descasamento.
+
+// Quantas questões por nível CEFR dentro de cada habilidade.
+export const QUESTIONS_PER_LEVEL = 5;
+
+// Percentual mínimo de acerto para avançar ao próximo nível (80%).
+export const PLACEMENT_PASS_THRESHOLD = 0.8;
+
+// Quantas variações de prova cada habilidade tem por trimestre.
+// O aluno recebe uma sorteada, o que reduz a chance de colagem.
+export const PLACEMENT_VARIATIONS_PER_SKILL = 3;
+
+// A ordem crescente de dificuldade dos níveis dentro do teste.
+// O teste começa em A1 e sobe até C1, parando quando o aluno não
+// atinge o PLACEMENT_PASS_THRESHOLD no nível atual.
+export const PLACEMENT_LEVEL_ORDER: Level[] = [
+  Level.A1, Level.A2, Level.B1, Level.B2, Level.C1,
+];
+
+// ── Uma questão do banco de nivelamento ───────────────────────
+// Carrega o nível CEFR a que pertence, para o front saber a qual
+// bloco de 5 ela corresponde. Para writing, o banco usa o campo
+// writingPrompt do PlacementBankEntry em vez de uma lista destas.
+export interface PlacementQuestion {
+  id: number;
+  level: Level;                 // A qual nível CEFR esta questão pertence
+  question: string;
+  questionPT?: string;          // Enunciado em português, quando útil
+  options: string[];
+  correctAnswerIndex: number;
+  explanation: string;
+  // Campos opcionais para reading/listening, que precisam de suporte
+  readingText?: string;         // Texto-base (reading)
+  listeningScript?: string;     // Roteiro do áudio (listening)
+  audioData?: string;           // Áudio gerado (listening)
+}
+
+// ── Uma variação completa de uma habilidade no trimestre ──────
+// É o documento salvo na coleção 'placement_bank' do Firestore.
+// O id é determinístico: skill_trimestre_variação (ex:
+// "grammar_2026-Q3_v1"), o que evita duplicatas e permite leitura
+// direta. Para as três habilidades de múltipla escolha, 'questions'
+// traz as 25 questões (5 por nível). Para writing, 'questions' fica
+// vazio e usa-se 'writingPrompt'/'writingPromptPT'.
+export interface PlacementBankEntry {
+  id: string;                   // skill_quarterKey_vN
+  skill: PlacementSkill;
+  quarterKey: string;           // Ex: "2026-Q3"
+  variation: number;            // 1, 2 ou 3
+  questions: PlacementQuestion[];   // 25 para MC; vazio para writing
+  writingPrompt?: string;       // Enunciado de writing (em inglês)
+  writingPromptPT?: string;     // Enunciado de writing (em português)
+  createdAt: number;            // timestamp de geração
+}
+
+// ── Resultado de UMA habilidade para um aluno ─────────────────
+// Guarda o nível atingido e a pontuação, mais o completedAt que é
+// a base do cooldown de 30 dias INDEPENDENTE por habilidade.
+export interface SkillPlacementResult {
+  skill: PlacementSkill;
+  level: Level;                 // Nível classificado nesta habilidade
+  score: number;                // Pontuação final (0-100 ou nº de acertos)
+  completedAt: number;          // timestamp — base do cooldown de 30 dias
+  variationUsed?: number;       // Qual variação o aluno respondeu
+}
+
+// ── Mapa de resultados por habilidade ─────────────────────────
+// Indexado pela PlacementSkill. Uma habilidade AUSENTE do mapa
+// significa "nunca nivelada" — é assim que o app sabe que a
+// primeira vez daquela habilidade é gratuita.
+export type PlacementResults = {
+  [skill in PlacementSkill]?: SkillPlacementResult;
+};
+
 export type VoiceGender = 'Male' | 'Female';
 export type VoiceAccent = 'American' | 'British' | 'Australian' | 'Indian';
 
@@ -103,8 +195,8 @@ export interface UserGamification {
   dailyActivitiesCount: number;
   lastActivityDate: string | null;
   isPro: boolean;
-  lastPlacementLevel?: Level;
-  lastPlacementDate?: number;
+  lastPlacementLevel?: Level;      // LEGADO — nivelamento único antigo
+  lastPlacementDate?: number;      // LEGADO — data do nivelamento único
   dailyChatCount: number;
   lastChatDate: string | null;
   followers: string[];
@@ -126,6 +218,12 @@ export interface UserGamification {
 
   // ── Novo: badge semanal (coroa) ───────────────────────────
   weeklyBadge: WeeklyBadge | null;
+
+  // ── Novo: nivelamento por habilidade (Etapa 1) ────────────
+  // Mapa indexado por habilidade. Substitui, na prática, o
+  // lastPlacementLevel único (mantido acima como legado por
+  // compatibilidade com perfis já salvos no Firestore).
+  placementResults: PlacementResults;
 }
 
 export interface AdminNotification {
@@ -184,7 +282,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -200,6 +298,8 @@ export interface AppState {
   lastFrGained?: number;
   newTierReached?: UserTier | null;
   activeChatUserId?: string | null;
+  // ── Novo: habilidade sendo testada quando o hub abre um teste ──
+  activePlacementSkill?: PlacementSkill | null;
 }
 
 export interface StudyPlanInput {
