@@ -1,7 +1,7 @@
-import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge } from '../types';
+import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // ── Helpers de período ────────────────────────────────────────
@@ -49,6 +49,34 @@ const getCongratulationsMessage = (position: 1 | 2 | 3, weekLabel: string, xp: n
   return `🥉 Que semana fantástica! Você ficou em 3º lugar na ${weekLabel} com ${xpFormatted} XP. Seu esforço está valendo a pena — continue praticando e logo você estará no topo do ranking! ⭐`;
 };
 
+// ══════════════════════════════════════════════════════════════
+// NIVELAMENTO POR HABILIDADE — helpers e constantes
+// ══════════════════════════════════════════════════════════════
+
+// Custo em Freedom Reais (FR$) para refazer UMA habilidade dentro
+// do período de cooldown. A primeira vez de cada habilidade é grátis.
+const PLACEMENT_RETAKE_COST = 10;
+
+// Dias que uma habilidade fica "bloqueada" para reteste gratuito
+// após ser feita. Cada habilidade tem seu próprio ciclo.
+const PLACEMENT_SKILL_COOLDOWN_DAYS = 30;
+
+// Retorna a chave do trimestre de calendário fixo: "2026-Q3".
+// Jan-Mar = Q1, Abr-Jun = Q2, Jul-Set = Q3, Out-Dez = Q4.
+// É a chave que agrupa as variações do banco de perguntas: todas
+// as questões geradas no mesmo trimestre compartilham esta chave,
+// e o conteúdo se renova naturalmente quando o trimestre vira.
+const getQuarterKey = (date: Date = new Date()): string => {
+  const quarter = Math.floor(date.getMonth() / 3) + 1; // 0-2→1, 3-5→2, etc.
+  return `${date.getFullYear()}-Q${quarter}`;
+};
+
+// Monta o ID de um documento do banco de perguntas de forma
+// determinística: sempre a mesma habilidade + trimestre + variação
+// gera o mesmo ID. Isso evita duplicatas e facilita a leitura direta.
+const buildBankId = (skill: PlacementSkill, quarterKey: string, variation: number): string =>
+  `${skill}_${quarterKey}_v${variation}`;
+
 const INITIAL_GAMIFICATION: UserGamification = {
   xp: 0, frBalance: 0, streak: 0, lastLoginDate: null, dailyXpEarned: 0,
   lastXpGainDate: null, dailyActivitiesCount: 0, lastActivityDate: null,
@@ -59,6 +87,8 @@ const INITIAL_GAMIFICATION: UserGamification = {
   weeklyActivities: 0, monthlyActivities: 0,
   lastWeekKey: null, lastMonthKey: null, lastYearKey: null,
   weeklyBadge: null,
+  // Novo: nivelamento por habilidade (mapa vazio = nada nivelado ainda)
+  placementResults: {},
 };
 
 const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
@@ -76,6 +106,8 @@ const ensureNewFields = (gamification: UserGamification): UserGamification => ({
   lastMonthKey: gamification.lastMonthKey ?? null,
   lastYearKey: gamification.lastYearKey ?? null,
   weeklyBadge: gamification.weeklyBadge ?? null,
+  // Nivelamento por habilidade: preserva o existente ou inicia vazio
+  placementResults: gamification.placementResults ?? {},
 });
 
 export const api = {
@@ -553,6 +585,141 @@ export const api = {
     user.gamification.lastPlacementDate = Date.now();
     await setDoc(userRef, clean(user));
     return user;
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // NIVELAMENTO POR HABILIDADE (Etapa 2 — camada de dados)
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Ler as variações disponíveis de uma habilidade no trimestre ──
+  // Retorna todas as variações (1-3) já geradas para a habilidade no
+  // trimestre atual. O front usa isto para: (a) saber quantas já
+  // existem, e (b) sortear uma para o aluno responder.
+  getPlacementBankEntries: async (skill: PlacementSkill): Promise<PlacementBankEntry[]> => {
+    const quarterKey = getQuarterKey();
+    const q = query(
+      collection(db, 'placement_bank'),
+      where('skill', '==', skill),
+      where('quarterKey', '==', quarterKey)
+    );
+    const snap = await getDocs(q);
+    return snap.docs
+      .map(d => d.data() as PlacementBankEntry)
+      .sort((a, b) => a.variation - b.variation);
+  },
+
+  // ── Sortear uma variação para o aluno responder ─────────────────
+  // Entre as variações prontas do trimestre, escolhe uma ao acaso.
+  // Retorna null se ainda não houver nenhuma (o front então dispara
+  // a geração via Background Function — isso vem na Etapa 3).
+  getRandomPlacementVariation: async (skill: PlacementSkill): Promise<PlacementBankEntry | null> => {
+    const entries = await api.getPlacementBankEntries(skill);
+    if (entries.length === 0) return null;
+    const idx = Math.floor(Math.random() * entries.length);
+    return entries[idx];
+  },
+
+  // ── Verificar se o banco de uma habilidade precisa de mais variações ──
+  // Regra de "preenchimento gradual": enquanto houver menos de 3
+  // variações no trimestre, o próximo nivelamento daquela habilidade
+  // deve gerar mais uma. Retorna o número da próxima variação a gerar
+  // (1, 2 ou 3) ou null se as três já existem.
+  getNextVariationToGenerate: async (skill: PlacementSkill): Promise<number | null> => {
+    const entries = await api.getPlacementBankEntries(skill);
+    if (entries.length >= PLACEMENT_VARIATIONS_PER_SKILL) return null;
+    // A próxima variação é o menor número de 1..3 ainda ausente
+    const existing = new Set(entries.map(e => e.variation));
+    for (let v = 1; v <= PLACEMENT_VARIATIONS_PER_SKILL; v++) {
+      if (!existing.has(v)) return v;
+    }
+    return null;
+  },
+
+  // ── Gravar uma variação no banco (chamada pela Background Function) ──
+  // Escreve o conjunto de questões (ou o prompt de writing) no Firestore.
+  // O ID é determinístico (skill_trimestre_variação), então regerar a
+  // mesma variação sobrescreve em vez de duplicar. Na Etapa 3, quem
+  // chama isto é a Background Function via Admin SDK; aqui deixamos a
+  // função pronta para uso a partir do cliente também, se necessário.
+  savePlacementBankEntry: async (entry: PlacementBankEntry): Promise<void> => {
+    const id = entry.id || buildBankId(entry.skill, entry.quarterKey, entry.variation);
+    const ref = doc(db, 'placement_bank', id);
+    await setDoc(ref, clean({ ...entry, id }));
+  },
+
+  // ── Estado de nivelamento de uma habilidade para um usuário ─────
+  // Retorna se o aluno pode fazer a habilidade de graça, se precisa
+  // pagar (dentro do cooldown de 30 dias), e os dados do último
+  // resultado. É o que o dashboard da Etapa 4 usa para pintar cada
+  // habilidade em um dos três estados (nunca feita / paga / livre).
+  getSkillPlacementStatus: (user: UserSession, skill: PlacementSkill): {
+    state: 'never' | 'cooldown' | 'free_again';
+    result: SkillPlacementResult | null;
+    daysLeft: number;
+    retakeCost: number;
+  } => {
+    const results = user.gamification.placementResults || {};
+    const result = results[skill] || null;
+    if (!result) {
+      return { state: 'never', result: null, daysLeft: 0, retakeCost: 0 };
+    }
+    const daysSince = (Date.now() - result.completedAt) / (1000 * 60 * 60 * 24);
+    if (daysSince >= PLACEMENT_SKILL_COOLDOWN_DAYS) {
+      return { state: 'free_again', result, daysLeft: 0, retakeCost: 0 };
+    }
+    return {
+      state: 'cooldown',
+      result,
+      daysLeft: Math.ceil(PLACEMENT_SKILL_COOLDOWN_DAYS - daysSince),
+      retakeCost: PLACEMENT_RETAKE_COST,
+    };
+  },
+
+  // ── Salvar o resultado de UMA habilidade ────────────────────────
+  // Grava o nível atingido, pontuação e timestamp (base do cooldown).
+  // Usa transação para não sobrescrever, por engano, resultados de
+  // outras habilidades gravados quase ao mesmo tempo.
+  saveSkillPlacementResult: async (
+    userId: string,
+    skill: PlacementSkill,
+    result: SkillPlacementResult
+  ): Promise<UserSession> => {
+    const userRef = doc(db, 'users', userId);
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists()) throw new Error("Usuário não encontrado.");
+      const user = snap.data() as UserSession;
+      user.gamification = ensureNewFields(user.gamification);
+      const results = { ...(user.gamification.placementResults || {}) };
+      results[skill] = result;
+      user.gamification.placementResults = results;
+      tx.set(userRef, clean(user));
+      return user;
+    });
+  },
+
+  // ── Cobrar FR$10 para refazer uma habilidade (ATÔMICO) ──────────
+  // Desconta o saldo SOMENTE se houver saldo suficiente, numa única
+  // transação indivisível. Retorna o novo saldo em caso de sucesso.
+  // Se o saldo for insuficiente, lança erro e NADA é descontado.
+  // A validação real de "pode ou não pagar" acontece aqui e não só
+  // no front — mesmo tendo combinado validação leve no cliente, o
+  // desconto em si precisa ser atômico para nunca furar o saldo.
+  chargePlacementRetake: async (userId: string, skill: PlacementSkill): Promise<{ newBalance: number }> => {
+    const userRef = doc(db, 'users', userId);
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists()) throw new Error("Usuário não encontrado.");
+      const user = snap.data() as UserSession;
+      user.gamification = ensureNewFields(user.gamification);
+      const balance = user.gamification.frBalance || 0;
+      if (balance < PLACEMENT_RETAKE_COST) {
+        throw new Error(`Saldo insuficiente. Você tem FR$ ${balance.toFixed(2)} e o reteste custa FR$ ${PLACEMENT_RETAKE_COST.toFixed(2)}.`);
+      }
+      user.gamification.frBalance = balance - PLACEMENT_RETAKE_COST;
+      tx.set(userRef, clean(user));
+      return { newBalance: user.gamification.frBalance };
+    });
   },
 
   getPlan: async (userId: string): Promise<StudyPlan | null> => {
