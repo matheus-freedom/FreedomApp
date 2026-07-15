@@ -13,6 +13,7 @@ import GuideChat from './components/GuideChat';
 import PlacementTestScreen from './components/PlacementTestScreen';
 import PlacementHubScreen from './components/PlacementHubScreen';
 import PlacementSkillTestScreen from './components/PlacementSkillTestScreen';
+import PlacementResultScreen from './components/PlacementResultScreen';
 import MyActivitiesScreen from './components/MyActivitiesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminPanel from './components/AdminPanel';
@@ -382,16 +383,49 @@ const App: React.FC = () => {
             user={state.user}
             skill={state.activePlacementSkill}
             onHome={handleHome}
-            onComplete={(result) => {
-              // Gravação do resultado vem na Sub-etapa 4.3.
-              // Por ora, volta ao hub após concluir.
-              console.log('Placement result (4.2a):', result);
-              setState(p => ({ ...p, status: 'placement_hub', activePlacementSkill: null }));
+            onComplete={async (result) => {
+              // Grava o resultado da habilidade e navega para a tela de resultado.
+              try {
+                if (state.user && state.activePlacementSkill) {
+                  const skill = state.activePlacementSkill;
+                  const updatedUser = await api.saveSkillPlacementResult(state.user.userId, skill, {
+                    skill,
+                    level: result.level,
+                    score: result.score,
+                    completedAt: Date.now(),
+                    resumeFromLevel: result.resumeFromLevel,
+                  });
+                  setState(p => ({
+                    ...p,
+                    user: updatedUser,
+                    status: 'placement_result',
+                    placementResultLevel: result.level,
+                    placementResultScore: result.score,
+                  }));
+                }
+              } catch (e) {
+                console.error('Erro ao salvar resultado do nivelamento:', e);
+                // Mesmo se a gravação falhar, mostra o resultado ao aluno.
+                setState(p => ({
+                  ...p,
+                  status: 'placement_result',
+                  placementResultLevel: result.level,
+                  placementResultScore: result.score,
+                }));
+              }
             }}
           />
         )}
         {state.status === 'placement_test' && !state.activePlacementSkill && (
           <PlacementTestScreen onFinish={handlePlacementFinish} onHome={handleHome} />
+        )}
+        {state.status === 'placement_result' && state.activePlacementSkill && state.placementResultLevel && (
+          <PlacementResultScreen
+            skill={state.activePlacementSkill}
+            level={state.placementResultLevel}
+            score={state.placementResultScore ?? 0}
+            onBackToHub={() => setState(p => ({ ...p, status: 'placement_hub', activePlacementSkill: null, placementResultLevel: null, placementResultScore: null }))}
+          />
         )}
         {state.status === 'plan_setup' && state.user && <StudyPlanSetup user={state.user} onCancel={handleHome} onPlanGenerated={async (newPlan) => { if (state.user) await api.savePlan(state.user.userId, newPlan); setState(prevState => ({ ...prevState, studyPlan: newPlan, status: 'dashboard' })); }} />}
         {state.status === 'dashboard' && state.studyPlan && state.user && <DashboardScreen plan={state.studyPlan} user={state.user} history={state.activityHistory} onUpdatePlan={async (updatedPlan) => { if (state.user) await api.savePlan(state.user.userId, updatedPlan); setState(prevState => ({ ...prevState, studyPlan: updatedPlan })); }} onHome={handleHome} onResetPlan={async () => { await api.deletePlan(state.user!.userId); setState(p => ({ ...p, studyPlan: null, status: 'plan_setup' })); }} onStartTask={(t) => handleStart(state.studyPlan!.inputs.level, t.relatedTheme!, t.description)} />}
