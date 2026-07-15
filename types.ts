@@ -110,6 +110,13 @@ export interface SkillPlacementResult {
   score: number;                // Pontuação final (0-100 ou nº de acertos)
   completedAt: number;          // timestamp — base do cooldown de 30 dias
   variationUsed?: number;       // Qual variação o aluno respondeu
+  // ── Checkpoint de retomada (regra dos 6 meses) ────────────
+  // Nível de onde o PRÓXIMO teste desta habilidade deve começar,
+  // desde que o aluno não tenha passado 6 meses sem nivelar nada
+  // (aí o relógio global reseta tudo para A1 — ver lastAnyPlacementAt).
+  // Ex: travou em B2 e foi classificado B1 → resumeFromLevel = B2.
+  // Se travou já no A1 → resumeFromLevel = A1 (o chão do sistema).
+  resumeFromLevel?: Level;
 }
 
 // ── Mapa de resultados por habilidade ─────────────────────────
@@ -224,6 +231,15 @@ export interface UserGamification {
   // lastPlacementLevel único (mantido acima como legado por
   // compatibilidade com perfis já salvos no Firestore).
   placementResults: PlacementResults;
+
+  // ── Novo: relógio GLOBAL de 6 meses (regra de reset A1) ───
+  // Timestamp do nivelamento mais recente do aluno em QUALQUER
+  // habilidade. É o carimbo que decide o reset global: se hoje -
+  // lastAnyPlacementAt > 6 meses, o próximo reteste de qualquer
+  // habilidade recomeça do A1 (ignora os checkpoints). Se o aluno
+  // fez qualquer nivelamento nesse período, os checkpoints valem.
+  // Ausente/undefined = nunca nivelou nada ainda.
+  lastAnyPlacementAt?: number;
 }
 
 export interface AdminNotification {
