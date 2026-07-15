@@ -80,15 +80,10 @@ export interface PlacementQuestion {
   // Campos opcionais para reading/listening, que precisam de suporte
   readingText?: string;         // Texto-base (reading)
   listeningScript?: string;     // Roteiro do áudio (listening) — usado
-                                // na GERAÇÃO do TTS, não exibido ao aluno
-  audioUrl?: string;            // URL pública do áudio no Firebase Storage
-                                // (listening). NÃO guardamos o áudio em
-                                // base64 aqui: passaria do teto de 1MB do
-                                // Firestore. O TTS é gerado uma vez por
-                                // variação, sobe pro Storage, e a questão
-                                // guarda só a URL (mesmo padrão das imagens
-                                // do LPG). Custo de IA fixo por variação,
-                                // não por aluno.
+                                // na GERAÇÃO do TTS, não exibido ao aluno.
+                                // Cinco questões do mesmo nível compartilham
+                                // UM áudio; a URL dele mora em
+                                // PlacementBankEntry.levelAudios, não aqui.
 }
 
 // ── Uma variação completa de uma habilidade no trimestre ──────
@@ -106,6 +101,15 @@ export interface PlacementBankEntry {
   questions: PlacementQuestion[];   // 25 para MC; vazio para writing
   writingPrompt?: string;       // Enunciado de writing (em inglês)
   writingPromptPT?: string;     // Enunciado de writing (em português)
+  // ── Áudios do listening, um por nível CEFR ────────────────
+  // Usado SÓ por listening. Cada nível tem UM áudio, e as 5
+  // questões daquele nível se referem a ele. Chave = nível
+  // (ex: "A1", "B2"), valor = URL pública no Firebase Storage.
+  // Fica aqui (não na questão) porque o áudio é do bloco de
+  // nível, não de cada questão — evita repetir a mesma URL 5x
+  // e deixa a intenção clara. As outras 3 habilidades ignoram
+  // este campo. Reduz o TTS de 25 para 5 gerações por variação.
+  levelAudios?: { [level: string]: string };
   createdAt: number;            // timestamp de geração
 }
 
