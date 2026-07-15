@@ -11,6 +11,7 @@ import DashboardScreen from './components/DashboardScreen';
 import GuideSelectionScreen from './components/GuideSelectionScreen';
 import GuideChat from './components/GuideChat';
 import PlacementTestScreen from './components/PlacementTestScreen';
+import PlacementHubScreen from './components/PlacementHubScreen';
 import MyActivitiesScreen from './components/MyActivitiesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminPanel from './components/AdminPanel';
@@ -350,7 +351,7 @@ const App: React.FC = () => {
             user={state.user}
             onStart={handleStart}
             onOpenStudyPlan={() => setState(p => ({ ...p, status: state.studyPlan ? 'dashboard' : 'plan_setup' }))}
-            onStartPlacement={() => setState(p => ({ ...p, status: 'placement_test' }))}
+            onStartPlacement={() => setState(p => ({ ...p, status: 'placement_hub' }))}
             onOpenActivities={() => setState(p => ({ ...p, status: 'my_activities' }))}
             onOpenProfile={() => setState(p => ({ ...p, status: 'profile' }))}
             onOpenAdmin={() => setState(p => ({ ...p, status: 'admin_panel' }))}
@@ -368,6 +369,7 @@ const App: React.FC = () => {
         {state.status === 'admin_panel' && (state.user?.username.toLowerCase() === 'admin' || state.user?.isAdmin) && <AdminPanel onBack={handleHome} />}
         {state.status === 'profile' && state.user && <ProfileScreen user={state.user} onHome={handleHome} onUpdate={handleUserUpdate} />}
         {state.status === 'my_activities' && state.user && <MyActivitiesScreen user={state.user} history={state.activityHistory} onHome={handleHome} onRedoActivity={handleStart} />}
+        {state.status === 'placement_hub' && state.user && <PlacementHubScreen user={state.user} onHome={handleHome} />}
         {state.status === 'placement_test' && <PlacementTestScreen onFinish={handlePlacementFinish} onHome={handleHome} />}
         {state.status === 'plan_setup' && state.user && <StudyPlanSetup user={state.user} onCancel={handleHome} onPlanGenerated={async (newPlan) => { if (state.user) await api.savePlan(state.user.userId, newPlan); setState(prevState => ({ ...prevState, studyPlan: newPlan, status: 'dashboard' })); }} />}
         {state.status === 'dashboard' && state.studyPlan && state.user && <DashboardScreen plan={state.studyPlan} user={state.user} history={state.activityHistory} onUpdatePlan={async (updatedPlan) => { if (state.user) await api.savePlan(state.user.userId, updatedPlan); setState(prevState => ({ ...prevState, studyPlan: updatedPlan })); }} onHome={handleHome} onResetPlan={async () => { await api.deletePlan(state.user!.userId); setState(p => ({ ...p, studyPlan: null, status: 'plan_setup' })); }} onStartTask={(t) => handleStart(state.studyPlan!.inputs.level, t.relatedTheme!, t.description)} />}
