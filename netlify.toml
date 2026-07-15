@@ -3,6 +3,19 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Função síncrona existente (generateContent, generateAudio, chat,
+# translate). O limite padrão de 26s é suficiente para ela.
+[functions.gemini]
+  timeout = 26
+
+# Background Function do nivelamento — gera uma variação completa
+# (25 questões + áudios do listening) e grava no Firestore/Storage.
+# O sufixo "-background" faz a Netlify rodá-la de forma assíncrona,
+# com folga de até 15 minutos (900s). Sem isso, a geração de
+# listening (5 áudios TTS) estouraria o timeout padrão.
+[functions.placement-background]
+  timeout = 900
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
