@@ -141,8 +141,10 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
     }
     const resumeFromLevel = PLACEMENT_LEVEL_ORDER[resumeIdx];
 
-    // Pontuação simples: % de acerto do último nível tentado (0-100).
-    const score = Math.round((correctInLevel / QUESTIONS_PER_LEVEL) * 100);
+    // Pontuação: % de acerto do último nível tentado (0-100), sobre o
+    // número REAL de questões daquele nível (resiliente a blocos parciais).
+    const totalLastLevel = getQuestionsForLevel(levelIdx).length || 1;
+    const score = Math.round((correctInLevel / totalLastLevel) * 100);
 
     setPhase('done');
     onComplete({ level: classifiedLevel, score, resumeFromLevel });
@@ -167,8 +169,11 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
         setAnswered(false);
         setSelectedOption(null);
       } else {
-        // Fim do bloco de 5 — avalia a trava de 80%.
-        const passed = (newCorrect / QUESTIONS_PER_LEVEL) >= PLACEMENT_PASS_THRESHOLD;
+        // Fim do bloco — avalia a trava de 80% sobre o número REAL
+        // de questões que existem neste nível (não a constante fixa),
+        // para ser resiliente a blocos que vieram com menos questões.
+        const totalInLevel = currentLevelQuestions.length || 1;
+        const passed = (newCorrect / totalInLevel) >= PLACEMENT_PASS_THRESHOLD;
         const isLastLevel = levelIdx >= PLACEMENT_LEVEL_ORDER.length - 1;
 
         if (passed && !isLastLevel) {
@@ -251,7 +256,7 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
             {meta.icon} {meta.label} • Nível {currentLevel}
           </div>
           <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
-            Questão {qInLevel + 1} de {QUESTIONS_PER_LEVEL}
+            Questão {qInLevel + 1} de {currentLevelQuestions.length}
           </h2>
         </div>
         <button
@@ -266,7 +271,7 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
       <div className="w-full h-1.5 bg-[#333333] rounded-full overflow-hidden mb-10">
         <div
           className="h-full bg-[#f7931e] shadow-[0_0_8px_rgba(247,147,30,0.4)] transition-all duration-500"
-          style={{ width: `${((qInLevel) / QUESTIONS_PER_LEVEL) * 100}%` }}
+          style={{ width: `${(qInLevel / (currentLevelQuestions.length || 1)) * 100}%` }}
         />
       </div>
 
