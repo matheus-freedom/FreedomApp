@@ -4,18 +4,16 @@ import {
   PLACEMENT_LEVEL_ORDER, QUESTIONS_PER_LEVEL, PLACEMENT_PASS_THRESHOLD,
 } from '../types';
 import { api } from '../services/api';
-import { generatePlacementVariation } from '../services/geminiService';
+import { generatePlacementVariation, evaluateWritingPlacement } from '../services/geminiService';
 import {
   Loader2, Brain, BookOpen, Volume2, PenTool, Home, HelpCircle,
-  Sparkles, ChevronRight,
+  Sparkles, Send,
 } from 'lucide-react';
 
 interface PlacementSkillTestScreenProps {
   user: UserSession;
   skill: PlacementSkill;
   onHome: () => void;
-  // Chamado quando o teste termina, com o nível classificado, a pontuação
-  // e o nível de retomada (checkpoint). A GRAVAÇÃO fica na Sub-etapa 4.3.
   onComplete: (result: { level: Level; score: number; resumeFromLevel: Level }) => void;
 }
 
@@ -26,53 +24,45 @@ const SKILL_META: Record<PlacementSkill, { label: string; icon: React.ReactNode 
   [PlacementSkill.Listening]: { label: 'Audição',   icon: <Volume2 className="w-3 h-3" /> },
 };
 
-type Phase = 'loading' | 'testing' | 'transition' | 'done' | 'error';
+// Mínimo de palavras exigido na redação do nivelamento de escrita.
+const WRITING_MIN_WORDS = 40;
+
+type Phase =
+  | 'loading' | 'testing' | 'transition' | 'done' | 'error'
+  | 'writing_input' | 'writing_evaluating';
 
 const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ user, skill, onHome, onComplete }) => {
   const [phase, setPhase] = useState<Phase>('loading');
   const [loadingMsg, setLoadingMsg] = useState('Preparando seu teste...');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Banco de questões (as 25 da variação sorteada).
   const [bankEntry, setBankEntry] = useState<PlacementBankEntry | null>(null);
 
-  // Onde o teste começa (checkpoint). Índice dentro de PLACEMENT_LEVEL_ORDER.
   const [startLevelIdx, setStartLevelIdx] = useState(0);
-  // Nível atual sendo testado (índice em PLACEMENT_LEVEL_ORDER).
   const [levelIdx, setLevelIdx] = useState(0);
-  // Índice da questão dentro do nível atual (0..4).
   const [qInLevel, setQInLevel] = useState(0);
-  // Acertos no nível atual.
   const [correctInLevel, setCorrectInLevel] = useState(0);
-
-  // O maior nível que o aluno JÁ passou (>= 80%). Começa como o nível
-  // anterior ao de partida (se começa no A1, ainda não passou nada).
   const [highestPassedIdx, setHighestPassedIdx] = useState(-1);
 
-  // Estado de resposta da questão atual.
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
 
-  // Evita dupla inicialização (StrictMode / re-render).
+  // Writing: texto do aluno.
+  const [essayText, setEssayText] = useState('');
+
   const initedRef = useRef(false);
 
-  // ── Determina o nível de partida a partir do checkpoint ────────
   const resolveStartLevel = (): number => {
     const results = user.gamification.placementResults || {};
     const prev = results[skill];
     const lastAny = user.gamification.lastAnyPlacementAt;
     const SIX_MONTHS = 1000 * 60 * 60 * 24 * 30 * 6;
-
-    // Reset global de 6 meses: se o último nivelamento de QUALQUER
-    // habilidade foi há mais de 6 meses, recomeça do A1.
     const resetByTime = lastAny ? (Date.now() - lastAny > SIX_MONTHS) : false;
-
-    if (!prev || resetByTime || !prev.resumeFromLevel) return 0; // A1
+    if (!prev || resetByTime || !prev.resumeFromLevel) return 0;
     const idx = PLACEMENT_LEVEL_ORDER.indexOf(prev.resumeFromLevel);
     return idx >= 0 ? idx : 0;
   };
 
-  // ── Inicialização: obtém o banco e define o ponto de partida ───
   useEffect(() => {
     if (initedRef.current) return;
     initedRef.current = true;
@@ -81,21 +71,31 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
       try {
         setPhase('loading');
 
-        // 1. Precisa gerar uma variação nova (preenchimento gradual)?
         const nextVar = await api.getNextVariationToGenerate(skill);
         if (nextVar !== null) {
-          setLoadingMsg('Gerando seu teste pela primeira vez...');
+          setLoadingMsg(skill === PlacementSkill.Listening
+            ? 'Gerando seu teste e os áudios pela primeira vez (pode levar 1-2 minutos)...'
+            : 'Gerando seu teste pela primeira vez...');
           await generatePlacementVariation(skill, nextVar, (m) => setLoadingMsg(m));
         }
 
-        // 2. Sorteia uma variação pronta do banco.
         const entry = await api.getRandomPlacementVariation(skill);
+
+        // Validação POR HABILIDADE: writing usa enunciado, as demais usam questões.
+        if (skill === PlacementSkill.Writing) {
+          if (!entry || !entry.writingPrompt) {
+            throw new Error('Não foi possível carregar o tema da redação. Tente novamente.');
+          }
+          setBankEntry(entry);
+          setPhase('writing_input');
+          return;
+        }
+
         if (!entry || !entry.questions || entry.questions.length === 0) {
           throw new Error('Não foi possível carregar as questões. Tente novamente.');
         }
         setBankEntry(entry);
 
-        // 3. Define o ponto de partida (checkpoint).
         const start = resolveStartLevel();
         setStartLevelIdx(start);
         setLevelIdx(start);
@@ -111,7 +111,6 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
     init();
   }, []);
 
-  // ── Questões do nível atual (bloco de 5) ───────────────────────
   const getQuestionsForLevel = (idx: number): PlacementQuestion[] => {
     if (!bankEntry) return [];
     const level = PLACEMENT_LEVEL_ORDER[idx];
@@ -120,29 +119,27 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
 
   const currentLevelQuestions = getQuestionsForLevel(levelIdx);
   const currentQuestion = currentLevelQuestions[qInLevel];
+  const currentLevel = PLACEMENT_LEVEL_ORDER[levelIdx];
 
-  // ── Classifica o nível final ao encerrar o teste ───────────────
-  // O nível classificado é o maior nível que o aluno passou (>=80%).
-  // Se não passou nenhum (travou já no primeiro), fica A1 (iniciante).
+  // Áudio do nível atual (listening): um áudio compartilhado pelas 10 questões.
+  const currentLevelAudioUrl: string | null =
+    skill === PlacementSkill.Listening
+      ? (bankEntry?.levelAudios?.[currentLevel] ?? null)
+      : null;
+
   const finishTest = (passedThisLevel: boolean) => {
     const lastPassedIdx = passedThisLevel ? levelIdx : highestPassedIdx;
-    const classifiedIdx = Math.max(0, lastPassedIdx); // nunca abaixo de A1
+    const classifiedIdx = Math.max(0, lastPassedIdx);
     const classifiedLevel = PLACEMENT_LEVEL_ORDER[classifiedIdx];
 
-    // Checkpoint de retomada: o nível onde travou (o atual, se não passou;
-    // ou o próximo, se passou o último). Nunca abaixo de A1.
     let resumeIdx: number;
     if (passedThisLevel) {
-      // passou o nível atual → retoma do próximo (se houver) ou do próprio C1
       resumeIdx = Math.min(levelIdx + 1, PLACEMENT_LEVEL_ORDER.length - 1);
     } else {
-      // travou no nível atual → retoma dele mesmo
       resumeIdx = levelIdx;
     }
     const resumeFromLevel = PLACEMENT_LEVEL_ORDER[resumeIdx];
 
-    // Pontuação: % de acerto do último nível tentado (0-100), sobre o
-    // número REAL de questões daquele nível (resiliente a blocos parciais).
     const totalLastLevel = getQuestionsForLevel(levelIdx).length || 1;
     const score = Math.round((correctInLevel / totalLastLevel) * 100);
 
@@ -150,7 +147,6 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
     onComplete({ level: classifiedLevel, score, resumeFromLevel });
   };
 
-  // ── Responde uma questão ───────────────────────────────────────
   const handleAnswer = (idx: number | 'unknown') => {
     if (answered || !currentQuestion) return;
     const isUnknown = idx === 'unknown';
@@ -164,20 +160,15 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
     setTimeout(() => {
       const nextQ = qInLevel + 1;
       if (nextQ < currentLevelQuestions.length) {
-        // Próxima questão do mesmo nível.
         setQInLevel(nextQ);
         setAnswered(false);
         setSelectedOption(null);
       } else {
-        // Fim do bloco — avalia a trava de 80% sobre o número REAL
-        // de questões que existem neste nível (não a constante fixa),
-        // para ser resiliente a blocos que vieram com menos questões.
         const totalInLevel = currentLevelQuestions.length || 1;
         const passed = (newCorrect / totalInLevel) >= PLACEMENT_PASS_THRESHOLD;
         const isLastLevel = levelIdx >= PLACEMENT_LEVEL_ORDER.length - 1;
 
         if (passed && !isLastLevel) {
-          // Avança para o próximo nível.
           setHighestPassedIdx(levelIdx);
           setPhase('transition');
           setTimeout(() => {
@@ -189,17 +180,36 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
             setPhase('testing');
           }, 1400);
         } else {
-          // Travou (não passou) ou passou o último nível (C1): encerra.
           finishTest(passed);
         }
       }
     }, 700);
   };
 
-  const meta = SKILL_META[skill];
-  const currentLevel = PLACEMENT_LEVEL_ORDER[levelIdx];
+  // ── Writing: enviar a redação para avaliação ───────────────────
+  const wordCount = essayText.trim().split(/\s+/).filter(Boolean).length;
 
-  // ── Renderização por fase ──────────────────────────────────────
+  const handleSubmitEssay = async () => {
+    if (wordCount < WRITING_MIN_WORDS || !bankEntry) return;
+    try {
+      setPhase('writing_evaluating');
+      const result = await evaluateWritingPlacement(
+        bankEntry.writingPrompt || '',
+        essayText.trim()
+      );
+      setPhase('done');
+      // Writing não tem progressão de níveis: a IA classifica direto.
+      // O checkpoint aponta para o próprio nível classificado.
+      onComplete({ level: result.level, score: result.score, resumeFromLevel: result.level });
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Erro ao avaliar sua redação.');
+      setPhase('error');
+    }
+  };
+
+  const meta = SKILL_META[skill];
+
+  // ── Renders ────────────────────────────────────────────────────
 
   if (phase === 'loading') {
     return (
@@ -235,21 +245,79 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
     );
   }
 
-  if (phase === 'done') {
-    // A tela de resultado detalhada vem na 4.3; aqui só um estado neutro
-    // enquanto o onComplete processa a navegação.
+  if (phase === 'done' || phase === 'writing_evaluating') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
         <Loader2 className="w-12 h-12 text-[#f7931e] animate-spin" />
-        <p className="text-gray-400">Salvando seu resultado...</p>
+        <p className="text-gray-400">
+          {phase === 'writing_evaluating' ? 'Avaliando sua redação...' : 'Salvando seu resultado...'}
+        </p>
       </div>
     );
   }
 
-  // phase === 'testing'
+  // ── Writing: tela de redação ───────────────────────────────────
+  if (phase === 'writing_input' && bankEntry) {
+    const canSubmit = wordCount >= WRITING_MIN_WORDS;
+    return (
+      <div className="w-full max-w-4xl mx-auto p-4 md:p-6 pb-32 animate-fade-in">
+        <div className="w-full flex justify-between items-end border-b border-[#333333] pb-6 mb-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-[#f7931e] font-black uppercase text-[10px] tracking-widest">
+              {meta.icon} {meta.label}
+            </div>
+            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Sua Redação</h2>
+          </div>
+          <button onClick={onHome} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#333333] text-gray-400 hover:text-white font-black uppercase text-[10px] tracking-widest transition-all shrink-0">
+            <Home className="w-4 h-4" /> Sair
+          </button>
+        </div>
+
+        {/* Enunciado (português + inglês) */}
+        <div className="bg-[#2a2a2a] rounded-3xl p-6 border border-white/5 mb-6 space-y-3">
+          {bankEntry.writingPromptPT && (
+            <p className="text-white font-bold text-lg leading-relaxed">{bankEntry.writingPromptPT}</p>
+          )}
+          {bankEntry.writingPrompt && (
+            <p className="text-gray-500 text-sm italic leading-relaxed">{bankEntry.writingPrompt}</p>
+          )}
+          <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+            Escreva em INGLÊS • mínimo de {WRITING_MIN_WORDS} palavras • quanto mais completo e rico o texto, melhor a avaliação
+          </p>
+        </div>
+
+        {/* Área de texto */}
+        <textarea
+          value={essayText}
+          onChange={(e) => setEssayText(e.target.value)}
+          placeholder="Write your text here, in English..."
+          className="w-full min-h-[280px] bg-[#222222] border border-white/10 focus:border-[#f7931e]/50 rounded-3xl p-6 text-white text-lg font-medium leading-relaxed outline-none transition-all resize-y"
+        />
+
+        {/* Contador + enviar */}
+        <div className="flex items-center justify-between mt-4">
+          <span className={`text-[11px] font-black uppercase tracking-widest ${canSubmit ? 'text-green-400' : 'text-gray-500'}`}>
+            {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'} {!canSubmit && `(mínimo ${WRITING_MIN_WORDS})`}
+          </span>
+          <button
+            onClick={handleSubmitEssay}
+            disabled={!canSubmit}
+            className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all ${
+              canSubmit
+                ? 'bg-[#f7931e] text-[#222222] hover:bg-[#ffa733]'
+                : 'bg-[#333333] text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            <Send className="w-5 h-5" /> Enviar para avaliação
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Múltipla escolha (grammar / reading / listening) ───────────
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-6 pb-32 animate-fade-in flex flex-col items-center">
-      {/* Cabeçalho */}
       <div className="w-full flex justify-between items-end border-b border-[#333333] pb-6 mb-8">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-[#f7931e] font-black uppercase text-[10px] tracking-widest">
@@ -267,15 +335,41 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
         </button>
       </div>
 
-      {/* Barra de progresso do bloco de 5 */}
-      <div className="w-full h-1.5 bg-[#333333] rounded-full overflow-hidden mb-10">
+      <div className="w-full h-1.5 bg-[#333333] rounded-full overflow-hidden mb-8">
         <div
           className="h-full bg-[#f7931e] shadow-[0_0_8px_rgba(247,147,30,0.4)] transition-all duration-500"
           style={{ width: `${(qInLevel / (currentLevelQuestions.length || 1)) * 100}%` }}
         />
       </div>
 
-      {/* Questão de múltipla escolha (grammar) */}
+      {/* LISTENING: player do áudio do nível (compartilhado pelas questões) */}
+      {skill === PlacementSkill.Listening && (
+        <div className="w-full bg-[#2a2a2a] rounded-3xl p-6 border border-white/5 mb-8">
+          <div className="flex items-center gap-2 text-[#f7931e] font-black uppercase text-[10px] tracking-widest mb-4">
+            <Volume2 className="w-3.5 h-3.5" /> Ouça o áudio do nível {currentLevel} e responda as questões
+          </div>
+          {currentLevelAudioUrl ? (
+            <audio controls src={currentLevelAudioUrl} className="w-full" preload="auto">
+              Seu navegador não suporta a reprodução de áudio.
+            </audio>
+          ) : (
+            <p className="text-red-400 text-sm font-bold">
+              O áudio deste nível não está disponível. Saia e tente novamente — se persistir, avise a escola.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* READING: texto-base do nível */}
+      {skill === PlacementSkill.Reading && currentQuestion?.readingText && (
+        <div className="w-full bg-[#2a2a2a] rounded-3xl p-6 border border-white/5 mb-8 max-h-[300px] overflow-y-auto">
+          <div className="flex items-center gap-2 text-[#f7931e] font-black uppercase text-[10px] tracking-widest mb-4">
+            <BookOpen className="w-3.5 h-3.5" /> Leia o texto e responda
+          </div>
+          <p className="text-gray-200 text-base leading-relaxed whitespace-pre-line">{currentQuestion.readingText}</p>
+        </div>
+      )}
+
       {currentQuestion && (
         <div className="w-full space-y-6">
           <h3 className="text-2xl md:text-3xl font-black text-white leading-tight">{currentQuestion.question}</h3>
