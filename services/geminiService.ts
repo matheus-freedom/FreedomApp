@@ -399,3 +399,56 @@ export const generatePlacementVariation = async (
     setTimeout(poll, 4_000);
   });
 };
+
+// ── Avalia a redação do nivelamento de ESCRITA ─────────────────
+// Writing não tem progressão de níveis: o aluno escreve UM texto e a
+// IA o classifica direto num nível CEFR. Regra central da avaliação
+// (definida pelo Matheus): complexidade lexical e sintática tem o
+// MESMO peso que correção gramatical — um texto sem erros mas com
+// vocabulário simples de A2 é A2, não C1.
+export const evaluateWritingPlacement = async (
+  prompt: string,
+  essay: string
+): Promise<{ level: Level; score: number; feedback: string }> => {
+  try {
+    const evalPrompt = `You are an expert CEFR English examiner. Classify the following student essay into ONE CEFR level: A1, A2, B1, B2 or C1.
+
+CRITICAL EVALUATION RULES:
+- Lexical and syntactic COMPLEXITY carries EQUAL weight to grammatical accuracy. An essay with zero errors but only simple A2-level vocabulary and structures is A2, NOT C1.
+- To reach B2/C1, the essay must DEMONSTRATE advanced structures (conditionals, passive, inversion, nuanced connectors) and rich vocabulary — not merely avoid mistakes.
+- A very short essay that shows little cannot be classified above the level it demonstrates.
+- Consider: range of vocabulary, variety of grammatical structures, cohesion and organization, accuracy, and task response.
+
+The writing task was: "${prompt}"
+
+Student essay:
+"""
+${essay}
+"""
+
+Return ONLY valid JSON (no markdown, no backticks):
+{
+  "level": "A1" | "A2" | "B1" | "B2" | "C1",
+  "score": 0-100 (overall quality within the classified level),
+  "feedback": "2-3 frases de feedback construtivo em PORTUGUÊS BRASILEIRO, citando pontos fortes e o que melhorar para subir de nível"
+}`;
+
+    const data = await callGemini("generateContent", {
+      model: "gemini-3.5-flash",
+      contents: evalPrompt,
+      config: { responseMimeType: "application/json" },
+    });
+
+    const clean = String(data.text || "").replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    const validLevels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+    const level = validLevels.includes(parsed.level) ? parsed.level as Level : ('A1' as Level);
+    const score = typeof parsed.score === 'number' ? Math.max(0, Math.min(100, Math.round(parsed.score))) : 50;
+    const feedback = typeof parsed.feedback === 'string' ? parsed.feedback : '';
+
+    return { level, score, feedback };
+  } catch (error) {
+    return handleError(error);
+  }
+};
