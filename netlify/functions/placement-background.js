@@ -295,12 +295,24 @@ exports.handler = async (event) => {
             });
             const data = parseJson(resp.text);
             const parsed = Array.isArray(data.questions) ? data.questions : [];
-            // Só aceita se veio uma quantidade razoável (>= metade do pedido).
-            if (parsed.length >= Math.ceil(QUESTIONS_PER_LEVEL / 2)) {
+            // Só aceita se veio uma quantidade razoável (>= metade do pedido)
+            // E, para reading/listening, se as questões trazem o material-base
+            // (texto ou roteiro). Sem isso, a variação nasceria capenga: o
+            // reading sem texto para ler, o listening sem script para o TTS.
+            const hasBaseMaterial =
+              skill === "reading"
+                ? parsed.some((q) => q.readingText && String(q.readingText).trim().length > 20)
+                : skill === "listening"
+                  ? parsed.some((q) => q.listeningScript && String(q.listeningScript).trim().length > 20)
+                  : true;
+            if (parsed.length >= Math.ceil(QUESTIONS_PER_LEVEL / 2) && hasBaseMaterial) {
               levelQs = parsed;
               break;
             }
-            lastErr = new Error(`Nível ${level}: veio só ${parsed.length} questões.`);
+            lastErr = new Error(
+              `Nível ${level}: veio ${parsed.length} questões` +
+              (hasBaseMaterial ? "." : " e sem o material-base (texto/roteiro).")
+            );
           } catch (e) {
             lastErr = e;
           }
@@ -338,9 +350,12 @@ exports.handler = async (event) => {
           // Pega o script do primeiro item daquele nível.
           const q = questions.find(x => x.level === level && x.listeningScript);
           const script = q?.listeningScript;
-          if (script) {
-            levelAudios[level] = await generateAndUploadAudio(ai, bucket, script, jobId, level);
+          if (!script) {
+            // Sem script não há áudio — melhor falhar claramente do que
+            // gravar uma variação de listening que o aluno não consegue ouvir.
+            throw new Error(`Listening ${level}: sem roteiro para gerar o áudio.`);
           }
+          levelAudios[level] = await generateAndUploadAudio(ai, bucket, script, jobId, level);
         }
         entry.levelAudios = levelAudios;
       }
