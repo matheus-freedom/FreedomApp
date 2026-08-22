@@ -84,7 +84,11 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   const [voiceGender, setVoiceGender] = useState<VoiceGender>('Female');
   const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>('American');
   const [leaderboardUsers, setLeaderboardUsers] = useState<{user: UserSession, periodXp: number, periodActivities: number}[]>([]);
-  const [leaderboardFilter, setLeaderboardFilter] = useState<'Weekly' | 'Monthly' | 'Annual'>('Annual');
+  // Ranking abre no MÊS por padrão: o recorte anual premiava quem já
+  // acumulou muito XP e deixava o aluno novo longe do topo, sem sensação
+  // de disputa. O mês reinicia com frequência e mantém a corrida viva.
+  // Semana e ano continuam disponíveis no seletor ao lado do título.
+  const [leaderboardFilter, setLeaderboardFilter] = useState<'Weekly' | 'Monthly' | 'Annual'>('Monthly');
   // Trava contra clique repetido no "Iniciar Prática". O ref é lido e
   // escrito de forma síncrona (não espera re-render), então nenhum
   // clique extra passa; o state é só para o botão mudar na hora.
