@@ -227,45 +227,50 @@ const App: React.FC = () => {
   const handleFinish = async (finalScore: number, total: number) => {
     if (!state.user) return;
     setState(prev => ({ ...prev, status: 'loading' }));
-    const accuracy = Math.min(1, finalScore / total);
-    const rawXp = Math.min(100, Math.round(accuracy * 100));
+    try {
+      // O servidor calcula o XP, aplica "só na 1ª vez" e o teto diário,
+      // e grava histórico + gamificação. Repetir a mesma atividade
+      // (Refazer ou pela aba Histórico) volta com xpGained = 0.
+      const { totalXp, xpGained, frGained, totalFr, isRepeat } = await api.completeActivity({
+        level: state.level!,
+        theme: state.theme!,
+        topic: state.subTopic!,
+        type: state.theme === Theme.Writing ? 'writing' : 'quiz',
+        score: finalScore,
+        total,
+      });
 
-    const { totalXp, xpGained, frGained, totalFr } = await api.updateXp(state.user.userId, rawXp);
+      const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
+      const prevTier = calculateTier(state.user.gamification.xp);
+      const newTier = calculateTier(totalXp);
+      const leveledUp = newTier !== prevTier;
 
-    const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
-    const prevTier = calculateTier(state.user.gamification.xp);
-    const newTier = calculateTier(totalXp);
-    const leveledUp = newTier !== prevTier;
+      const updatedHistory = await api.getHistory(state.user.userId);
+      const today = new Date().toISOString().split('T')[0];
+      const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
 
-    const record: ActivityRecord = {
-      id: crypto.randomUUID(), date: Date.now(), level: state.level!, theme: state.theme!,
-      topic: state.subTopic!, score: finalScore, total: total, type: state.theme === Theme.Writing ? 'writing' : 'quiz',
-      xpGained: xpGained, frGained: frGained
-    };
+      const updatedUser = {
+        ...state.user,
+        gamification: {
+          ...state.user.gamification,
+          xp: totalXp,
+          frBalance: totalFr,
+          dailyXpEarned: newDailyXp,
+          lastXpGainDate: today
+        }
+      };
 
-    await api.saveActivity(state.user.userId, record);
-    const updatedHistory = await api.getHistory(state.user.userId);
-    const today = new Date().toISOString().split('T')[0];
+      setState(prev => ({
+        ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
+        user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null,
+        lastWasRepeat: isRepeat
+      }));
 
-    const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
-
-    const updatedUser = {
-      ...state.user,
-      gamification: {
-        ...state.user.gamification,
-        xp: totalXp,
-        frBalance: totalFr,
-        dailyXpEarned: newDailyXp,
-        lastXpGainDate: today
-      }
-    };
-
-    setState(prev => ({
-      ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
-      user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null
-    }));
-
-    if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
+      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
+    } catch (error) {
+      // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
+      setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
+    }
   };
 
   const handlePlacementFinish = async (level: Level) => {
@@ -431,7 +436,7 @@ const App: React.FC = () => {
         {state.status === 'dashboard' && state.studyPlan && state.user && <DashboardScreen plan={state.studyPlan} user={state.user} history={state.activityHistory} onUpdatePlan={async (updatedPlan) => { if (state.user) await api.savePlan(state.user.userId, updatedPlan); setState(prevState => ({ ...prevState, studyPlan: updatedPlan })); }} onHome={handleHome} onResetPlan={async () => { await api.deletePlan(state.user!.userId); setState(p => ({ ...p, studyPlan: null, status: 'plan_setup' })); }} onStartTask={(t) => handleStart(state.studyPlan!.inputs.level, t.relatedTheme!, t.description)} />}
         {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleHome} level={state.level!} theme={state.theme!} topic={state.subTopic!} />}
         {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleHome} />}
-        {state.status === 'results' && <ResultsScreen score={state.score} totalQuestions={state.theme === Theme.Writing ? 100 : (state.content?.questions.length || 10)} onRetry={() => setState(p => ({ ...p, status: state.theme === Theme.Writing ? 'writing' : 'quiz' }))} onHome={handleHome} xpGained={state.lastXpGained} frGained={state.lastFrGained} />}
+        {state.status === 'results' && <ResultsScreen score={state.score} totalQuestions={state.theme === Theme.Writing ? 100 : (state.content?.questions.length || 10)} onRetry={() => setState(p => ({ ...p, status: state.theme === Theme.Writing ? 'writing' : 'quiz' }))} onHome={handleHome} xpGained={state.lastXpGained} frGained={state.lastFrGained} wasRepeat={state.lastWasRepeat} />}
       </main>
       <a href="https://wa.me/message/JZDOD5MBRXEAO1" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 left-6 z-50 flex items-center gap-2 text-gray-500 hover:text-[#f7931e] transition-all bg-[#1a1a1a]/50 p-2.5 rounded-xl backdrop-blur-sm group border border-white/5 hover:border-[#f7931e]/30 shadow-2xl" title="Reportar Erro"><AlertTriangle className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline-block animate-fade-in pr-1">Reportar Erro</span></a>
       {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'keyword_check' && (
