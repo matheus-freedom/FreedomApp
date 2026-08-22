@@ -9,13 +9,14 @@ interface ResultsScreenProps {
   onHome: () => void;
   xpGained?: number;
   frGained?: number;
+  wasRepeat?: boolean;
 }
 
 const formatFR = (value: number) => {
   return "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0 }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false }) => {
   const percentage = Math.round((score / (totalQuestions || 1)) * 100);
 
   let resultType: 'gold' | 'silver' | 'bronze' | 'sad';
@@ -122,6 +123,15 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, on
           </div>
         )}
       </div>
+
+      {wasRepeat && (
+        <div className="flex items-start gap-3 bg-[#333333] text-gray-300 border border-[#444444] px-5 py-3 rounded-2xl max-w-md mb-8 z-10">
+          <RotateCcw className="w-5 h-5 text-[#f7931e] shrink-0 mt-0.5" />
+          <p className="text-sm leading-relaxed text-left">
+            Você já tinha feito esta atividade, então ela não vale XP desta vez — cada atividade só dá XP na <span className="font-bold text-white">primeira vez</span>. Refazer é ótimo para revisar! Para ganhar XP, escolha uma atividade nova.
+          </p>
+        </div>
+      )}
 
       <div className="bg-[#333333] p-6 rounded-2xl border border-[#444444] max-w-md text-center mb-8 z-10 shadow-xl">
           <p className="text-white text-lg font-medium leading-relaxed">

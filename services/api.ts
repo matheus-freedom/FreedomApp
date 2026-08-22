@@ -4,6 +4,11 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswor
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
+// Endpoint da function que concede XP/moedas no servidor (à prova de fraude).
+const AWARD_URL = import.meta.env.DEV
+  ? 'http://localhost:8888/.netlify/functions/award-activity'
+  : '/.netlify/functions/award-activity';
+
 // ── Helpers de período ────────────────────────────────────────
 
 // Retorna a chave da semana ISO: "2026-W18"
@@ -344,7 +349,32 @@ export const api = {
     return user.gamification.dailyChatCount;
   },
 
-  // ── updateXp: agora registra XP por período e detecta virada ──
+  // ── completeActivity: concede XP/moedas pelo SERVIDOR ────────
+  // O cálculo do XP (a partir da nota), a regra "só na 1ª vez"
+  // (repetição pelo botão Refazer ou pela aba Histórico = 0 XP) e
+  // o teto de 800 XP/dia são aplicados na function award-activity,
+  // com Admin SDK — o aluno NÃO consegue forjar pontos. O cliente
+  // só envia o resultado e a identidade dele vem do token de login.
+  completeActivity: async (
+    input: { level: Level; theme: Theme; topic: string; type: 'quiz' | 'writing'; score: number; total: number }
+  ): Promise<{ totalXp: number; xpGained: number; frGained: number; totalFr: number; isRepeat: boolean; record: ActivityRecord }> => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sua sessão expirou. Faça login novamente.');
+    const res = await fetch(AWARD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || `Erro ${res.status}`);
+    }
+    return res.json();
+  },
+
+  // ── updateXp: LEGADO — mantido só como referência da lógica que
+  // migrou para o servidor (award-activity). NÃO é mais chamado
+  // pelo fluxo de atividades. Não usar no cliente. ──────────────
   updateXp: async (userId: string, xpGain: number): Promise<{ totalXp: number, xpGained: number, frGained: number, totalFr: number }> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);

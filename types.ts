@@ -324,6 +324,9 @@ export interface AppState {
   activeTaskId?: string;
   lastXpGained?: number;
   lastFrGained?: number;
+  // Verdadeiro quando a última atividade foi uma repetição (sem XP,
+  // por já ter sido feita antes) — usado para explicar o "0 XP".
+  lastWasRepeat?: boolean;
   newTierReached?: UserTier | null;
   activeChatUserId?: string | null;
   // ── Novo: habilidade sendo testada quando o hub abre um teste ──
