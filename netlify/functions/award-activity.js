@@ -28,6 +28,7 @@ const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { randomUUID } = require("crypto");
+const { weekKeyOf, monthKeyOf, SOURCE_TAG } = require("./lib/ranking-core");
 
 const DAILY_XP_LIMIT = 800;
 
@@ -62,113 +63,63 @@ const initFirebase = () => {
   return { db: getFirestore(), auth: getAuth() };
 };
 
-// ── Helpers de período (espelham services/api.ts, em UTC) ─────
-const getWeekKey = (date = new Date()) => {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
-};
-const getMonthKey = (date = new Date()) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-const getYearKey = (date = new Date()) => `${date.getFullYear()}`;
+// ── Helpers de período ────────────────────────────────────────
+// Vêm de lib/ranking-core.js e são calculados no horário de
+// Brasília, igual ao que o navegador do aluno faz. Antes rodavam em
+// UTC: nos domingos, das 21h à meia-noite, o servidor já achava que
+// era segunda e zerava o XP semanal do aluno antes da hora.
+const getWeekKey = (date = new Date()) => weekKeyOf(date.getTime());
+const getMonthKey = (date = new Date()) => monthKeyOf(date.getTime());
+const getYearKey = (date = new Date()) => `${new Date(date.getTime() - 3 * 3600000).getUTCFullYear()}`;
 
-const getWeekLabel = (weekKey) => {
-  const [year, week] = weekKey.split("-W");
-  return `Semana ${week} • ${year}`;
+// A apuração do Top 3 (Hall da Fama) NÃO acontece mais aqui.
+// Ela saía dos contadores weeklyXp/monthlyXp, que esta mesma
+// transação acabara de zerar — o campeão sumia do próprio pódio, e
+// quando a foto saía dias depois ela misturava semanas diferentes.
+// Agora quem apura é ranking-snapshot-background.js, somando a
+// coleção `history`. Aqui só avisamos que há período a fechar.
+const DIA_MS = 86400000;
+let jaConferiuPendencia = false;
+
+const urlDaApuracao = () => {
+  const base = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL;
+  return base ? `${base}/.netlify/functions/ranking-snapshot-background` : null;
 };
-const getMonthLabel = (monthKey) => {
-  const [year, month] = monthKey.split("-");
-  const months = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-  return `${months[parseInt(month, 10) - 1]} ${year}`;
+
+const dispararApuracao = async (windowDays) => {
+  const url = urlDaApuracao();
+  if (!url) return;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 2500);
+  try {
+    // Background function: responde 202 na hora, não segura o aluno.
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ windowDays }),
+      signal: ctrl.signal,
+    });
+  } catch { /* melhor esforço — a rotina diária cobre de qualquer jeito */ }
+  finally { clearTimeout(t); }
 };
-const getCongratulationsMessage = (position, weekLabel, xp) => {
-  const xpFormatted = Number(xp).toLocaleString("pt-BR");
-  if (position === 1) return `🏆 Você foi o CAMPEÃO da ${weekLabel}! Incrível — você acumulou ${xpFormatted} XP e liderou todos os alunos da Freedom. Sua dedicação é inspiradora. Continue assim e conquiste mais uma semana no topo! 🚀`;
-  if (position === 2) return `🥈 Parabéns! Você ficou em 2º lugar na ${weekLabel}, acumulando ${xpFormatted} XP. Você foi incrível essa semana! Está muito perto do topo — mais uma semana de foco e a coroa é sua! 💪`;
-  return `🥉 Que semana fantástica! Você ficou em 3º lugar na ${weekLabel} com ${xpFormatted} XP. Seu esforço está valendo a pena — continue praticando e logo você estará no topo do ranking! ⭐`;
+
+// Falta fechar a última semana encerrada? (1 leitura barata, e só
+// na primeira atividade de cada instância da função)
+const faltaFecharSemana = async (db) => {
+  if (jaConferiuPendencia) return false;
+  jaConferiuPendencia = true;
+  try {
+    const chave = weekKeyOf(Date.now() - 7 * DIA_MS);
+    const snap = await db.collection("ranking_snapshots").doc(`weekly_${chave}`).get();
+    return !snap.exists || (snap.data() || {}).source !== SOURCE_TAG;
+  } catch {
+    return false;
+  }
 };
 
 // ── Assinatura de uma atividade (identidade para o "1ª vez") ──
 const normalizeTopic = (t) => String(t || "").toLowerCase().trim();
 const signatureOf = (a) => `${a.type}|${a.level}|${a.theme}|${normalizeTopic(a.topic)}`;
-
-// ── Snapshot do ranking na virada de período, com trava de
-//    "criar-se-não-existir" (impede sobrescrita e notificação
-//    duplicada quando vários alunos viram o período) ───────────
-const maybeSaveSnapshot = async (db, period, periodKey) => {
-  const snapId = `${period}_${periodKey}`;
-  const ref = db.collection("ranking_snapshots").doc(snapId);
-  const existing = await ref.get();
-  if (existing.exists) return; // já foi salvo por outro aluno — não duplica
-
-  const usersSnap = await db.collection("users").get();
-  const sorted = usersSnap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((u) => (u.username || "").toLowerCase() !== "admin")
-    .map((u) => {
-      const g = u.gamification || {};
-      return {
-        user: u,
-        periodXp: period === "weekly" ? (g.weeklyXp || 0) : (g.monthlyXp || 0),
-        activities: period === "weekly" ? (g.weeklyActivities || 0) : (g.monthlyActivities || 0),
-      };
-    })
-    .filter((u) => u.periodXp > 0)
-    .sort((a, b) => b.periodXp - a.periodXp || b.activities - a.activities);
-
-  if (sorted.length === 0) return;
-
-  const top3 = sorted.slice(0, 3).map((item, index) => ({
-    userId: item.user.userId || item.user.id,
-    username: item.user.username,
-    fullName: item.user.fullName,
-    profilePhoto: item.user.profilePhoto,
-    xp: item.periodXp,
-    activitiesCount: item.activities,
-    position: index + 1,
-  }));
-
-  const label = period === "weekly" ? getWeekLabel(periodKey) : getMonthLabel(periodKey);
-  const snapshot = {
-    id: snapId, period, label,
-    startDate: periodKey,
-    endDate: new Date().toISOString().split("T")[0],
-    top3, savedAt: Date.now(),
-  };
-
-  // create() falha se o doc passou a existir no meio do caminho
-  // (outro aluno virou o período ao mesmo tempo) — trava a corrida.
-  try {
-    await ref.create(snapshot);
-  } catch {
-    return; // criado por outro processo — não notifica de novo
-  }
-
-  if (period === "weekly") {
-    for (const entry of top3) {
-      try {
-        const uRef = db.collection("users").doc(entry.userId);
-        const uSnap = await uRef.get();
-        if (!uSnap.exists) continue;
-        const u = uSnap.data();
-        u.gamification = u.gamification || {};
-        u.gamification.weeklyBadge = { position: entry.position, weekLabel: label, xp: entry.xp, awardedAt: Date.now() };
-        if (!u.notifications) u.notifications = [];
-        u.notifications.unshift({
-          id: randomUUID(),
-          message: getCongratulationsMessage(entry.position, label, entry.xp),
-          date: Date.now(), read: false, sender: "🏆 Freedom Ranking",
-        });
-        await uRef.set(u);
-      } catch (e) {
-        console.error("Erro ao notificar Top 3:", e);
-      }
-    }
-  }
-};
 
 // ── Atualiza desafios ativos do aluno com o XP concedido ──────
 const updateChallenges = async (db, uid, awardedXp) => {
@@ -294,8 +245,10 @@ exports.handler = async (event) => {
     await db.collection("history").doc(record.id).set(record);
 
     // ── 6) Efeitos colaterais (fora da transação) ─────────────
-    for (const [period, key] of rollovers) {
-      try { await maybeSaveSnapshot(db, period, key); } catch (e) { console.error("snapshot:", e); }
+    // Virou semana/mês para este aluno, ou o fechamento anterior
+    // ficou pendente? Manda apurar em segundo plano.
+    if (rollovers.length > 0 || (await faltaFecharSemana(db))) {
+      await dispararApuracao(rollovers.length > 0 ? 70 : 400);
     }
     try { await updateChallenges(db, uid, result.xpGained); } catch (e) { console.error("challenges:", e); }
 
