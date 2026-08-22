@@ -41,6 +41,9 @@ const StudyPlanSetup: React.FC<StudyPlanSetupProps> = ({ onCancel, onPlanGenerat
   const [customFocus, setCustomFocus] = useState('');
   const [duration, setDuration] = useState(isChallengeOnly ? '40 Days' : '30 Days');
   const [isLoading, setIsLoading] = useState(false);
+  // Mensagem de progresso: o plano agora é montado em blocos, então o
+  // aluno acompanha o avanço em vez de olhar para um botão parado.
+  const [progressMsg, setProgressMsg] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [showAccessAlert, setShowAccessAlert] = useState(false);
@@ -82,7 +85,7 @@ const StudyPlanSetup: React.FC<StudyPlanSetupProps> = ({ onCancel, onPlanGenerat
         customFocus: focusSkill === 'Custom' ? customFocus : undefined
       };
 
-      const plan = await generateStudyPlan(inputs);
+      const plan = await generateStudyPlan(inputs, (m) => setProgressMsg(m));
       
       if (!plan || !plan.weeks || plan.weeks.length === 0) {
         throw new Error("Não foi possível gerar um plano estruturado. Tente mudar o foco ou o nível.");
@@ -98,6 +101,7 @@ const StudyPlanSetup: React.FC<StudyPlanSetupProps> = ({ onCancel, onPlanGenerat
       setError(error instanceof Error ? error.message : "Falha ao gerar o plano. Tente novamente em instantes.");
     } finally {
       setIsLoading(false);
+      setProgressMsg('');
     }
   };
 
@@ -297,7 +301,7 @@ const StudyPlanSetup: React.FC<StudyPlanSetupProps> = ({ onCancel, onPlanGenerat
         className="w-full mt-8 p-6 rounded-2xl font-black text-lg flex items-center justify-center gap-3 bg-[#f7931e] text-[#222222] hover:bg-[#e08215] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-[#f7931e]/20 uppercase tracking-widest"
       >
         {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle className="w-6 h-6" />}
-        {isLoading ? "Gerando seu Plano Freedom..." : (focusSkill === 'Challenge Mode' ? "Start Challenge" : "Criar Meu Plano de Estudos")}
+        {isLoading ? (progressMsg || "Gerando seu Plano Freedom...") : (focusSkill === 'Challenge Mode' ? "Start Challenge" : "Criar Meu Plano de Estudos")}
       </button>
     </div>
   );

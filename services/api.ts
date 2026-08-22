@@ -76,6 +76,15 @@ const getQuarterKey = (date: Date = new Date()): string => {
   return `${date.getFullYear()}-Q${quarter}`;
 };
 
+// Trimestre anterior — usado como rede de segurança quando o trimestre
+// vira e o banco novo ainda está vazio. Sem isso, no dia 1º de cada
+// trimestre TODO aluno cairia na geração ao vivo (lenta e sujeita a
+// timeout), que é exatamente o que quebrava o nivelamento.
+const getPreviousQuarterKey = (date: Date = new Date()): string => {
+  const quarter = Math.floor(date.getMonth() / 3) + 1;
+  return quarter === 1 ? `${date.getFullYear() - 1}-Q4` : `${date.getFullYear()}-Q${quarter - 1}`;
+};
+
 // Monta o ID de um documento do banco de perguntas de forma
 // determinística: sempre a mesma habilidade + trimestre + variação
 // gera o mesmo ID. Isso evita duplicatas e facilita a leitura direta.
@@ -315,21 +324,28 @@ export const api = {
     }
   },
 
+  // ── Conta +1 exercício do dia, de forma ATÔMICA ────────────────
+  // Usa transação porque antes era ler-modificar-gravar solto: se duas
+  // gravações se cruzassem, uma sobrescrevia a outra e o contador saía
+  // errado. Dentro da transação o Firestore garante que a leitura e a
+  // escrita enxerguem o mesmo estado.
   incrementActivityCount: async (userId: string): Promise<number> => {
     const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
-    if (user.gamification.lastActivityDate !== today) {
-      user.gamification.dailyActivitiesCount = 1;
-      user.gamification.lastActivityDate = today;
-    } else {
-      user.gamification.dailyActivitiesCount += 1;
-    }
-    await setDoc(userRef, clean(user));
-    return user.gamification.dailyActivitiesCount;
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists()) throw new Error("User not found");
+      const user = snap.data() as UserSession;
+      user.gamification = ensureNewFields(user.gamification);
+      const today = new Date().toISOString().split('T')[0];
+      if (user.gamification.lastActivityDate !== today) {
+        user.gamification.dailyActivitiesCount = 1;
+        user.gamification.lastActivityDate = today;
+      } else {
+        user.gamification.dailyActivitiesCount += 1;
+      }
+      tx.set(userRef, clean(user));
+      return user.gamification.dailyActivitiesCount;
+    });
   },
 
   incrementChatCount: async (userId: string): Promise<number> => {
@@ -625,8 +641,7 @@ export const api = {
   // Retorna todas as variações (1-3) já geradas para a habilidade no
   // trimestre atual. O front usa isto para: (a) saber quantas já
   // existem, e (b) sortear uma para o aluno responder.
-  getPlacementBankEntries: async (skill: PlacementSkill): Promise<PlacementBankEntry[]> => {
-    const quarterKey = getQuarterKey();
+  getPlacementBankEntries: async (skill: PlacementSkill, quarterKey: string = getQuarterKey()): Promise<PlacementBankEntry[]> => {
     const q = query(
       collection(db, 'placement_bank'),
       where('skill', '==', skill),
@@ -639,11 +654,15 @@ export const api = {
   },
 
   // ── Sortear uma variação para o aluno responder ─────────────────
-  // Entre as variações prontas do trimestre, escolhe uma ao acaso.
-  // Retorna null se ainda não houver nenhuma (o front então dispara
-  // a geração via Background Function — isso vem na Etapa 3).
+  // Entre as variações prontas, escolhe uma ao acaso. Se o trimestre
+  // atual ainda não tem nenhuma (virada de trimestre), cai para o
+  // trimestre anterior em vez de deixar o aluno esperando a geração.
+  // Retorna null só quando não existe absolutamente nada.
   getRandomPlacementVariation: async (skill: PlacementSkill): Promise<PlacementBankEntry | null> => {
-    const entries = await api.getPlacementBankEntries(skill);
+    let entries = await api.getPlacementBankEntries(skill);
+    if (entries.length === 0) {
+      entries = await api.getPlacementBankEntries(skill, getPreviousQuarterKey());
+    }
     if (entries.length === 0) return null;
     const idx = Math.floor(Math.random() * entries.length);
     return entries[idx];
@@ -780,12 +799,19 @@ export const api = {
     await addDoc(bankRef, clean({ level, theme, subTopic: subTopic.toLowerCase().trim(), content, createdAt: Date.now() }));
   },
 
-  getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string): Promise<any | null> => {
+  // ── Reaproveita uma atividade já gerada para o mesmo tópico ─────
+  // minVariations: só reaproveita quando o banco JÁ tem pelo menos
+  // esse número de versões diferentes do tópico. Enquanto tiver
+  // menos, devolve null de propósito, para o app gerar uma versão
+  // nova e ir acumulando variedade. Sem isso, a PRIMEIRA versão
+  // gerada de cada tópico ficava sendo servida para sempre — foi o
+  // que fez os mesmos personagens (Sarah, Mark, Leo) se repetirem.
+  getRandomActivityFromBank: async (level: Level, theme: Theme, subTopic: string, minVariations = 1): Promise<any | null> => {
     const normalizedTopic = subTopic.toLowerCase().trim();
     const q = query(collection(db, 'bank'), where('level', '==', level), where('theme', '==', theme), where('subTopic', '==', normalizedTopic));
     const snap = await getDocs(q);
-    if (snap.empty) return null;
     const matches = snap.docs.map(d => d.data());
+    if (matches.length < minVariations) return null;
     return matches[Math.floor(Math.random() * matches.length)];
   },
 

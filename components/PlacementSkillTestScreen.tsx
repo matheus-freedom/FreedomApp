@@ -4,7 +4,7 @@ import {
   PLACEMENT_LEVEL_ORDER, QUESTIONS_PER_LEVEL, PLACEMENT_PASS_THRESHOLD,
 } from '../types';
 import { api } from '../services/api';
-import { generatePlacementVariation, evaluateWritingPlacement } from '../services/geminiService';
+import { generatePlacementVariation, triggerPlacementGeneration, evaluateWritingPlacement } from '../services/geminiService';
 import {
   Loader2, Brain, BookOpen, Volume2, PenTool, Home, HelpCircle,
   Sparkles, Send,
@@ -71,15 +71,29 @@ const PlacementSkillTestScreen: React.FC<PlacementSkillTestScreenProps> = ({ use
       try {
         setPhase('loading');
 
+        // ── Ordem corrigida: primeiro tenta usar uma prova PRONTA ───
+        // Antes, sempre que faltava variação no trimestre o aluno era
+        // obrigado a ESPERAR a geração ao vivo. Em listening isso são
+        // 10 chamadas de IA (5 de questões + 5 de áudio), o que passa
+        // do tempo de espera do navegador: o aluno via "demorou demais"
+        // mesmo quando a geração terminava bem, minutos depois.
+        // Agora só espera quem realmente não tem nenhuma prova pronta;
+        // as variações que faltam são geradas em segundo plano.
+        let entry = await api.getRandomPlacementVariation(skill);
         const nextVar = await api.getNextVariationToGenerate(skill);
-        if (nextVar !== null) {
-          setLoadingMsg(skill === PlacementSkill.Listening
-            ? 'Gerando seu teste e os áudios pela primeira vez (pode levar 1-2 minutos)...'
-            : 'Gerando seu teste pela primeira vez...');
-          await generatePlacementVariation(skill, nextVar, (m) => setLoadingMsg(m));
-        }
 
-        const entry = await api.getRandomPlacementVariation(skill);
+        if (!entry && nextVar !== null) {
+          // Nada pronto: aqui não tem jeito, é preciso esperar.
+          setLoadingMsg(skill === PlacementSkill.Listening
+            ? 'Preparando seu teste e os áudios pela primeira vez (pode levar alguns minutos)...'
+            : 'Preparando seu teste pela primeira vez...');
+          await generatePlacementVariation(skill, nextVar, (m) => setLoadingMsg(m));
+          entry = await api.getRandomPlacementVariation(skill);
+        } else if (nextVar !== null) {
+          // Já existe prova pronta: o aluno começa agora e o banco vai
+          // se completando sozinho, sem prender ninguém na espera.
+          triggerPlacementGeneration(skill, nextVar);
+        }
 
         // Validação POR HABILIDADE: writing usa enunciado, as demais usam questões.
         if (skill === PlacementSkill.Writing) {
