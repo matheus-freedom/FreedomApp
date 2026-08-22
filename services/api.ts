@@ -1,7 +1,7 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, orderBy, limit, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Endpoint da function que concede XP/moedas no servidor (à prova de fraude).
@@ -388,196 +388,29 @@ export const api = {
     return res.json();
   },
 
-  // ── updateXp: LEGADO — mantido só como referência da lógica que
-  // migrou para o servidor (award-activity). NÃO é mais chamado
-  // pelo fluxo de atividades. Não usar no cliente. ──────────────
-  updateXp: async (userId: string, xpGain: number): Promise<{ totalXp: number, xpGained: number, frGained: number, totalFr: number }> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) throw new Error("User not found");
-    
-    const user = snap.data() as UserSession;
-    user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
-    const currentWeekKey = getWeekKey();
-    const currentMonthKey = getMonthKey();
-    const currentYearKey = getYearKey();
-
-    // ── Limite diário de 800 XP ───────────────────────────────
-    if (user.gamification.lastXpGainDate !== today) {
-      user.gamification.dailyXpEarned = 0;
-      user.gamification.lastXpGainDate = today;
-    }
-    const DAILY_XP_LIMIT = 800;
-    let actualXpGain = xpGain;
-    if (user.gamification.dailyXpEarned + xpGain > DAILY_XP_LIMIT) {
-      actualXpGain = Math.max(0, DAILY_XP_LIMIT - user.gamification.dailyXpEarned);
-    }
-
-    const frGain = actualXpGain / 100;
-
-    // ── Detecta virada de semana → salva snapshot ─────────────
-    const prevWeekKey = user.gamification.lastWeekKey;
-    if (prevWeekKey && prevWeekKey !== currentWeekKey) {
-      // Virou semana — salva snapshot e envia notificações
-      await api.saveRankingSnapshot('weekly', prevWeekKey);
-      // Zera contadores semanais
-      user.gamification.weeklyXp = 0;
-      user.gamification.weeklyActivities = 0;
-    }
-
-    // ── Detecta virada de mês → salva snapshot ────────────────
-    const prevMonthKey = user.gamification.lastMonthKey;
-    if (prevMonthKey && prevMonthKey !== currentMonthKey) {
-      await api.saveRankingSnapshot('monthly', prevMonthKey);
-      user.gamification.monthlyXp = 0;
-      user.gamification.monthlyActivities = 0;
-    }
-
-    // ── Detecta virada de ano ─────────────────────────────────
-    if (user.gamification.lastYearKey && user.gamification.lastYearKey !== currentYearKey) {
-      user.gamification.yearlyXp = 0;
-    }
-
-    // ── Atualiza todos os contadores ──────────────────────────
-    user.gamification.xp += actualXpGain;
-    user.gamification.frBalance = (user.gamification.frBalance || 0) + frGain;
-    user.gamification.dailyXpEarned += actualXpGain;
-    user.gamification.weeklyXp = (user.gamification.weeklyXp || 0) + actualXpGain;
-    user.gamification.monthlyXp = (user.gamification.monthlyXp || 0) + actualXpGain;
-    user.gamification.yearlyXp = (user.gamification.yearlyXp || 0) + actualXpGain;
-    user.gamification.weeklyActivities = (user.gamification.weeklyActivities || 0) + 1;
-    user.gamification.monthlyActivities = (user.gamification.monthlyActivities || 0) + 1;
-    user.gamification.lastWeekKey = currentWeekKey;
-    user.gamification.lastMonthKey = currentMonthKey;
-    user.gamification.lastYearKey = currentYearKey;
-
-    await setDoc(userRef, clean(user));
-
-    // ── Atualiza desafios ativos ──────────────────────────────
-    const challengesSnap = await getDocs(collection(db, 'challenges'));
-    const now = Date.now();
-    challengesSnap.forEach(async (d) => {
-      const c = d.data() as UserChallenge;
-      if (c.status === 'active' && (c.participantIds || []).includes(userId)) {
-        if (now > c.endDate) {
-          c.status = 'closed';
-          const participants = (c.participantIds || []).map(pid => ({ id: pid, xp: c.participantStats[pid]?.xpGained || 0 })).sort((a, b) => b.xp - a.xp);
-          c.winnerId = participants[0]?.id;
-        } else {
-          if (!c.participantStats[userId]) c.participantStats[userId] = { xpGained: 0, activitiesDone: 0 };
-          c.participantStats[userId].xpGained += actualXpGain;
-          c.participantStats[userId].activitiesDone += 1;
-        }
-        await setDoc(doc(db, 'challenges', c.id), clean(c));
-      }
-    });
-
-    return { totalXp: user.gamification.xp, xpGained: actualXpGain, frGained: frGain, totalFr: user.gamification.frBalance };
-  },
-
-  // ── Salva snapshot do Top 3 de um período ────────────────────
-  saveRankingSnapshot: async (period: 'weekly' | 'monthly', periodKey: string): Promise<void> => {
-    try {
-      const allUsers = await api.admin_getAllUsers();
-      
-      // Ordena pelo XP do período correto
-      const sorted = allUsers
-        .filter(u => u.username.toLowerCase() !== 'admin')
-        .map(u => ({
-          user: u,
-          periodXp: period === 'weekly' ? (u.gamification.weeklyXp || 0) : (u.gamification.monthlyXp || 0),
-          activities: period === 'weekly' ? (u.gamification.weeklyActivities || 0) : (u.gamification.monthlyActivities || 0),
-        }))
-        .filter(u => u.periodXp > 0)
-        .sort((a, b) => b.periodXp - a.periodXp || b.activities - a.activities);
-
-      if (sorted.length === 0) return;
-
-      const top3: RankingEntry[] = sorted.slice(0, 3).map((item, index) => ({
-        userId: item.user.userId,
-        username: item.user.username,
-        fullName: item.user.fullName,
-        profilePhoto: item.user.profilePhoto,
-        xp: item.periodXp,
-        activitiesCount: item.activities,
-        position: (index + 1) as 1 | 2 | 3,
-      }));
-
-      const label = period === 'weekly' ? getWeekLabel(periodKey) : getMonthLabel(periodKey);
-
-      // Calcula datas aproximadas do período
-      const now = new Date();
-      const snapshot: RankingSnapshot = {
-        id: `${period}_${periodKey}`,
-        period,
-        label,
-        startDate: periodKey,
-        endDate: now.toISOString().split('T')[0],
-        top3,
-        savedAt: Date.now(),
-      };
-
-      await setDoc(doc(db, 'ranking_snapshots', snapshot.id), clean(snapshot));
-
-      // Envia notificações e badges apenas para snapshots semanais
-      if (period === 'weekly') {
-        await api.sendRankingNotifications(top3, label);
-      }
-    } catch (e) {
-      console.error('Erro ao salvar snapshot de ranking:', e);
-    }
-  },
-
-  // ── Envia notificações e atribui badges ao Top 3 ─────────────
-  sendRankingNotifications: async (top3: RankingEntry[], weekLabel: string): Promise<void> => {
-    for (const entry of top3) {
-      try {
-        const userRef = doc(db, 'users', entry.userId);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) continue;
-
-        const user = snap.data() as UserSession;
-        user.gamification = ensureNewFields(user.gamification);
-
-        // Atribui badge semanal (coroa)
-        const badge: WeeklyBadge = {
-          position: entry.position,
-          weekLabel,
-          xp: entry.xp,
-          awardedAt: Date.now(),
-        };
-        user.gamification.weeklyBadge = badge;
-
-        // Cria notificação personalizada
-        if (!user.notifications) user.notifications = [];
-        const message = getCongratulationsMessage(entry.position, weekLabel, entry.xp);
-        user.notifications.unshift({
-          id: crypto.randomUUID(),
-          message,
-          date: Date.now(),
-          read: false,
-          sender: '🏆 Freedom Ranking',
-        });
-
-        await setDoc(userRef, clean(user));
-      } catch (e) {
-        console.error(`Erro ao notificar usuário ${entry.userId}:`, e);
-      }
-    }
-  },
+  // ── Apuração do ranking: agora é 100% servidor ────────────────
+  // updateXp / saveRankingSnapshot / sendRankingNotifications foram
+  // removidos daqui. O XP é concedido por netlify/functions/
+  // award-activity.js e o Top 3 de cada semana/mês é apurado por
+  // ranking-snapshot-background.js, somando a coleção `history`.
+  // Manter uma segunda versão no navegador só criava pódios
+  // divergentes — e um aluno podia forjá-los.
 
   // ── Busca histórico de snapshots de ranking ───────────────────
   getRankingHistory: async (period: 'weekly' | 'monthly', limitCount: number = 12): Promise<RankingSnapshot[]> => {
     try {
-      const q = query(
-        collection(db, 'ranking_snapshots'),
-        where('period', '==', period),
-        orderBy('savedAt', 'desc'),
-        limit(limitCount)
-      );
+      // Sem orderBy de propósito. Combinar where + orderBy exige um
+      // índice composto no Firestore que nunca foi criado; a consulta
+      // falhava, o catch abaixo devolvia [] e o Hall da Fama aparecia
+      // vazio mesmo com os dados gravados. Filtrar por período usa o
+      // índice automático de campo único, e a ordenação sai aqui — são
+      // poucas dezenas de documentos.
+      const q = query(collection(db, 'ranking_snapshots'), where('period', '==', period));
       const snap = await getDocs(q);
-      return snap.docs.map(d => d.data() as RankingSnapshot);
+      return snap.docs
+        .map(d => d.data() as RankingSnapshot)
+        .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0) || String(b.startDate).localeCompare(String(a.startDate)))
+        .slice(0, limitCount);
     } catch (e) {
       console.error('Erro ao buscar histórico de ranking:', e);
       return [];

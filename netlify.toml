@@ -16,6 +16,18 @@
 [functions.placement-background]
   timeout = 900
 
+# Fechamento diário do ranking (Hall da Fama). Roda às 03:10 UTC =
+# 00:10 de Brasília, para que na segunda-feira de manhã o campeão
+# da semana já esteja registrado mesmo que ninguém tenha praticado.
+# Esta função só dispara a de baixo, então termina em milissegundos.
+[functions.ranking-snapshot]
+  schedule = "10 3 * * *"
+
+# Apuração de fato: lê o histórico e grava o Top 3 de cada semana e
+# de cada mês encerrados. Background = até 15 minutos de folga.
+[functions.ranking-snapshot-background]
+  timeout = 900
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

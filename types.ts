@@ -193,7 +193,8 @@ export interface RankingSnapshot {
   startDate: string;    // YYYY-MM-DD
   endDate: string;      // YYYY-MM-DD
   top3: RankingEntry[];
-  savedAt: number;      // timestamp
+  savedAt: number;      // timestamp do FECHAMENTO do período
+  source?: string;      // 'history' = apurado somando a coleção history
 }
 
 // ── Novo: badge semanal do usuário ────────────────────────────
