@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Level, Theme, VoiceGender, VoiceAccent, UserTier, UserSession, AccessType } from '../types';
 import { TOPICS } from '../constants';
 import { api } from '../services/api';
@@ -12,7 +12,9 @@ import {
 
 interface SelectionScreenProps {
   user: UserSession;
-  onStart: (level: Level, theme: Theme, subTopic: string, voiceGender?: VoiceGender, voiceAccent?: VoiceAccent) => void;
+  // Devolve false quando o pedido foi recusado (limite, trava), para a
+  // tela poder destravar o botão em vez de ficar presa em "Gerando...".
+  onStart: (level: Level, theme: Theme, subTopic: string, voiceGender?: VoiceGender, voiceAccent?: VoiceAccent) => Promise<boolean> | void;
   onOpenStudyPlan: () => void;
   onStartPlacement: () => void;
   onOpenActivities: () => void;
@@ -83,6 +85,12 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   const [voiceAccent, setVoiceAccent] = useState<VoiceAccent>('American');
   const [leaderboardUsers, setLeaderboardUsers] = useState<{user: UserSession, periodXp: number, periodActivities: number}[]>([]);
   const [leaderboardFilter, setLeaderboardFilter] = useState<'Weekly' | 'Monthly' | 'Annual'>('Annual');
+  // Trava contra clique repetido no "Iniciar Prática". O ref é lido e
+  // escrito de forma síncrona (não espera re-render), então nenhum
+  // clique extra passa; o state é só para o botão mudar na hora.
+  const startingRef = useRef(false);
+  const [isStarting, setIsStarting] = useState(false);
+
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showTiersModal, setShowTiersModal] = useState(false);
   const [showAccessAlert, setShowAccessAlert] = useState(false);
@@ -173,12 +181,28 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
     setSelectedMultiTopics(newSet);
   };
 
+  // ── Início da prática ──────────────────────────────────────────
+  // A contagem do exercício NÃO acontece mais aqui. Antes, este
+  // handler somava +1 no Firestore ANTES de qualquer trava, então
+  // cada clique repetido durante o delay da IA virava um exercício
+  // a mais na cota do aluno ("só fiz um e a plataforma diz 3").
+  // Agora quem conta é o App, uma única vez e só depois que o
+  // exercício realmente abre. Aqui ficam apenas a trava síncrona
+  // contra clique repetido e o feedback visual imediato.
   const handleStartClick = async () => {
+    if (startingRef.current) return;   // 2º clique nem entra
     if (isChallengeOnly) { setShowAccessAlert(true); return; }
     if (isLimitReached) { setShowLimitModal(true); return; }
-    const newCount = await api.incrementActivityCount(user.userId);
-    onUserUpdate({ ...user, gamification: { ...user.gamification, dailyActivitiesCount: newCount, lastActivityDate: today } });
-    onStart(selectedLevel!, selectedTheme!, finalTopic, voiceGender, voiceAccent);
+    startingRef.current = true;
+    setIsStarting(true);
+
+    // Se o App recusar o pedido, esta tela continua montada — então
+    // precisa soltar a própria trava, senão o botão fica morto.
+    const started = await onStart(selectedLevel!, selectedTheme!, finalTopic, voiceGender, voiceAccent);
+    if (started === false) {
+      startingRef.current = false;
+      setIsStarting(false);
+    }
   };
 
   // ── Progress Bar do Wizard (passos 1/2/3) ────────────────────
@@ -605,10 +629,10 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
 
                 <div className="flex gap-3">
                   <button onClick={() => setWizardStep(2)} className="px-5 py-4 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all border border-white/5">← Voltar</button>
-                  <button onClick={handleStartClick} disabled={!canStart || isLoading}
+                  <button onClick={handleStartClick} disabled={!canStart || isLoading || isStarting}
                     className="flex-1 py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-xl shadow-[#f7931e]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100">
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                    {isLoading ? 'Gerando...' : 'Iniciar Prática'}
+                    {(isLoading || isStarting) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                    {(isLoading || isStarting) ? 'Gerando seu exercício...' : 'Iniciar Prática'}
                   </button>
                 </div>
               </div>

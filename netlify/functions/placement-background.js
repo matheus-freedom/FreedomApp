@@ -53,6 +53,66 @@ const saveBankEntry = async (db, entry) => {
   await db.collection("placement_bank").doc(entry.id).set(entry);
 };
 
+// ── Trava por variação (evita gerar a mesma coisa duas vezes) ───
+// Quando dois alunos abriam a mesma habilidade ao mesmo tempo, os
+// dois disparavam a geração da MESMA variação: trabalho e cota de
+// IA em dobro, e um sobrescrevendo o outro. create() falha se o
+// documento já existe, então quem chega primeiro leva a trava.
+// Uma trava velha (função morreu no meio) é considerada abandonada.
+const LOCK_STALE_MS = 20 * 60 * 1000;
+
+const acquireLock = async (db, bankId) => {
+  const ref = db.collection("placement_locks").doc(bankId);
+  try {
+    await ref.create({ startedAt: Date.now() });
+    return true;
+  } catch {
+    // Já existe: só assume se estiver abandonada.
+    try {
+      const snap = await ref.get();
+      const startedAt = snap.exists ? snap.data().startedAt || 0 : 0;
+      if (Date.now() - startedAt > LOCK_STALE_MS) {
+        await ref.set({ startedAt: Date.now() });
+        return true;
+      }
+    } catch { /* trata como ocupada */ }
+    return false;
+  }
+};
+
+const releaseLock = async (db, bankId) => {
+  try { await db.collection("placement_locks").doc(bankId).delete(); } catch { /* ignora */ }
+};
+
+// Aguarda a variação que OUTRO processo está gerando aparecer no
+// banco. Usado quando a trava está ocupada: em vez de devolver erro
+// ao aluno, esperamos o trabalho do outro terminar e aproveitamos.
+const waitForBankEntry = async (db, bankId, timeoutMs = 10 * 60 * 1000) => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const snap = await db.collection("placement_bank").doc(bankId).get();
+    if (snap.exists) return true;
+    // Dorme só o que ainda resta do prazo: dormir 10s fixos fazia a
+    // espera passar do tempo limite combinado.
+    const remaining = timeoutMs - (Date.now() - startedAt);
+    if (remaining <= 0) break;
+    await new Promise((r) => setTimeout(r, Math.min(10_000, remaining)));
+  }
+  return false;
+};
+
+// ── Limpa carimbos de job órfãos ───────────────────────────────
+// O carimbo é apagado pelo front quando ele lê o resultado. Se o
+// aluno fechou a tela antes, o documento fica para trás. Esta
+// varredura leve remove os que já passaram de uma hora.
+const cleanupOldJobs = async (db) => {
+  try {
+    const cutoff = Date.now() - 60 * 60 * 1000;
+    const snap = await db.collection("placement_jobs").where("updatedAt", "<", cutoff).limit(50).get();
+    await Promise.all(snap.docs.map((d) => d.ref.delete().catch(() => {})));
+  } catch { /* limpeza é oportunista; nunca derruba a geração */ }
+};
+
 // ── Envelopa PCM bruto (saída do TTS Gemini) em container WAV ───
 // O TTS devolve PCM 16-bit, 24kHz, mono, SEM cabeçalho. Sem este
 // envelope, o navegador não toca o arquivo. Adiciona os 44 bytes
@@ -106,6 +166,49 @@ const generateAndUploadAudio = async (ai, bucket, script, jobId, level) => {
   return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 };
 
+// ── Variedade de personagens (espelha services/geminiService.ts) ─
+// Sem isto o modelo repete Sarah/Mark/Leo em todos os textos e
+// áudios do nivelamento. Sorteia um elenco a cada nível gerado.
+const NAME_POOL = [
+  "Ethan", "Olivia", "Marcus", "Chloe", "Nathan", "Grace", "Dylan", "Naomi",
+  "Trevor", "Harper", "Caleb", "Vivian", "Spencer", "Ruby", "Damon", "Paige",
+  "Jerome", "Colette", "Wesley", "Imani", "Preston", "Delia", "Malik", "Sloane",
+  "Thiago", "Larissa", "Rafael", "Beatriz", "Gustavo", "Camila", "Bruno", "Juliana",
+  "Vinícius", "Priscila", "Rodrigo", "Tatiana", "Fernando", "Renata", "Caio", "Bianca",
+  "Matheus", "Aline", "Otávio", "Letícia", "Igor", "Sabrina", "Murilo", "Carla",
+  "Santiago", "Valentina", "Mateo", "Lucía", "Joaquín", "Camilo", "Ximena", "Emiliano",
+  "Álvaro", "Daniela", "Nicolás", "Paloma", "Esteban", "Mariana", "Andrés",
+  "Rocío", "Facundo", "Gabriela", "Ignacio", "Antonella", "Tomás", "Selena", "Hugo",
+];
+
+const SETTING_POOL = [
+  "a coworking space in São Paulo", "a night bus in Buenos Aires", "a food truck festival in Austin",
+  "a rooftop garden in Bogotá", "a hardware store in Chicago", "a beach kiosk in Recife",
+  "a mountain hostel in Cusco", "a recording studio in Los Angeles", "a farmers market in Guadalajara",
+  "a startup office in Florianópolis", "a train station in Seattle", "a family bakery in Montevideo",
+  "a dive shop in Fortaleza", "a university lab in Boston", "a car repair shop in Medellín",
+  "a community radio in Porto Alegre", "a ski lodge in Denver", "a bookshop in Santiago",
+];
+
+const pickRandom = (arr, n) => {
+  const copy = [...arr];
+  const out = [];
+  for (let i = 0; i < n && copy.length > 0; i++) {
+    out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+  }
+  return out;
+};
+
+const buildVarietyInstruction = () => {
+  const names = pickRandom(NAME_POOL, 6);
+  const setting = pickRandom(SETTING_POOL, 1)[0];
+  return `CHARACTER AND SETTING VARIETY (mandatory):
+- If the content has characters, use ONLY names from this list: ${names.join(", ")}.
+- NEVER use the names Sarah, Mark, Leo, John, Mary, Anna, Emily, Michael, Tom or David.
+- Suggested setting for the context: ${setting}.
+- Naturally mix characters of different backgrounds (American, Brazilian, Latino).`;
+};
+
 // ── Prompts de geração por habilidade ──────────────────────────
 // Cada um pede as 25 questões (5 por nível, dificuldade crescente),
 // em JSON estrito. Reading traz um texto por nível; listening traz
@@ -153,11 +256,15 @@ This is a GRAMMAR test at level ${level}. CRITICAL:
   if (skill === "reading") {
     return base + `
 
+${buildVarietyInstruction()}
+
 This is a READING test at level ${level}. Write ONE short reading passage appropriate to ${level} (more complex for higher levels), and base all ${QUESTIONS_PER_LEVEL} questions on it. Put the SAME passage text in a "readingText" field on EACH question. Test comprehension, inference and vocabulary in context.`;
   }
 
   // listening
   return base + `
+
+${buildVarietyInstruction()}
 
 This is a LISTENING test at level ${level}. Write ONE short spoken-style script (monologue or dialogue) appropriate to ${level} (more natural/faster for higher levels), and base all ${QUESTIONS_PER_LEVEL} questions on it. Put the SAME script in a "listeningScript" field on EACH question. The student will HEAR this (not read it). Test detail, gist, inference.`;
 };
@@ -230,7 +337,13 @@ exports.handler = async (event) => {
     return;
   }
 
-  const { jobId, skill, quarterKey, variation } = body;
+  // wait !== false significa que existe alguém esperando o resultado
+  // (o aluno na tela de carregamento). Disparos em segundo plano mandam
+  // wait: false e encerram assim que veem que outro processo já cuida
+  // desta variação — sem isso, cada aluno que abrisse o nivelamento
+  // ocuparia uma função por até 10 minutos consultando o Firestore à toa.
+  const { jobId, skill, quarterKey, variation, wait } = body;
+  const someoneIsWaiting = wait !== false;
   if (!jobId || !skill || !quarterKey || !variation) {
     // Sem jobId não há como sinalizar erro ao front; só encerra.
     return;
@@ -248,8 +361,35 @@ exports.handler = async (event) => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const bankId = `${skill}_${quarterKey}_v${variation}`;
 
+  let holdsLock = false;
+
   try {
     await saveJobStatus(db, jobId, { status: "working", skill, variation });
+    cleanupOldJobs(db); // oportunista, sem await: não atrasa a geração
+
+    // Se esta variação já existe, não há nada a fazer — evita regerar
+    // (e sobrescrever) uma prova boa quando dois disparos se cruzam.
+    const already = await db.collection("placement_bank").doc(bankId).get();
+    if (already.exists) {
+      await saveJobStatus(db, jobId, { status: "done", bankId });
+      return;
+    }
+
+    // Trava: se outro processo já está gerando esta variação, espera
+    // o resultado dele em vez de duplicar o trabalho.
+    holdsLock = await acquireLock(db, bankId);
+    if (!holdsLock) {
+      if (!someoneIsWaiting) {
+        // Disparo de bastidor: outro processo já está gerando. Encerra.
+        await saveJobStatus(db, jobId, { status: "done", bankId, note: "já estava sendo gerada" });
+        return;
+      }
+      const arrived = await waitForBankEntry(db, bankId);
+      await saveJobStatus(db, jobId, arrived
+        ? { status: "done", bankId }
+        : { status: "error", error: "A geração deste teste está demorando. Tente novamente em alguns minutos." });
+      return;
+    }
 
     const entry = {
       id: bankId,
@@ -374,5 +514,13 @@ exports.handler = async (event) => {
     } catch {
       // se nem o carimbo de erro salvar, o polling do front expira sozinho
     }
+  } finally {
+    // Libera a trava em qualquer desfecho, para não bloquear a
+    // próxima tentativa desta mesma variação.
+    if (holdsLock) await releaseLock(db, bankId);
   }
 };
+
+// Exportado apenas para os testes automatizados (test-placement.mjs).
+// A Netlify usa somente exports.handler; isto não altera o runtime.
+exports.__test = { acquireLock, releaseLock, waitForBankEntry, buildVarietyInstruction, NAME_POOL };

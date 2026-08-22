@@ -26,6 +26,11 @@ import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle } from 'lucide-react';
 
 const DAILY_LIMIT = 8;
+// Quantas versões diferentes de cada tópico o banco acumula antes de
+// passar a reaproveitar em vez de gerar. Mais versões = menos repetição
+// de texto e de personagem para o aluno; o custo é gerar algumas vezes
+// a mais no começo da vida de cada tópico.
+const ACTIVITY_VARIATIONS = 3;
 const INACTIVITY_LIMIT = 15 * 60 * 1000;
 
 // ── PALAVRA-CHAVE: validade em dias ───────────────────────────
@@ -100,6 +105,10 @@ const App: React.FC = () => {
 
   const handleLogout = useCallback(async () => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    // Libera a trava de início: o logout não recarrega a página, então
+    // uma trava esquecida aqui deixaria o botão "Iniciar Prática"
+    // permanentemente morto para o próximo login na mesma aba.
+    isStartingRef.current = false;
     localStorage.removeItem('freedom_postgres_session');
     await api.logout();
     setState(p => ({ ...p, user: null, status: 'login', studyPlan: null, activityHistory: [] }));
@@ -185,14 +194,18 @@ const App: React.FC = () => {
     }
   }, [state.user]);
 
-  const handleStart = async (level: Level, theme: Theme, subTopic: string, voiceGender: VoiceGender = 'Female', voiceAccent: VoiceAccent = 'American') => {
-    if (!state.user) return;
+  // Devolve TRUE quando o exercício realmente começou a ser preparado e
+  // FALSE quando o pedido foi ignorado (trava, limite diário, sem aluno).
+  // Quem chamou usa isso para destravar o próprio botão — sem esse
+  // retorno, um pedido recusado deixaria a tela presa em "Gerando...".
+  const handleStart = async (level: Level, theme: Theme, subTopic: string, voiceGender: VoiceGender = 'Female', voiceAccent: VoiceAccent = 'American'): Promise<boolean> => {
+    if (!state.user) return false;
 
     // ── VERIFICAÇÃO DA TRAVA ──────────────────────────────────────
     // Se já está processando um clique anterior, ignora completamente.
     // isStartingRef.current é lido e escrito de forma síncrona,
     // então não existe janela de tempo para um segundo clique passar.
-    if (isStartingRef.current) return;
+    if (isStartingRef.current) return false;
     isStartingRef.current = true;
 
     const today = new Date().toISOString().split('T')[0];
@@ -200,12 +213,15 @@ const App: React.FC = () => {
     if (!state.user.gamification.isPro && dailyCount >= DAILY_LIMIT) {
       alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje.`);
       isStartingRef.current = false;
-      return;
+      return false;
     }
 
     setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined }));
     try {
-      const cached = await api.getRandomActivityFromBank(level, theme, subTopic);
+      // Só reaproveita do banco quando o tópico já tem ACTIVITY_VARIATIONS
+      // versões diferentes. Até lá, gera uma nova a cada vez, para o
+      // banco acumular variedade de textos e personagens.
+      const cached = await api.getRandomActivityFromBank(level, theme, subTopic, ACTIVITY_VARIATIONS);
       let content: GeneratedContent;
 
       if (cached) {
@@ -215,12 +231,36 @@ const App: React.FC = () => {
         await api.saveToActivityBank(level, theme, subTopic, content);
       }
 
-      if (theme === Theme.Writing) setState(prev => ({ ...prev, status: 'writing', content, score: 0 }));
-      else setState(prev => ({ ...prev, status: 'quiz', content, score: 0, currentQuestionIndex: 0 }));
+      // ── CONTAGEM DO EXERCÍCIO ────────────────────────────────────
+      // Conta AQUI, uma única vez, e só depois que o exercício ficou
+      // pronto. Antes a soma acontecia na SelectionScreen, no clique,
+      // fora desta trava — por isso cada clique repetido durante o
+      // delay da IA virava um exercício a mais na cota do aluno.
+      // Se a geração falhar (catch abaixo), nada é contado.
+      const newCount = await api.incrementActivityCount(state.user.userId);
+
+      // A atualização parte de prev.user (e não do state.user capturado
+      // no clique). A geração leva dezenas de segundos; nesse intervalo
+      // outra parte do app pode ter mexido no perfil, e usar a cópia
+      // antiga desfaria essa mudança.
+      const applyCount = (prev: AppState): UserSession | null => prev.user && ({
+        ...prev.user,
+        gamification: { ...prev.user.gamification, dailyActivitiesCount: newCount, lastActivityDate: today },
+      });
+
+      // Trava liberada aqui: a janela do clique repetido terminou (o
+      // exercício está na tela). Manter travado impediria o aluno de
+      // iniciar outra atividade pelo guia Fred/Frida sem voltar ao início.
+      isStartingRef.current = false;
+
+      if (theme === Theme.Writing) setState(prev => ({ ...prev, user: applyCount(prev), status: 'writing', content, score: 0 }));
+      else setState(prev => ({ ...prev, user: applyCount(prev), status: 'quiz', content, score: 0, currentQuestionIndex: 0 }));
+      return true;
     } catch (error) {
       // Em caso de erro, libera a trava para o usuário poder tentar de novo
       isStartingRef.current = false;
       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : "Erro ao carregar atividade." }));
+      return false;
     }
   };
 
@@ -266,7 +306,11 @@ const App: React.FC = () => {
         lastWasRepeat: isRepeat
       }));
 
-      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount + 1 >= DAILY_LIMIT) setShowDailyLimitModal(true);
+      // A contagem já foi somada quando o exercício abriu, então NÃO se
+      // soma 1 de novo aqui: com o "+1" o modal de meta concluída
+      // aparecia já no 7º de 8 exercícios, mandando o aluno embora com
+      // um exercício ainda disponível.
+      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= DAILY_LIMIT) setShowDailyLimitModal(true);
     } catch (error) {
       // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
@@ -365,7 +409,7 @@ const App: React.FC = () => {
             onOpenChallenges={() => setState(p => ({ ...p, status: 'challenges' }))}
             onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))}
             onOpenRankingHistory={() => setState(p => ({ ...p, status: 'ranking_history' }))}
-            isLoading={false}
+            isLoading={state.status === 'loading'}
             hasActivePlan={!!state.studyPlan}
             onUserUpdate={handleUserUpdate}
           />
