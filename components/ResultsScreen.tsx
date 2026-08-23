@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { RotateCcw, Award, ThumbsUp, Frown, Trophy, Repeat, Zap, Home, Coins } from 'lucide-react';
+import { RotateCcw, Award, ThumbsUp, Frown, Trophy, Repeat, Zap, Home, Coins, Map as MapIcon } from 'lucide-react';
 
 interface ResultsScreenProps {
   score: number;
@@ -10,13 +10,16 @@ interface ResultsScreenProps {
   xpGained?: number;
   frGained?: number;
   wasRepeat?: boolean;
+  // Quando o exercício veio da Journey, o botão principal volta para o
+  // MAPA da trilha (e não para o menu), para o aluno emendar o próximo.
+  journeyLabel?: string;
 }
 
 const formatFR = (value: number) => {
   return "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false, journeyLabel }) => {
   const percentage = Math.round((score / (totalQuestions || 1)) * 100);
 
   let resultType: 'gold' | 'silver' | 'bronze' | 'sad';
@@ -151,8 +154,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, on
             onClick={onHome}
             className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-xl font-bold hover:bg-[#e08215] transition-all transform hover:scale-105 shadow-lg uppercase tracking-tighter text-xs"
           >
-            <Home className="w-5 h-5" />
-            Menu principal
+            {journeyLabel ? <MapIcon className="w-5 h-5" /> : <Home className="w-5 h-5" />}
+            {journeyLabel ? 'Voltar à trilha' : 'Menu principal'}
           </button>
       </div>
     </div>

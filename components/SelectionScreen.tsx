@@ -23,6 +23,7 @@ interface SelectionScreenProps {
   onOpenChat: (userId: string) => void;
   onOpenAdmin?: () => void;
   onOpenRankingHistory: () => void;
+  onOpenJourney: () => void;
   isLoading: boolean;
   initialLevel?: Level | null;
   initialTheme?: Theme | null;
@@ -71,7 +72,7 @@ const PODIUM_CONFIG: Record<number, { emoji: string; color: string; bg: string; 
 
 const SelectionScreen: React.FC<SelectionScreenProps> = ({
   user, onStart, onOpenStudyPlan, onStartPlacement, onOpenActivities,
-  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory,
+  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory, onOpenJourney,
   isLoading, initialLevel = null, initialTheme = null, initialTopic = null,
   hasActivePlan, onUserUpdate
 }) => {
@@ -102,6 +103,20 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
     user.accessType === AccessType.CHALLENGE_ONLY && !localStorage.getItem(`welcome_seen_${user.userId}`)
   );
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+
+  // ── Aviso da novidade (Journey to Fluency) ───────────────────
+  // Aparece uma vez por aluno, na voz do guia dele. A chave termina
+  // em "_v1": quando houver uma nova novidade para anunciar, basta
+  // trocar para "_v2" que todo mundo vê o aviso de novo.
+  const journeyNoticeKey = `journey_notice_v1_${user.userId}`;
+  const [showJourneyNotice, setShowJourneyNotice] = useState(
+    () => !localStorage.getItem(journeyNoticeKey)
+  );
+  const closeJourneyNotice = (openJourney: boolean) => {
+    localStorage.setItem(journeyNoticeKey, Date.now().toString());
+    setShowJourneyNotice(false);
+    if (openJourney) onOpenJourney();
+  };
 
   const isChallengeOnly = user.accessType === AccessType.CHALLENGE_ONLY;
   const isAdmin = user.username.toLowerCase() === 'admin' || user.isAdmin === true;
@@ -255,6 +270,64 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
         </div>
       )}
 
+      {/* ── Aviso da novidade, na voz do guia ── */}
+      {showJourneyNotice && !showWelcomeModal && (
+        <div className="fixed inset-0 z-[480] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#2a2a2a] w-full max-w-lg rounded-[2.5rem] border-2 border-[#f7931e]/50 shadow-[0_0_60px_rgba(247,147,30,0.25)] overflow-hidden animate-pop max-h-[92vh] overflow-y-auto scrollbar-hide">
+            <div className="relative p-8 bg-gradient-to-br from-[#f7931e] to-[#ff5e3a]">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#222222]/30 border-2 border-white/40 flex items-center justify-center backdrop-blur-sm shrink-0">
+                  <span className="text-3xl">🧭</span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Novidade na plataforma</p>
+                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none">Journey to Fluency</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-5">
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Oi, <span className="text-white font-black">{user.userName}</span>! Aqui é o <span className="text-[#f7931e] font-black">{user.guide}</span>. 👋
+                Muita gente me diz que fica em dúvida sobre <span className="text-white font-bold">o que estudar hoje</span> com tantas opções. Então criamos uma trilha para você seguir sem pensar: a <span className="text-[#f7931e] font-black">Journey to Fluency</span>.
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { icon: '🏆', title: '5 Seasons, do A1 ao C1', text: 'Cada Season é um nível. Você avança como numa série: uma temporada de cada vez.' },
+                  { icon: '📍', title: 'Steps na ordem da sua aula', text: 'Cada Step é um tópico de gramática, na mesma sequência que a gente usa na Freedom.' },
+                  { icon: '🎯', title: '5 exercícios por Step', text: 'Gramática, vocabulário, leitura, áudio e escrita — todos combinando entre si.' },
+                  { icon: '🚀', title: 'Já fez o nivelamento?', text: 'Então as Seasons do seu nível já vêm desbloqueadas. Você começa de onde está.' },
+                ].map(item => (
+                  <div key={item.title} className="flex items-start gap-3 bg-[#222222] p-4 rounded-2xl border border-white/5">
+                    <span className="text-xl shrink-0">{item.icon}</span>
+                    <div>
+                      <p className="text-white font-black text-xs uppercase tracking-tight">{item.title}</p>
+                      <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-gray-400 text-xs leading-relaxed italic">
+                Escolha entre 4 jornadas — <span className="text-white font-bold">Freedom</span>, <span className="text-white font-bold">Business</span>, <span className="text-white font-bold">Young</span> e <span className="text-white font-bold">Traveler</span> — e o conteúdo se adapta ao seu mundo. Vamos nessa? 💪
+              </p>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button onClick={() => closeJourneyNotice(true)}
+                  className="w-full py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-xl shadow-[#f7931e]/20 flex items-center justify-center gap-2">
+                  <Compass className="w-5 h-5" /> Conhecer a trilha
+                </button>
+                <button onClick={() => closeJourneyNotice(false)}
+                  className="w-full py-4 bg-transparent text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:text-white transition-all">
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Access Alert ── */}
       {showAccessAlert && (
         <div className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowAccessAlert(false)}>
@@ -388,6 +461,34 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ── JOURNEY TO FLUENCY ── */}
+      {/* Fica ACIMA do wizard de propósito: a trilha é o caminho
+          recomendado para quem não sabe o que estudar hoje — que era
+          justamente onde o aluno se perdia entre tantas opções. */}
+      <button onClick={onOpenJourney}
+        className="group relative w-full overflow-hidden rounded-[2.5rem] border-2 border-[#f7931e]/40 hover:border-[#f7931e] bg-[#2a2a2a] p-6 md:p-8 text-left transition-all hover:-translate-y-0.5 shadow-xl">
+        <div className="absolute -right-16 -top-20 w-80 h-80 rounded-full bg-gradient-to-br from-[#f7931e] to-[#ff5e3a] opacity-20 blur-3xl group-hover:opacity-30 transition-opacity" />
+        <div className="absolute -left-10 -bottom-16 w-56 h-56 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 opacity-10 blur-3xl" />
+        <div className="relative flex flex-col md:flex-row items-center gap-6">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#f7931e] to-[#ff5e3a] flex items-center justify-center text-4xl shadow-2xl shadow-[#f7931e]/30 shrink-0 group-hover:scale-105 transition-transform">
+            🧭
+          </div>
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded">Novo</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Trilha guiada</span>
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">Journey to Fluency</h3>
+            <p className="text-sm text-gray-400 font-medium leading-relaxed max-w-xl">
+              Não sabe o que estudar hoje? Siga a trilha: <span className="text-white font-bold">5 Seasons</span> (A1 ao C1), divididas em Steps com gramática, vocabulário, leitura, áudio e escrita — na mesma ordem da sua aula na Freedom.
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs group-hover:scale-105 transition-transform shadow-lg">
+            <Compass className="w-5 h-5" /> Abrir trilha
+          </div>
+        </div>
+      </button>
 
       {/* ── Nav Buttons ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

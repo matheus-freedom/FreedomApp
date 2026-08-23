@@ -16,6 +16,19 @@
 [functions.placement-background]
   timeout = 900
 
+# Journey to Fluency — entrega UM exercício da trilha. Busca no banco
+# compartilhado (journey_bank) e só chama a IA quando ninguém ainda
+# passou por aquele exercício. Uma geração de texto cabe nos 26s; por
+# isso o áudio do listening ficou na função de baixo.
+[functions.journey-content]
+  timeout = 26
+
+# TTS dos exercícios de listening da Journey. Background = até 15
+# minutos. Roda no máximo UMA vez por exercício: o arquivo fica no
+# Storage e todos os alunos seguintes tocam o mesmo áudio.
+[functions.journey-audio-background]
+  timeout = 900
+
 # Fechamento diário do ranking (Hall da Fama). Roda às 03:10 UTC =
 # 00:10 de Brasília, para que na segunda-feira de manhã o campeão
 # da semana já esteja registrado mesmo que ninguém tenha praticado.

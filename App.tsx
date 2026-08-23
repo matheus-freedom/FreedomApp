@@ -20,7 +20,10 @@ import AdminPanel from './components/AdminPanel';
 import ChallengesScreen from './components/ChallengesScreen';
 import ChatScreen from './components/ChatScreen';
 import RankingHistoryScreen from './components/RankingHistoryScreen';
+import JourneyScreen from './components/JourneyScreen';
+import GapFillScreen from './components/GapFillScreen';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
+import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS } from './journeys';
 import { generateQuizContent } from './services/geminiService';
 import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle } from 'lucide-react';
@@ -96,6 +99,9 @@ const App: React.FC = () => {
   const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Muda a cada exercício de trilha concluído: é o sinal para a
+  // JourneyScreen reler o progresso no servidor ao voltar do exercício.
+  const [journeyReload, setJourneyReload] = useState(0);
 
   // ── TRAVA ANTI-CLIQUE-DUPLO ───────────────────────────────────
   // useRef é síncrono: bloqueia instantaneamente, antes mesmo do
@@ -190,9 +196,24 @@ const App: React.FC = () => {
     if (state.user) {
       // Libera a trava ao voltar para a tela inicial
       isStartingRef.current = false;
-      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null }));
+      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null }));
     }
   }, [state.user]);
+
+  // ── Sair de um exercício ──────────────────────────────────────
+  // Se o exercício veio da trilha, o destino natural é o MAPA da
+  // trilha (com o progresso recarregado), não o menu principal —
+  // devolver o aluno ao início a cada exercício quebraria o ritmo
+  // que a Journey existe para criar.
+  const handleExitActivity = useCallback(() => {
+    isStartingRef.current = false;
+    if (state.journeyContext) {
+      setJourneyReload(n => n + 1);
+      setState(prev => ({ ...prev, status: 'journey', content: null, journeyContext: null, newTierReached: null }));
+    } else {
+      handleHome();
+    }
+  }, [state.journeyContext, handleHome]);
 
   // Devolve TRUE quando o exercício realmente começou a ser preparado e
   // FALSE quando o pedido foi ignorado (trava, limite diário, sem aluno).
@@ -216,7 +237,7 @@ const App: React.FC = () => {
       return false;
     }
 
-    setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined }));
+    setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined, journeyContext: null, loadingMessage: undefined }));
     try {
       // Só reaproveita do banco quando o tópico já tem ACTIVITY_VARIATIONS
       // versões diferentes. Até lá, gera uma nova a cada vez, para o
@@ -264,6 +285,67 @@ const App: React.FC = () => {
     }
   };
 
+  // ── Início de um exercício da JOURNEY TO FLUENCY ──────────────
+  // Diferente do handleStart (prática livre), aqui o aluno não
+  // escolhe nível/tema/tópico: eles vêm da posição na trilha. O
+  // conteúdo é pedido à function journey-content, que devolve do
+  // banco compartilhado quando já existe — só o primeiro aluno a
+  // chegar em cada exercício gasta crédito de IA.
+  const handleStartJourney = async (journeyId: JourneyId, season: number, node: JourneyNode, kind: JourneyKind): Promise<boolean> => {
+    if (!state.user) return false;
+    if (isStartingRef.current) return false;
+    isStartingRef.current = true;
+
+    const today = new Date().toISOString().split('T')[0];
+    const dailyCount = state.user.gamification.lastActivityDate === today ? state.user.gamification.dailyActivitiesCount : 0;
+    if (!state.user.gamification.isPro && dailyCount >= DAILY_LIMIT) {
+      alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje. Sua jornada continua amanhã!`);
+      isStartingRef.current = false;
+      return false;
+    }
+
+    const level = SEASONS[season].level;
+    const theme = KIND_META[kind].theme;
+    // O "tópico" que aparece na tela e no histórico: vocabulário usa o
+    // tema de vocabulário; os demais usam o tópico gramatical do Step.
+    const subTopic = kind === 'vocabulary' ? node.vocabTheme : node.grammarTopic;
+
+    setState(prev => ({
+      ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined,
+      journeyContext: { journeyId, season, node: node.index, kind },
+      loadingMessage: 'Preparando seu exercício...',
+    }));
+
+    try {
+      const { content } = await api.getJourneyExercise(journeyId, season, node.index, kind);
+      const newCount = await api.incrementActivityCount(state.user.userId);
+      const applyCount = (prev: AppState): UserSession | null => prev.user && ({
+        ...prev.user,
+        gamification: { ...prev.user.gamification, dailyActivitiesCount: newCount, lastActivityDate: today },
+      });
+
+      isStartingRef.current = false;
+
+      // Escrita das Seasons 1 e 2 vem como lacunas (gapItems) e usa a
+      // tela própria; das Seasons 3+ é texto livre na tela de escrita.
+      const nextStatus: AppState['status'] =
+        kind === 'writing' ? (content.gapItems?.length ? 'gapfill' : 'writing') : 'quiz';
+
+      setState(prev => ({
+        ...prev, user: applyCount(prev), status: nextStatus, content,
+        score: 0, currentQuestionIndex: 0, loadingMessage: undefined,
+      }));
+      return true;
+    } catch (error) {
+      isStartingRef.current = false;
+      setState(prev => ({
+        ...prev, status: 'error', loadingMessage: undefined,
+        errorMessage: error instanceof Error ? error.message : 'Não consegui preparar este exercício. Tente novamente.',
+      }));
+      return false;
+    }
+  };
+
   const handleFinish = async (finalScore: number, total: number) => {
     if (!state.user) return;
     setState(prev => ({ ...prev, status: 'loading' }));
@@ -271,14 +353,29 @@ const App: React.FC = () => {
       // O servidor calcula o XP, aplica "só na 1ª vez" e o teto diário,
       // e grava histórico + gamificação. Repetir a mesma atividade
       // (Refazer ou pela aba Histórico) volta com xpGained = 0.
-      const { totalXp, xpGained, frGained, totalFr, isRepeat } = await api.completeActivity({
+      const { totalXp, xpGained, frGained, totalFr, isRepeat, journeyProgressSaved } = await api.completeActivity({
         level: state.level!,
         theme: state.theme!,
         topic: state.subTopic!,
-        type: state.theme === Theme.Writing ? 'writing' : 'quiz',
+        // Escrita por lacunas é corrigida no navegador e chega aqui com
+        // acertos/total, igual a um quiz — por isso vai como 'quiz'.
+        type: state.theme === Theme.Writing && !state.content?.gapItems?.length ? 'writing' : 'quiz',
         score: finalScore,
         total,
+        // Quando o exercício veio da trilha, o servidor também grava o
+        // progresso do Step (melhor nota e estrelas).
+        journey: state.journeyContext || undefined,
       });
+      if (state.journeyContext) {
+        setJourneyReload(n => n + 1);
+        // O XP entrou, mas o progresso do Step não foi gravado. Se
+        // ficarmos calados, o aluno volta ao mapa, vê o exercício ainda
+        // "não iniciado" e refaz — gastando um exercício da cota dele
+        // à toa. Melhor avisar na hora.
+        if (journeyProgressSaved === false) {
+          alert('Seu XP foi registrado, mas não consegui salvar o progresso deste exercício na trilha. Se ele continuar aparecendo como não feito, refaça-o (o XP dele já está garantido).');
+        }
+      }
 
       const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
       const prevTier = calculateTier(state.user.gamification.xp);
@@ -324,6 +421,13 @@ const App: React.FC = () => {
   };
 
   const handleUserUpdate = (updatedUser: UserSession) => { setState(p => ({ ...p, user: updatedUser })); };
+
+  // Rótulo "Season 1 · Step 3 · Gramática" mostrado durante o
+  // exercício e no resultado, para o aluno nunca perder a noção de
+  // onde está dentro da trilha.
+  const journeyLabel = state.journeyContext
+    ? `${SEASONS[state.journeyContext.season].title} · ${KIND_META[state.journeyContext.kind].label}`
+    : undefined;
 
   return (
     <div className="min-h-screen bg-[#222222] text-white font-sans selection:bg-[#f7931e] selection:text-[#222222]">
@@ -409,6 +513,7 @@ const App: React.FC = () => {
             onOpenChallenges={() => setState(p => ({ ...p, status: 'challenges' }))}
             onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))}
             onOpenRankingHistory={() => setState(p => ({ ...p, status: 'ranking_history' }))}
+            onOpenJourney={() => { setJourneyReload(n => n + 1); setState(p => ({ ...p, status: 'journey' })); }}
             isLoading={state.status === 'loading'}
             hasActivePlan={!!state.studyPlan}
             onUserUpdate={handleUserUpdate}
@@ -478,9 +583,29 @@ const App: React.FC = () => {
         )}
         {state.status === 'plan_setup' && state.user && <StudyPlanSetup user={state.user} onCancel={handleHome} onPlanGenerated={async (newPlan) => { if (state.user) await api.savePlan(state.user.userId, newPlan); setState(prevState => ({ ...prevState, studyPlan: newPlan, status: 'dashboard' })); }} />}
         {state.status === 'dashboard' && state.studyPlan && state.user && <DashboardScreen plan={state.studyPlan} user={state.user} history={state.activityHistory} onUpdatePlan={async (updatedPlan) => { if (state.user) await api.savePlan(state.user.userId, updatedPlan); setState(prevState => ({ ...prevState, studyPlan: updatedPlan })); }} onHome={handleHome} onResetPlan={async () => { await api.deletePlan(state.user!.userId); setState(p => ({ ...p, studyPlan: null, status: 'plan_setup' })); }} onStartTask={(t) => handleStart(state.studyPlan!.inputs.level, t.relatedTheme!, t.description)} />}
-        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleHome} level={state.level!} theme={state.theme!} topic={state.subTopic!} />}
-        {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleHome} />}
-        {state.status === 'results' && <ResultsScreen score={state.score} totalQuestions={state.theme === Theme.Writing ? 100 : (state.content?.questions.length || 10)} onRetry={() => setState(p => ({ ...p, status: state.theme === Theme.Writing ? 'writing' : 'quiz' }))} onHome={handleHome} xpGained={state.lastXpGained} frGained={state.lastFrGained} wasRepeat={state.lastWasRepeat} />}
+        {state.status === 'journey' && state.user && (
+          <JourneyScreen
+            user={state.user}
+            onHome={handleHome}
+            onStartExercise={handleStartJourney}
+            reloadToken={journeyReload}
+          />
+        )}
+        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={state.user?.guide} userName={state.user?.userName} journeyLabel={journeyLabel} />}
+        {state.status === 'gapfill' && state.content && state.user && <GapFillScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={handleFinish} onHome={handleExitActivity} guide={state.user.guide} userName={state.user.userName} />}
+        {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleExitActivity} />}
+        {state.status === 'results' && (
+          <ResultsScreen
+            score={state.score}
+            totalQuestions={state.theme === Theme.Writing && !state.content?.gapItems?.length ? 100 : (state.content?.gapItems?.length || state.content?.questions.length || 10)}
+            onRetry={() => setState(p => ({ ...p, status: p.content?.gapItems?.length ? 'gapfill' : (state.theme === Theme.Writing ? 'writing' : 'quiz') }))}
+            onHome={handleExitActivity}
+            xpGained={state.lastXpGained}
+            frGained={state.lastFrGained}
+            wasRepeat={state.lastWasRepeat}
+            journeyLabel={journeyLabel}
+          />
+        )}
       </main>
       <a href="https://wa.me/message/JZDOD5MBRXEAO1" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 left-6 z-50 flex items-center gap-2 text-gray-500 hover:text-[#f7931e] transition-all bg-[#1a1a1a]/50 p-2.5 rounded-xl backdrop-blur-sm group border border-white/5 hover:border-[#f7931e]/30 shadow-2xl" title="Reportar Erro"><AlertTriangle className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline-block animate-fade-in pr-1">Reportar Erro</span></a>
       {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'keyword_check' && (

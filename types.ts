@@ -164,6 +164,10 @@ export interface GeneratedContent {
   readingText?: string;
   listeningScript?: string;
   audioData?: string;
+  // Áudio JÁ pronto no Firebase Storage (exercícios da Journey). Quando
+  // presente, o quiz toca este arquivo em vez de pedir um TTS novo —
+  // é o que evita gastar uma geração de áudio por aluno.
+  audioUrl?: string;
   imageData?: string;
   writingPrompt?: string;
   writingPromptPT?: string;
@@ -172,6 +176,23 @@ export interface GeneratedContent {
     gender: VoiceGender;
     accent: VoiceAccent;
   };
+  // ── Journey: escrita por lacunas (Seasons 1 e 2) ──────────
+  // Frases com "____" que o aluno completa digitando. A correção é
+  // feita no próprio navegador (sem IA): compara com 'answer' e
+  // 'alternatives' ignorando maiúsculas e espaços extras.
+  gapItems?: GapItem[];
+  // Instrução de tamanho para a escrita livre (Seasons 3+), ex.:
+  // "Escreva 3 a 5 frases". Mostrada acima da caixa de texto.
+  writingLengthHint?: string;
+}
+
+export interface GapItem {
+  id: number;
+  sentence: string;        // Ex.: "She ____ a teacher."
+  answer: string;          // Ex.: "is"
+  alternatives?: string[]; // Outras respostas aceitas (ex.: "'s")
+  hintPT?: string;         // Dica em português (ex.: "verbo to be, 3ª pessoa")
+  translationPT?: string;  // Tradução da frase completa
 }
 
 // ── Novo: entrada do Top 3 em um snapshot de ranking ──────────
@@ -311,7 +332,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history';
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'gapfill' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history' | 'journey';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -335,6 +356,13 @@ export interface AppState {
   // ── Novo: resultado a exibir na tela de resultado do nivelamento ──
   placementResultLevel?: Level | null;
   placementResultScore?: number | null;
+  // ── Journey to Fluency ────────────────────────────────────
+  // Quando preenchido, o exercício em andamento pertence à trilha:
+  // o resultado é gravado no progresso da jornada e, ao terminar,
+  // o aluno volta para o mapa em vez do menu principal.
+  journeyContext?: import('./journeys').JourneyContext | null;
+  // Mensagem de carregamento em etapas (ex.: "Gerando seu exercício...").
+  loadingMessage?: string;
 }
 
 export interface StudyPlanInput {

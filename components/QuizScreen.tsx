@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { GeneratedContent, QuizQuestion, VoiceGender, VoiceAccent, Level, Theme } from '../types';
+import { GeneratedContent, QuizQuestion, VoiceGender, VoiceAccent, Level, Theme, GuideCharacter } from '../types';
 import { generateAudioFromText, translateWordToPortuguese } from '../services/geminiService';
+import GuideReaction, { ReactionEvent } from './GuideReaction';
 import { ArrowRight, Check, X, Home, Play, Pause, Volume2, FileText, Loader2, Languages, ChevronDown, ChevronUp, FastForward, Rewind, Image as ImageIcon, Sparkles, Gauge } from 'lucide-react';
 
 interface QuizScreenProps {
@@ -11,6 +12,12 @@ interface QuizScreenProps {
   level: Level;
   theme: Theme;
   topic: string;
+  // Guia (Fred/Frida) que reage aos acertos e erros. Opcional: quando
+  // não vem, o quiz funciona exatamente como antes, sem balões.
+  guide?: GuideCharacter;
+  userName?: string;
+  // Rótulo do contexto da trilha, ex.: "Season 1 · Step 3".
+  journeyLabel?: string;
 }
 
 // Singleton AudioContext para evitar overhead de criação
@@ -182,14 +189,19 @@ export const InteractiveText: React.FC<{ text: string; voiceGender?: VoiceGender
   );
 };
 
-const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, theme, level, topic }) => {
+const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, theme, level, topic, guide, userName, journeyLabel }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [reaction, setReaction] = useState<ReactionEvent>(null);
+  const streaks = useRef({ correct: 0, wrong: 0, seq: 0 });
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [showTranscript, setShowTranscript] = useState(false);
   const [showQuestionTranslation, setShowQuestionTranslation] = useState(false);
   const [localAudioData, setLocalAudioData] = useState<string | null>(null);
+  // Vira true quando o arquivo de áudio pronto (Storage) não carrega:
+  // daí em diante o exercício usa o TTS gerado no navegador.
+  const [audioUrlFailed, setAudioUrlFailed] = useState(false);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -234,6 +246,38 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
   };
 
   const handleGenerateAudio = async () => {
+    // ── Caminho barato: áudio já pronto no Storage ───────────────
+    // Exercícios da Journey têm o WAV gerado UMA vez pelo servidor e
+    // guardado no Firebase Storage. Quando a URL existe, não se pede
+    // TTS nenhum: é só tocar o arquivo.
+    if (content.audioUrl && !audioUrlFailed) {
+      setIsGeneratingAudio(true);
+      const ok = await new Promise<boolean>((resolve) => {
+        const audio = new Audio(content.audioUrl);
+        // new Audio() NUNCA lança erro para URL quebrada — a falha
+        // chega por onerror. Sem escutar isso, o player abriria mudo
+        // e o aluno ficaria olhando um botão de "Pause" que não toca.
+        audio.onerror = () => resolve(false);
+        audio.onloadedmetadata = () => { setDuration(audio.duration); resolve(true); };
+        audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
+        audio.onended = () => { setIsPlaying(false); setCurrentTime(0); };
+        audioRef.current = audio;
+        // Rede lenta não é falha: passados 12s seguimos para o TTS.
+        setTimeout(() => resolve(false), 12000);
+      });
+      if (ok) {
+        setLocalAudioData(content.audioUrl);
+        setIsGeneratingAudio(false);
+        return;
+      }
+      // Arquivo indisponível: cai no caminho antigo (gerar no
+      // navegador) em vez de deixar o exercício sem áudio.
+      console.warn('Áudio pronto indisponível; gerando na hora.');
+      audioRef.current = null;
+      setAudioUrlFailed(true);
+      setIsGeneratingAudio(false);
+    }
+
     const text = content.listeningScript || content.readingText;
     if (!text) return;
     setIsGeneratingAudio(true);
@@ -294,6 +338,20 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
     const isCorrect = idx === currentQuestion.correctAnswerIndex;
     playFeedbackSound(isCorrect);
     if (isCorrect) setScore(s => s + 1);
+
+    // Reação do guia: sequências de acerto viram elogio, erros viram
+    // incentivo. Contadores em ref para não disparar re-render extra.
+    streaks.current.correct = isCorrect ? streaks.current.correct + 1 : 0;
+    streaks.current.wrong = isCorrect ? 0 : streaks.current.wrong + 1;
+    streaks.current.seq += 1;
+    if (guide) {
+      const lastQuestion = currentIdx === content.questions.length - 1;
+      setReaction({
+        seq: streaks.current.seq, correct: isCorrect,
+        correctStreak: streaks.current.correct, wrongStreak: streaks.current.wrong,
+        isLast: lastQuestion, perfect: isCorrect && score + 1 === content.questions.length,
+      });
+    }
   };
 
   const handleNext = () => {
@@ -313,8 +371,14 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-6 pb-40 flex flex-col items-center">
+      {guide && <GuideReaction guide={guide} userName={userName || ''} event={reaction} />}
       <div className="w-full flex justify-between items-start mb-8">
         <div className="flex flex-col gap-1">
+          {journeyLabel && (
+            <div className="inline-flex items-center gap-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-[#f7931e]/10 border border-[#f7931e]/30 text-[#f7931e] px-3 py-1 rounded-lg w-fit">
+              🧭 {journeyLabel}
+            </div>
+          )}
           <div className="flex items-center gap-1.5 text-[9px] md:text-[10px] font-black text-gray-500 uppercase tracking-widest bg-[#2a2a2a] px-3 py-1 rounded-lg border border-white/5">
              <span className="text-[#f7931e]">{level}</span>
              <span className="opacity-30">•</span>

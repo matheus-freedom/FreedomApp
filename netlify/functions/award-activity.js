@@ -29,6 +29,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { randomUUID } = require("crypto");
 const { weekKeyOf, monthKeyOf, SOURCE_TAG } = require("./lib/ranking-core");
+const { resolvePosition, canAccess } = require("./lib/journey-core");
 
 const DAILY_XP_LIMIT = 800;
 
@@ -118,8 +119,76 @@ const faltaFecharSemana = async (db) => {
 };
 
 // ── Assinatura de uma atividade (identidade para o "1ª vez") ──
+// Para exercícios da Journey a assinatura vem da POSIÇÃO na trilha,
+// não do texto do tópico. Duas razões: (a) renomear um tópico do
+// currículo não faz o aluno ganhar XP de novo pelo mesmo exercício;
+// (b) a mesma gramática praticada na trilha e na prática livre são
+// atividades diferentes e cada uma dá XP na sua primeira vez.
 const normalizeTopic = (t) => String(t || "").toLowerCase().trim();
-const signatureOf = (a) => `${a.type}|${a.level}|${a.theme}|${normalizeTopic(a.topic)}`;
+const signatureOf = (a) =>
+  a.journey
+    ? `journey|${a.journey.journeyId}|s${a.journey.season}|n${a.journey.node}|${a.journey.kind}`
+    : `${a.type}|${a.level}|${a.theme}|${normalizeTopic(a.topic)}`;
+
+// ── Journey: validação da posição e gravação do progresso ─────
+// resolvePosition confere contra o currículo de verdade (o mesmo
+// JSON que o front usa): a Season existe, o nó existe dentro dela e
+// aquele TIPO de exercício existe naquele nó — um Review, por
+// exemplo, só tem gramática. Qualquer coisa fora disso vira "sem
+// jornada": a atividade ainda conta como prática livre, mas não
+// suja o progresso da trilha.
+const parseJourney = (raw) => {
+  const pos = resolvePosition(raw);
+  if (!pos) return null;
+  return { journeyId: pos.journeyId, season: pos.season, node: pos.node, kind: pos.kind };
+};
+
+const starsFor = (pct) => (pct >= 90 ? 3 : pct >= 75 ? 2 : 1);
+
+// Grava o resultado do exercício em journey_progress/{uid}.
+// Guarda a MELHOR nota (o aluno pode refazer para subir de estrelas)
+// e o número de tentativas. Transação porque dois exercícios podem
+// terminar quase juntos (ex.: aluno com duas abas abertas).
+const saveJourneyProgress = async (db, uid, journey, pct) => {
+  const ref = db.collection("journey_progress").doc(uid);
+  const userRef = db.collection("users").doc(uid);
+  const nodeKey = `s${journey.season}_n${journey.node}`;
+  return db.runTransaction(async (tx) => {
+    // Leituras primeiro (exigência do Firestore em transações).
+    const [snap, userSnap] = await Promise.all([tx.get(ref), tx.get(userRef)]);
+    const data = snap.exists ? snap.data() : { journeys: {} };
+
+    // O aluno realmente podia estar neste Step? Sem esta conferência,
+    // um POST forjado marcaria a trilha inteira como concluída — e a
+    // sequência dos Steps, que é a espinha da Journey, viraria enfeite.
+    const pos = resolvePosition(journey);
+    const access = pos ? canAccess(pos, snap.exists ? snap.data() : null, (userSnap.data() || {}).gamification) : { allowed: false };
+    if (!access.allowed) {
+      console.warn("journey progress recusado (posição bloqueada):", uid, nodeKey);
+      return false;
+    }
+
+    if (!data.journeys) data.journeys = {};
+    if (!data.journeys[journey.journeyId]) data.journeys[journey.journeyId] = { startedAt: Date.now(), nodes: {} };
+    const j = data.journeys[journey.journeyId];
+    if (!j.nodes) j.nodes = {};
+    if (!j.nodes[nodeKey]) j.nodes[nodeKey] = { exercises: {} };
+    const ex = j.nodes[nodeKey].exercises || (j.nodes[nodeKey].exercises = {});
+    const prev = ex[journey.kind];
+    const best = Math.max(pct, prev?.bestPct || 0);
+    ex[journey.kind] = {
+      bestPct: best,
+      attempts: (prev?.attempts || 0) + 1,
+      stars: starsFor(best),
+      completedAt: prev?.completedAt || Date.now(),
+      lastAt: Date.now(),
+    };
+    data.activeJourney = journey.journeyId;
+    data.updatedAt = Date.now();
+    tx.set(ref, data);
+    return true;
+  });
+};
 
 // ── Atualiza desafios ativos do aluno com o XP concedido ──────
 const updateChallenges = async (db, uid, awardedXp) => {
@@ -144,6 +213,9 @@ const updateChallenges = async (db, uid, awardedXp) => {
     await db.collection("challenges").doc(c.id).set(c);
   }
 };
+
+// Exposto só para os testes. A Netlify chama apenas exports.handler.
+exports._internals = { parseJourney, signatureOf, starsFor, normalizeTopic };
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || "";
@@ -179,8 +251,10 @@ exports.handler = async (event) => {
   if (!Number.isFinite(s) || !Number.isFinite(t) || t <= 0 || s < 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Nota inválida." }) };
   }
-  const rawXp = Math.min(100, Math.round(Math.min(1, s / t) * 100));
-  const sig = signatureOf({ type, level, theme, topic });
+  const pct = Math.round(Math.min(1, s / t) * 100);
+  const rawXp = Math.min(100, pct);
+  const journey = parseJourney(body.journey);
+  const sig = signatureOf({ type, level, theme, topic, journey });
 
   try {
     // ── 3) "Só na primeira vez": já existe no histórico? ──────
@@ -242,7 +316,19 @@ exports.handler = async (event) => {
       level, theme, topic, score: s, total: t, type,
       xpGained: result.xpGained, frGained: result.frGained, signature: sig,
     };
+    if (journey) record.journey = journey;
     await db.collection("history").doc(record.id).set(record);
+
+    // ── Progresso da trilha ───────────────────────────────────
+    // Vem DEPOIS do XP e num try próprio: se falhar, o aluno não
+    // perde os pontos que acabou de ganhar. Diferente do XP, o
+    // progresso é gravado mesmo em repetição — é assim que o aluno
+    // melhora as estrelas de um exercício refazendo.
+    let journeyProgressSaved = false;
+    if (journey) {
+      try { journeyProgressSaved = await saveJourneyProgress(db, uid, journey, pct); }
+      catch (e) { console.error("journey progress:", e); }
+    }
 
     // ── 6) Efeitos colaterais (fora da transação) ─────────────
     // Virou semana/mês para este aluno, ou o fechamento anterior
@@ -252,7 +338,7 @@ exports.handler = async (event) => {
     }
     try { await updateChallenges(db, uid, result.xpGained); } catch (e) { console.error("challenges:", e); }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ ...result, record }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ ...result, record, pct, journeyProgressSaved }) };
   } catch (error) {
     console.error("Erro em award-activity:", error);
     if (String(error.message).includes("USER_NOT_FOUND")) {

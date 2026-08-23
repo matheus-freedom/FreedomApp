@@ -1,4 +1,5 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
+import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
@@ -8,6 +9,12 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 const AWARD_URL = import.meta.env.DEV
   ? 'http://localhost:8888/.netlify/functions/award-activity'
   : '/.netlify/functions/award-activity';
+
+// Endpoint que entrega os exercícios da Journey to Fluency (busca no
+// banco compartilhado e, só se não existir, gera com a IA).
+const JOURNEY_URL = import.meta.env.DEV
+  ? 'http://localhost:8888/.netlify/functions/journey-content'
+  : '/.netlify/functions/journey-content';
 
 // ── Helpers de período ────────────────────────────────────────
 
@@ -372,8 +379,8 @@ export const api = {
   // com Admin SDK — o aluno NÃO consegue forjar pontos. O cliente
   // só envia o resultado e a identidade dele vem do token de login.
   completeActivity: async (
-    input: { level: Level; theme: Theme; topic: string; type: 'quiz' | 'writing'; score: number; total: number }
-  ): Promise<{ totalXp: number; xpGained: number; frGained: number; totalFr: number; isRepeat: boolean; record: ActivityRecord }> => {
+    input: { level: Level; theme: Theme; topic: string; type: 'quiz' | 'writing'; score: number; total: number; journey?: JourneyContext | null }
+  ): Promise<{ totalXp: number; xpGained: number; frGained: number; totalFr: number; isRepeat: boolean; record: ActivityRecord; pct?: number; journeyProgressSaved?: boolean }> => {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error('Sua sessão expirou. Faça login novamente.');
     const res = await fetch(AWARD_URL, {
@@ -742,4 +749,45 @@ export const api = {
   },
 
   admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
+
+  // ══════════════════════════════════════════════════════════════
+  // JOURNEY TO FLUENCY
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Progresso do aluno na trilha ──────────────────────────────
+  // Documento journey_progress/{uid}, escrito SÓ pelo servidor
+  // (award-activity). O cliente apenas lê: assim ninguém marca um
+  // Step como concluído pelo DevTools para pular a fila.
+  getJourneyProgress: async (userId: string): Promise<JourneyProgressDoc | null> => {
+    try {
+      const snap = await getDoc(doc(db, 'journey_progress', userId));
+      return snap.exists() ? (snap.data() as JourneyProgressDoc) : null;
+    } catch (e) {
+      console.error('Erro ao ler progresso da jornada:', e);
+      return null;
+    }
+  },
+
+  // ── Busca (ou manda gerar) UM exercício da trilha ─────────────
+  // A function devolve do banco compartilhado quando já existe —
+  // é o que impede a plataforma de gastar créditos de IA de novo a
+  // cada aluno. 'cached' diz qual dos dois casos aconteceu (útil
+  // para o front mostrar "preparando" só quando é geração real).
+  getJourneyExercise: async (
+    journeyId: JourneyId, season: number, node: number, kind: JourneyKind
+  ): Promise<{ content: GeneratedContent; cached: boolean }> => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sua sessão expirou. Faça login novamente.');
+    const res = await fetch(JOURNEY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ journeyId, season, node, kind }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || `Erro ${res.status}`);
+    }
+    const data = await res.json();
+    return { content: data.content as GeneratedContent, cached: !!data.cached };
+  },
 };

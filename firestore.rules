@@ -1,0 +1,94 @@
+// ════════════════════════════════════════════════════════════════
+// FREEDOMAPP — Regras do Firestore
+// ────────────────────────────────────────────────────────────────
+// COMO USAR: Console do Firebase → Firestore → Regras → colar este
+// conteúdo → "Laboratório de testes de regras" (simulador) → só
+// então Publicar.
+//
+// ⚠️ POR QUE ISTO PRECISOU MUDAR AGORA
+// A regra anterior terminava com um curinga:
+//
+//     match /{document=**} { allow write: if request.auth != null; }
+//
+// No Firestore, as regras são somadas (OU), não sobrepostas: se
+// QUALQUER regra que casa com o caminho permite, está permitido.
+// Ou seja, um curinga liberando escrita para "qualquer um logado"
+// não pode ser restringido depois por uma regra mais específica —
+// ela seria simplesmente ignorada.
+//
+// Antes da Journey isso já era ruim (o aluno podia editar o próprio
+// XP). Com a Journey fica pior, porque agora existe conteúdo
+// COMPARTILHADO: um único aluno com o DevTools aberto poderia
+// reescrever os exercícios da coleção journey_bank — e todos os
+// outros alunos da escola passariam a ver o que ele escreveu.
+//
+// Por isso o curinga sai e cada coleção passa a ser declarada.
+//
+// NOTA: o Admin SDK (as Netlify Functions) IGNORA estas regras por
+// design. Então "allow write: if false" quer dizer "só o servidor
+// escreve" — as functions continuam funcionando normalmente.
+// ════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() {
+      return request.auth != null;
+    }
+
+    // ── users ────────────────────────────────────────────────
+    // Leitura aberta porque a tela de login procura o e-mail pelo
+    // @username ANTES de o aluno estar autenticado. (Fechar isso de
+    // vez exige a coleção `usernames` do passo 2 da auditoria.)
+    // Escrita continua como estava — apertá-la é o Passo 2B, que
+    // depende de mover perfil/streak/chat para o servidor.
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if logado();
+    }
+
+    // ── Conteúdo e progresso da Journey to Fluency ────────────
+    // journey_bank guarda os exercícios COMPARTILHADOS por toda a
+    // escola. Ninguém escreve pelo navegador: quem grava é a
+    // function journey-content (Admin SDK). A leitura também é
+    // fechada — o aluno recebe o exercício pela function, que antes
+    // confere se ele pode mesmo estar naquele ponto da trilha.
+    match /journey_bank/{exercicio} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // O aluno LÊ o próprio progresso (é o que desenha o mapa) e não
+    // escreve nada: quem grava é a function award-activity, depois
+    // de conferir a nota e a posição. Sem isto, "concluí a trilha"
+    // seria só uma linha digitada no console do navegador.
+    match /journey_progress/{userId} {
+      allow read: if logado() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // ── Demais coleções (comportamento preservado) ────────────
+    // Mesma permissão que o curinga anterior dava, só que declarada
+    // coleção por coleção — para que journey_bank e journey_progress
+    // acima não sejam anulados por um curinga mais frouxo.
+    match /plans/{doc}              { allow read, write: if logado(); }
+    match /history/{doc}            { allow read, write: if logado(); }
+    match /bank/{doc}               { allow read, write: if logado(); }
+    match /challenges/{doc}         { allow read, write: if logado(); }
+    match /messages/{doc}           { allow read, write: if logado(); }
+    match /ranking_snapshots/{doc}  { allow read, write: if logado(); }
+    match /ranking_locks/{doc}      { allow read, write: if logado(); }
+    match /placement_bank/{doc}     { allow read, write: if logado(); }
+    match /placement_jobs/{doc}     { allow read, write: if logado(); }
+    match /placement_locks/{doc}    { allow read, write: if logado(); }
+
+    // Qualquer coleção NÃO listada acima fica fechada ao navegador.
+    // É de propósito: se amanhã o código passar a usar uma coleção
+    // nova, ela nasce trancada e alguém precisa decidir a regra —
+    // em vez de nascer aberta e ninguém perceber.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

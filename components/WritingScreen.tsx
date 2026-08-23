@@ -178,8 +178,16 @@ const WritingScreen: React.FC<WritingScreenProps> = ({ content, level, theme, to
         <div className="bg-[#333333] p-6 rounded-2xl border border-[#444444] shadow-lg relative overflow-hidden">
            <div className="absolute top-0 right-0 p-4 opacity-5"><PenTool className="w-24 h-24 text-[#f7931e]" /></div>
            <h3 className="text-[#f7931e] text-[10px] font-bold uppercase tracking-tighter mb-1">Tarefa (Assignment)</h3>
-           <p className="text-lg md:text-xl text-white font-medium leading-relaxed mb-6">{content.writingPrompt}</p>
-           
+           <p className="text-lg md:text-xl text-white font-medium leading-relaxed mb-4">{content.writingPrompt}</p>
+           {/* Tamanho esperado — vem da trilha e cresce a cada Season
+               (frases curtas → parágrafo → texto). Deixa claro quanto se
+               espera do aluno antes de ele começar a escrever. */}
+           {content.writingLengthHint && (
+             <p className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-xl bg-[#f7931e]/10 border border-[#f7931e]/30 text-[#f7931e] text-[11px] font-black uppercase tracking-widest">
+               ✍️ {content.writingLengthHint}
+             </p>
+           )}
+
            <div className="flex flex-wrap gap-3">
              <button 
                 onClick={handleSeeExample} 
