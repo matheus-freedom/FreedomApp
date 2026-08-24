@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { showToast } from './Toast';
 import { Level, Theme, GeneratedContent, QuizQuestion, VoiceGender, VoiceAccent } from '../types';
 import { 
   generatePlacementGrammar, 
@@ -128,7 +129,7 @@ const PlacementTestScreen: React.FC<PlacementTestScreenProps> = ({ onFinish, onH
         setGrammarContent(content);
         setPhase('grammar');
       } catch (e) {
-        alert("Erro ao carregar teste de gramática. Verifique sua conexão.");
+        showToast("Erro ao carregar o teste de gramática. Verifique sua conexão.", 'error');
         onHome();
       }
     };
@@ -176,7 +177,7 @@ const PlacementTestScreen: React.FC<PlacementTestScreenProps> = ({ onFinish, onH
       }
     } catch (e) {
       console.error("Erro na transição de fase:", e);
-      alert("Houve um erro ao carregar a próxima etapa. Finalizando diagnóstico...");
+      showToast("Houve um erro ao carregar a próxima etapa. Finalizando o diagnóstico...", 'error');
       setPhase('results');
     }
   };
@@ -212,7 +213,7 @@ const PlacementTestScreen: React.FC<PlacementTestScreenProps> = ({ onFinish, onH
 
   const handleWritingSubmit = async () => {
     if (userWriting.length < 50) {
-        alert("Por favor, escreva um pouco mais para uma avaliação precisa.");
+        showToast("Escreva um pouco mais para uma avaliação precisa.", 'info');
         return;
     }
     setIsSubmitting(true);
@@ -266,7 +267,7 @@ const PlacementTestScreen: React.FC<PlacementTestScreenProps> = ({ onFinish, onH
         audio.play();
         setIsPlaying(true);
       } catch (e) {
-        alert("Erro ao gerar áudio de nivelamento.");
+        showToast("Erro ao gerar o áudio do nivelamento. Tente novamente.", 'error');
       } finally {
         setIsSubmitting(false);
       }

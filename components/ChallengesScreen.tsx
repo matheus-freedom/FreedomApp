@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { showToast } from './Toast';
 import { UserSession, UserChallenge, Level } from '../types';
 import { api } from '../services/api';
 import { 
@@ -48,15 +49,15 @@ const ChallengesScreen: React.FC<ChallengesScreenProps> = ({ user, onHome, onUse
     const target = allUsers.find(u => u.username.toLowerCase() === cleanUsername.toLowerCase());
     
     if (!target) {
-      alert("Usuário não encontrado.");
+      showToast("Usuário não encontrado.", 'error');
       return;
     }
     if (target.userId === user.userId) {
-      alert("Você não pode convidar a si mesmo.");
+      showToast("Você não pode convidar a si mesmo.", 'info');
       return;
     }
     if (invitedUsers.some(u => u.userId === target.userId)) {
-      alert("Usuário já convidado.");
+      showToast("Usuário já convidado.", 'info');
       return;
     }
     setInvitedUsers([...invitedUsers, target]);
@@ -65,13 +66,13 @@ const ChallengesScreen: React.FC<ChallengesScreenProps> = ({ user, onHome, onUse
 
   const handleCreateChallenge = async () => {
     if (!challengeName || !rules) {
-      alert("Preencha todos os campos.");
+      showToast("Preencha todos os campos.", 'info');
       return;
     }
 
     const activeCount = challenges.filter(c => c.status === 'active' && (c.participantIds || []).includes(user.userId)).length;
     if (activeCount >= 5) {
-      alert("Você já possui 5 desafios ativos. Aguarde algum se encerrar.");
+      showToast("Você já possui 5 desafios ativos. Aguarde algum se encerrar.", 'info');
       return;
     }
 
@@ -98,7 +99,7 @@ const ChallengesScreen: React.FC<ChallengesScreenProps> = ({ user, onHome, onUse
     setInvitedUsers([]);
     setChallengeName('');
     setRules('');
-    alert("Desafio criado com sucesso! Os convites foram enviados.");
+    showToast("Desafio criado com sucesso! Os convites foram enviados. ⚔️", 'success');
   };
 
   const activeChallenges = challenges.filter(c => c.status === 'active');

@@ -5,6 +5,7 @@ import { evaluateWritingExercise, generateWritingExample } from '../services/gem
 import { InteractiveText } from './QuizScreen';
 import { Home, Send, PenTool, Lightbulb, Loader2, BookOpen, Sparkles, Languages, ChevronDown, ChevronUp, RotateCcw, CheckCircle2, AlertCircle, Book, Target } from 'lucide-react';
 
+import { showToast } from './Toast';
 interface WritingScreenProps {
   content: GeneratedContent;
   level: Level;
@@ -36,7 +37,7 @@ const WritingScreen: React.FC<WritingScreenProps> = ({ content, level, theme, to
       setFeedback(result);
     } catch (e) { 
       console.error(e);
-      alert("Erro ao avaliar escrita. Verifique sua conexão e tente novamente."); 
+      showToast("Erro ao avaliar sua escrita. Verifique sua conexão e tente novamente.", 'error');
     }
     setIsSubmitting(false);
   };

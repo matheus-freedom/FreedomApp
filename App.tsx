@@ -26,9 +26,10 @@ import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRe
 import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS } from './journeys';
 import { generateQuizContent } from './services/geminiService';
 import { api } from './services/api';
-import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle } from 'lucide-react';
+import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle, Zap, Coins } from 'lucide-react';
+import { ToastHost, showToast } from './components/Toast';
+import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyUsage, getDailyAllowance } from './dailyLimit';
 
-const DAILY_LIMIT = 8;
 // Quantas versões diferentes de cada tópico o banco acumula antes de
 // passar a reaproveitar em vez de gerar. Mais versões = menos repetição
 // de texto e de personagem para o aluno; o custo é gerar algumas vezes
@@ -97,6 +98,9 @@ const App: React.FC = () => {
   });
 
   const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
+  // Modal do pacote extra de exercícios (+8 por FR$10) e trava da compra.
+  const [showExtraModal, setShowExtraModal] = useState(false);
+  const [buyingExtra, setBuyingExtra] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Muda a cada exercício de trilha concluído: é o sinal para a
@@ -124,7 +128,7 @@ const App: React.FC = () => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     if (state.user) {
       inactivityTimerRef.current = setTimeout(() => {
-        alert("Sessão expirada por inatividade.");
+        showToast("Sessão expirada por inatividade. Faça login de novo.", 'info', 7000);
         handleLogout();
       }, INACTIVITY_LIMIT);
     }
@@ -230,9 +234,10 @@ const App: React.FC = () => {
     isStartingRef.current = true;
 
     const today = new Date().toISOString().split('T')[0];
-    const dailyCount = state.user.gamification.lastActivityDate === today ? state.user.gamification.dailyActivitiesCount : 0;
-    if (!state.user.gamification.isPro && dailyCount >= DAILY_LIMIT) {
-      alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje.`);
+    const dailyCount = getDailyUsage(state.user.gamification);
+    if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
+      // Em vez do popup do navegador: oferece o pacote extra de exercícios.
+      setShowExtraModal(true);
       isStartingRef.current = false;
       return false;
     }
@@ -297,9 +302,10 @@ const App: React.FC = () => {
     isStartingRef.current = true;
 
     const today = new Date().toISOString().split('T')[0];
-    const dailyCount = state.user.gamification.lastActivityDate === today ? state.user.gamification.dailyActivitiesCount : 0;
-    if (!state.user.gamification.isPro && dailyCount >= DAILY_LIMIT) {
-      alert(`Parabéns! Você já concluiu seus ${DAILY_LIMIT} exercícios de hoje. Sua jornada continua amanhã!`);
+    const dailyCount = getDailyUsage(state.user.gamification);
+    if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
+      // Em vez do popup do navegador: oferece o pacote extra de exercícios.
+      setShowExtraModal(true);
       isStartingRef.current = false;
       return false;
     }
@@ -373,7 +379,7 @@ const App: React.FC = () => {
         // "não iniciado" e refaz — gastando um exercício da cota dele
         // à toa. Melhor avisar na hora.
         if (journeyProgressSaved === false) {
-          alert('Seu XP foi registrado, mas não consegui salvar o progresso deste exercício na trilha. Se ele continuar aparecendo como não feito, refaça-o (o XP dele já está garantido).');
+          showToast('Seu XP foi registrado, mas não consegui salvar o progresso deste exercício na trilha. Se ele continuar como não feito, refaça-o (o XP já está garantido).', 'error', 10000);
         }
       }
 
@@ -407,7 +413,7 @@ const App: React.FC = () => {
       // soma 1 de novo aqui: com o "+1" o modal de meta concluída
       // aparecia já no 7º de 8 exercícios, mandando o aluno embora com
       // um exercício ainda disponível.
-      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= DAILY_LIMIT) setShowDailyLimitModal(true);
+      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= getDailyAllowance(state.user.gamification)) setShowDailyLimitModal(true);
     } catch (error) {
       // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
@@ -422,6 +428,24 @@ const App: React.FC = () => {
 
   const handleUserUpdate = (updatedUser: UserSession) => { setState(p => ({ ...p, user: updatedUser })); };
 
+  // ── Compra do pacote extra de exercícios (+8 hoje, FR$10) ─────
+  // A transação na API é atômica: ou desconta e credita, ou não faz
+  // nada (saldo insuficiente vira uma mensagem amigável no toast).
+  const handleBuyExtraDaily = async () => {
+    if (!state.user || buyingExtra) return;
+    setBuyingExtra(true);
+    try {
+      const { user } = await api.purchaseExtraDaily(state.user.userId);
+      setState(p => p.user ? ({ ...p, user: { ...p.user, gamification: user.gamification } }) : p);
+      setShowExtraModal(false);
+      setShowDailyLimitModal(false);
+      showToast('Pacote comprado! Você ganhou +8 exercícios para hoje. 🎉', 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Não consegui concluir a compra. Tente novamente.', 'error', 7000);
+    }
+    setBuyingExtra(false);
+  };
+
   // Rótulo "Season 1 · Step 3 · Gramática" mostrado durante o
   // exercício e no resultado, para o aluno nunca perder a noção de
   // onde está dentro da trilha.
@@ -431,6 +455,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#222222] text-white font-sans selection:bg-[#f7931e] selection:text-[#222222]">
+      <ToastHost />
       {state.status !== 'admin_panel' && (
         <Header onLogout={handleLogout} onHome={handleHome} onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))} user={state.user} />
       )}
@@ -438,8 +463,38 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[500] bg-[#222222]/95 backdrop-blur-2xl flex flex-col items-center justify-center p-8 text-center animate-fade-in">
             <div className="relative mb-8"><Star className="w-24 h-24 text-yellow-400 animate-pulse" /><PartyPopper className="absolute -top-4 -right-4 w-12 h-12 text-[#f7931e] animate-bounce" /></div>
             <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4 animate-pop">Meta do Dia Concluída!</h2>
-            <p className="text-gray-300 max-w-lg text-lg md:text-xl font-medium leading-relaxed animate-fade-in delay-200">Parabéns! Você atingiu o máximo de atividades por hoje. <br/><span className="text-[#f7931e] font-black">Isso mostra o quanto você está focado!</span> <br/>Volte amanhã para praticar mais.</p>
+            <p className="text-gray-300 max-w-lg text-lg md:text-xl font-medium leading-relaxed animate-fade-in delay-200">Parabéns! Você atingiu o máximo de atividades por hoje. <br/><span className="text-[#f7931e] font-black">Isso mostra o quanto você está focado!</span></p>
             <button onClick={() => { setShowDailyLimitModal(false); handleHome(); }} className="mt-12 px-12 py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black text-xl hover:scale-110 transition-all uppercase tracking-widest shadow-2xl shadow-[#f7931e]/30">Sensacional!</button>
+            <button onClick={() => { setShowDailyLimitModal(false); setShowExtraModal(true); }} className="mt-4 px-8 py-4 bg-[#333333] text-white rounded-2xl font-black text-sm hover:bg-[#3d3d3d] hover:scale-105 transition-all uppercase tracking-widest border border-[#f7931e]/30 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-[#f7931e]" /> Quero continuar: +8 exercícios por FR$ {EXTRA_DAILY_COST.toFixed(2)}
+            </button>
+        </div>
+      )}
+      {showExtraModal && state.user && (
+        <div className="fixed inset-0 z-[600] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => !buyingExtra && setShowExtraModal(false)}>
+          <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-[#f7931e]/50 p-8 text-center space-y-5 animate-pop shadow-[0_0_50px_rgba(247,147,30,0.2)]" onClick={e => e.stopPropagation()}>
+            <div className="w-20 h-20 bg-[#f7931e]/10 rounded-full flex items-center justify-center mx-auto"><Zap className="w-10 h-10 text-[#f7931e]" /></div>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Pacote Extra de Exercícios</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              Você já usou seus <span className="text-white font-black">{getDailyAllowance(state.user.gamification)} exercícios</span> de hoje.
+              Compre um pacote de <span className="text-[#f7931e] font-black">+8 exercícios</span> — válido só para hoje — e continue praticando agora.
+            </p>
+            <div className="flex items-center justify-between bg-[#222222] rounded-2xl px-5 py-3 border border-white/5">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seu saldo</span>
+              <span className="flex items-center gap-2 text-[#f7931e] font-black text-lg"><Coins className="w-5 h-5" /> FR$ {(state.user.gamification.frBalance || 0).toFixed(2)}</span>
+            </div>
+            <button
+              onClick={handleBuyExtraDaily}
+              disabled={buyingExtra || (state.user.gamification.frBalance || 0) < EXTRA_DAILY_COST}
+              className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2">
+              {buyingExtra ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+              {buyingExtra ? 'Processando...' : `Comprar +8 por FR$ ${EXTRA_DAILY_COST.toFixed(2)}`}
+            </button>
+            {(state.user.gamification.frBalance || 0) < EXTRA_DAILY_COST && (
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Saldo insuficiente — complete exercícios para ganhar FR$</p>
+            )}
+            <button onClick={() => setShowExtraModal(false)} disabled={buyingExtra} className="w-full py-3 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all">Deixar para amanhã</button>
+          </div>
         </div>
       )}
       {state.status === 'level_up' && state.newTierReached && (
@@ -463,7 +518,7 @@ const App: React.FC = () => {
               <div className="mt-4 flex gap-4"><div className="flex-1"><p className="text-[8px] font-black text-gray-500 uppercase">Duração</p><p className="text-xs font-black text-white">{pendingChallenge.durationDays} dias</p></div><div className="flex-1"><p className="text-[8px] font-black text-gray-500 uppercase">Foco</p><p className="text-xs font-black text-white">{pendingChallenge.focus}</p></div></div>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              <button onClick={async () => { const updated = { ...pendingChallenge }; updated.pendingInvites = updated.pendingInvites.filter(id => id !== state.user!.userId); updated.participantIds.push(state.user!.userId); updated.participantStats[state.user!.userId] = { xpGained: 0, activitiesDone: 0 }; await api.saveChallenge(updated); setPendingChallenge(null); alert("Você entrou no desafio! Boa sorte! ⚔️"); }} className="w-full py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-xl shadow-[#f7931e]/20">Quero participar ⚔️</button>
+              <button onClick={async () => { const updated = { ...pendingChallenge }; updated.pendingInvites = updated.pendingInvites.filter(id => id !== state.user!.userId); updated.participantIds.push(state.user!.userId); updated.participantStats[state.user!.userId] = { xpGained: 0, activitiesDone: 0 }; await api.saveChallenge(updated); setPendingChallenge(null); showToast("Você entrou no desafio! Boa sorte! ⚔️", 'success'); }} className="w-full py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-xl shadow-[#f7931e]/20">Quero participar ⚔️</button>
               <button onClick={async () => { const updated = { ...pendingChallenge }; updated.pendingInvites = updated.pendingInvites.filter(id => id !== state.user!.userId); await api.saveChallenge(updated); setPendingChallenge(null); }} className="w-full py-5 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:text-white transition-all">Não quero participar 💔</button>
             </div>
           </div>
@@ -517,6 +572,7 @@ const App: React.FC = () => {
             isLoading={state.status === 'loading'}
             hasActivePlan={!!state.studyPlan}
             onUserUpdate={handleUserUpdate}
+            onBuyExtra={() => setShowExtraModal(true)}
           />
         )}
         {state.status === 'ranking_history' && <RankingHistoryScreen onHome={handleHome} />}
@@ -530,6 +586,7 @@ const App: React.FC = () => {
             user={state.user}
             onHome={handleHome}
             onStartSkill={(skill) => setState(p => ({ ...p, status: 'placement_test', activePlacementSkill: skill }))}
+            onUserUpdate={handleUserUpdate}
           />
         )}
         {state.status === 'placement_test' && state.user && state.activePlacementSkill && (

@@ -3,6 +3,7 @@ import { Level, Theme, VoiceGender, VoiceAccent, UserTier, UserSession, AccessTy
 import { TOPICS } from '../constants';
 import { api } from '../services/api';
 import ProfileViewModal from './ProfileViewModal';
+import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyAllowance } from '../dailyLimit';
 import { 
   Brain, Target, Flame, Zap, Trophy, Crown, Shield, Info, Sparkles,
   User as UserIcon, X, Calendar, Globe, BookOpen, Sword,
@@ -30,9 +31,10 @@ interface SelectionScreenProps {
   initialTopic?: string | null;
   hasActivePlan: boolean;
   onUserUpdate: (user: UserSession) => void;
+  // Abre o modal central de compra do pacote extra (+8 por FR$10).
+  onBuyExtra?: () => void;
 }
 
-const DAILY_LIMIT = 8;
 const PLACEMENT_COOLDOWN_DAYS = 30;
 const CUSTOM_TOPIC_VALUE = '__custom__';
 
@@ -74,7 +76,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   user, onStart, onOpenStudyPlan, onStartPlacement, onOpenActivities,
   onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory, onOpenJourney,
   isLoading, initialLevel = null, initialTheme = null, initialTopic = null,
-  hasActivePlan, onUserUpdate
+  hasActivePlan, onUserUpdate, onBuyExtra
 }) => {
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(initialLevel);
@@ -122,15 +124,17 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   const isAdmin = user.username.toLowerCase() === 'admin' || user.isAdmin === true;
   const today = new Date().toISOString().split('T')[0];
   const dailyCount = user.gamification.lastActivityDate === today ? user.gamification.dailyActivitiesCount : 0;
-  const isLimitReached = !user.gamification.isPro && dailyCount >= DAILY_LIMIT;
+  // A cota do dia: 8 + pacotes extras comprados hoje (dailyLimit.ts).
+  const dailyAllowance = getDailyAllowance(user.gamification);
+  const isLimitReached = !user.gamification.isPro && dailyCount >= dailyAllowance;
 
   // ── Progresso diário ─────────────────────────────────────────
   // Percentual de 0 a 100 para a barra
-  const dailyProgressPercent = Math.min(100, Math.round((dailyCount / DAILY_LIMIT) * 100));
+  const dailyProgressPercent = Math.min(100, Math.round((dailyCount / dailyAllowance) * 100));
   // Cor muda conforme o progresso: azul → laranja → verde (completo)
   const dailyProgressColor =
-    dailyCount >= DAILY_LIMIT ? 'bg-green-500' :
-    dailyCount >= Math.ceil(DAILY_LIMIT * 0.5) ? 'bg-[#f7931e]' :
+    dailyCount >= dailyAllowance ? 'bg-green-500' :
+    dailyCount >= Math.ceil(dailyAllowance * 0.5) ? 'bg-[#f7931e]' :
     'bg-blue-400';
 
   const placementCooldownStatus = useMemo(() => {
@@ -379,8 +383,13 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-[#f7931e]/50 p-8 text-center space-y-6 animate-pop shadow-[0_0_50px_rgba(247,147,30,0.2)]">
             <div className="w-20 h-20 bg-[#f7931e]/10 rounded-full flex items-center justify-center mx-auto"><Lock className="w-10 h-10 text-[#f7931e]" /></div>
             <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Limite Diário Atingido</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">Parabéns! Você atingiu o máximo de {DAILY_LIMIT} atividades por hoje. Volte amanhã.</p>
-            <button onClick={() => setShowLimitModal(false)} className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform">Entendido</button>
+            <p className="text-gray-400 text-sm leading-relaxed">Parabéns! Você usou seus {dailyAllowance} exercícios de hoje. Quer continuar agora? Compre um pacote extra de +8 exercícios, válido só para hoje.</p>
+            {onBuyExtra && (
+              <button onClick={() => { setShowLimitModal(false); onBuyExtra(); }} className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                <Zap className="w-5 h-5" /> Comprar +8 por FR$ {EXTRA_DAILY_COST.toFixed(2)}
+              </button>
+            )}
+            <button onClick={() => setShowLimitModal(false)} className="w-full py-3 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all">Voltar amanhã</button>
           </div>
         </div>
       )}
@@ -540,17 +549,17 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                 <div className="flex flex-col items-end gap-1.5 min-w-[130px]">
                   <div className="flex items-center justify-between w-full">
                     <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Hoje</p>
-                    <p className={`text-[11px] font-black ${dailyCount >= DAILY_LIMIT ? 'text-green-400' : 'text-white'}`}>
-                      {dailyCount}/{DAILY_LIMIT}
+                    <p className={`text-[11px] font-black ${dailyCount >= dailyAllowance ? 'text-green-400' : 'text-white'}`}>
+                      {dailyCount}/{dailyAllowance}
                     </p>
                   </div>
                   <div className="w-full h-2 bg-[#333333] rounded-full overflow-hidden border border-white/5">
                     <div
-                      className={`h-full rounded-full transition-all duration-700 ${dailyProgressColor} ${dailyCount >= DAILY_LIMIT ? 'shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}`}
+                      className={`h-full rounded-full transition-all duration-700 ${dailyProgressColor} ${dailyCount >= dailyAllowance ? 'shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}`}
                       style={{ width: `${dailyProgressPercent}%` }}
                     />
                   </div>
-                  {dailyCount >= DAILY_LIMIT && (
+                  {dailyCount >= dailyAllowance && (
                     <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">Meta concluída! 🎉</p>
                   )}
                 </div>

@@ -1,5 +1,6 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
+import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
@@ -110,6 +111,8 @@ const INITIAL_GAMIFICATION: UserGamification = {
   weeklyBadge: null,
   // Novo: nivelamento por habilidade (mapa vazio = nada nivelado ainda)
   placementResults: {},
+  // Novo: pacote extra de exercícios (nenhum comprado)
+  extraDailyAllowance: 0, extraDailyDate: null,
 };
 
 const clean = (obj: any) => JSON.parse(JSON.stringify(obj));
@@ -129,6 +132,9 @@ const ensureNewFields = (gamification: UserGamification): UserGamification => ({
   weeklyBadge: gamification.weeklyBadge ?? null,
   // Nivelamento por habilidade: preserva o existente ou inicia vazio
   placementResults: gamification.placementResults ?? {},
+  // Pacote extra de exercícios: perfis antigos nascem sem compra
+  extraDailyAllowance: gamification.extraDailyAllowance ?? 0,
+  extraDailyDate: gamification.extraDailyDate ?? null,
 });
 
 export const api = {
@@ -608,6 +614,32 @@ export const api = {
       user.gamification.frBalance = balance - PLACEMENT_RETAKE_COST;
       tx.set(userRef, clean(user));
       return { newBalance: user.gamification.frBalance };
+    });
+  },
+
+  // ── Comprar pacote extra de +8 exercícios para HOJE (ATÔMICO) ───
+  // Mesmo padrão do chargePlacementRetake: numa única transação,
+  // confere o saldo, desconta FR$10 e credita +8 exercícios com o
+  // carimbo de hoje. Se o saldo for insuficiente, lança erro e NADA
+  // muda. Comprar de novo no mesmo dia soma mais 8.
+  purchaseExtraDaily: async (userId: string): Promise<{ newBalance: number; user: UserSession }> => {
+    const userRef = doc(db, 'users', userId);
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists()) throw new Error("Usuário não encontrado.");
+      const user = snap.data() as UserSession;
+      user.gamification = ensureNewFields(user.gamification);
+      const balance = user.gamification.frBalance || 0;
+      if (balance < EXTRA_DAILY_COST) {
+        throw new Error(`Saldo insuficiente: você tem FR$ ${balance.toFixed(2)} e o pacote custa FR$ ${EXTRA_DAILY_COST.toFixed(2)}. Complete exercícios para ganhar mais FR$!`);
+      }
+      const today = todayKey();
+      const boughtToday = user.gamification.extraDailyDate === today;
+      user.gamification.frBalance = balance - EXTRA_DAILY_COST;
+      user.gamification.extraDailyAllowance = (boughtToday ? (user.gamification.extraDailyAllowance || 0) : 0) + DAILY_LIMIT;
+      user.gamification.extraDailyDate = today;
+      tx.set(userRef, clean(user));
+      return { newBalance: user.gamification.frBalance, user };
     });
   },
 

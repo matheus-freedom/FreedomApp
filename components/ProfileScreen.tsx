@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { showToast } from './Toast';
 import { UserSession, GuideCharacter } from '../types';
 import { api } from '../services/api';
 import { 
@@ -115,7 +116,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
       await api.saveUser(updatedUser);
       onUpdate(updatedUser);
       setIsSaving(false);
-      alert("Perfil atualizado com sucesso!");
+      showToast("Perfil atualizado com sucesso!", 'success');
     } catch (e: any) {
       setError(e.message || "Erro ao salvar perfil.");
       setIsSaving(false);

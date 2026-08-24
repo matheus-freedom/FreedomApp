@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { showToast } from './Toast';
 import { UserSession, ActivityRecord, Level, Theme, StudyPlan } from '../types';
 import { api } from '../services/api';
 import { 
@@ -126,7 +127,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const handleUpdateStats = async () => {
     if (!selectedUser) return;
     await api.admin_updateUserGamification(selectedUser.userId, xpAdjustment, frAdjustment);
-    alert("Saldo atualizado com sucesso!");
+    showToast("Saldo atualizado com sucesso!", 'success');
     setXpAdjustment(0);
     setFrAdjustment(0);
     setShowStatsModal(false);
@@ -137,7 +138,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     if (!selectedUser || !newPassword) return;
     const success = await api.admin_resetUserPassword(selectedUser.email, newPassword);
     if (success) {
-      alert(`Senha para ${selectedUser.email} alterada!`);
+      showToast(`Senha para ${selectedUser.email} alterada!`, 'success');
       setNewPassword('');
       setShowResetModal(false);
     }
@@ -146,7 +147,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const handleSendMessage = async () => {
     if (!selectedUser || !adminMessage) return;
     await api.admin_sendNotification(selectedUser.userId, adminMessage);
-    alert("Mensagem enviada para o aluno!");
+    showToast("Mensagem enviada para o aluno!", 'success');
     setAdminMessage('');
     setShowMessageModal(false);
   };

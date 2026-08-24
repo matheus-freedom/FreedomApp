@@ -274,6 +274,13 @@ export interface UserGamification {
   // fez qualquer nivelamento nesse período, os checkpoints valem.
   // Ausente/undefined = nunca nivelou nada ainda.
   lastAnyPlacementAt?: number;
+
+  // ── Novo: pacote extra de exercícios (compra com FR$) ─────
+  // O aluno pode comprar +8 exercícios válidos SÓ no dia da
+  // compra. extraDailyDate carimba o dia (YYYY-MM-DD); se não for
+  // hoje, o extra não vale mais. Compras no mesmo dia se somam.
+  extraDailyAllowance?: number;
+  extraDailyDate?: string | null;
 }
 
 export interface AdminNotification {

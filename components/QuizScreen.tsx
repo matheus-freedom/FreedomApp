@@ -5,6 +5,7 @@ import { generateAudioFromText, translateWordToPortuguese } from '../services/ge
 import GuideReaction, { ReactionEvent } from './GuideReaction';
 import { ArrowRight, Check, X, Home, Play, Pause, Volume2, FileText, Loader2, Languages, ChevronDown, ChevronUp, FastForward, Rewind, Image as ImageIcon, Sparkles, Gauge } from 'lucide-react';
 
+import { showToast } from './Toast';
 interface QuizScreenProps {
   content: GeneratedContent;
   onFinish: (score: number, total: number) => void;
@@ -300,7 +301,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
 
       audioRef.current = audio;
     } catch (error) {
-      alert("Não foi possível carregar o áudio principal.");
+      showToast("Não foi possível carregar o áudio. Tente de novo em instantes.", 'error');
     }
     setIsGeneratingAudio(false);
   };

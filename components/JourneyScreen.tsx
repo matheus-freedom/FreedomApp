@@ -373,8 +373,17 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
                         </p>
                         {current && <span className="text-[8px] font-black uppercase tracking-widest bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded">Você está aqui</span>}
                       </div>
-                      <p className="text-white font-black text-sm leading-tight truncate">{ns.node.grammarTopic}</p>
-                      {!isReview && <p className="text-[10px] text-gray-500 font-bold truncate">📚 {ns.node.vocabTheme}</p>}
+                      {/* Tema de vocabulário em destaque (é o que fala com o
+                          aluno); tópico gramatical menor, logo abaixo. Review
+                          não tem tema — mostra os tópicos revisados. */}
+                      {!isReview ? (
+                        <>
+                          <p className="text-white font-black text-sm leading-tight truncate">📚 {ns.node.vocabTheme}</p>
+                          <p className="text-[10px] text-gray-500 font-bold truncate">{ns.node.grammarTopic}</p>
+                        </>
+                      ) : (
+                        <p className="text-white font-black text-sm leading-tight truncate">{ns.node.grammarTopic}</p>
+                      )}
                       {!locked && (
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden max-w-[120px]">
@@ -412,8 +421,9 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80 mb-1">
                   {season.title} · {isReview ? `Review ${openNode.stepNumber}` : `Step ${openNode.stepNumber}`}
                 </p>
-                <h3 className="text-2xl font-black text-white leading-tight pr-10">{openNode.grammarTopic}</h3>
-                {!isReview && <p className="text-sm font-bold text-white/85 mt-1">📚 {openNode.vocabTheme}</p>}
+                {/* Mesma hierarquia dos cards: vocabulário grande, gramática abaixo. */}
+                <h3 className="text-2xl font-black text-white leading-tight pr-10">{isReview ? openNode.grammarTopic : `📚 ${openNode.vocabTheme}`}</h3>
+                {!isReview && <p className="text-sm font-bold text-white/85 mt-1">{openNode.grammarTopic}</p>}
               </div>
 
               <div className="p-6 space-y-3">

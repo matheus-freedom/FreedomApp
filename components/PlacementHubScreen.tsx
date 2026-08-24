@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserSession, PlacementSkill, Level } from '../types';
 import { api } from '../services/api';
+import { showToast } from './Toast';
 import {
   Brain, BookOpen, Volume2, PenTool, Home, Coins,
-  Lock, CheckCircle2, Sparkles, ChevronRight, Clock
+  Lock, CheckCircle2, Sparkles, ChevronRight, Clock, Loader2, X
 } from 'lucide-react';
 
 interface PlacementHubScreenProps {
@@ -12,6 +13,9 @@ interface PlacementHubScreenProps {
   // Iniciar o teste de uma habilidade — ligado na Sub-etapa 4.2.
   // Deixado opcional aqui para o hub ser comitável e testável sozinho.
   onStartSkill?: (skill: PlacementSkill) => void;
+  // Avisa o App que o saldo mudou (após a compra do reteste), para o
+  // valor novo aparecer em todas as telas sem precisar recarregar.
+  onUserUpdate?: (user: UserSession) => void;
 }
 
 // Metadados visuais de cada habilidade (rótulo PT + ícone).
@@ -124,8 +128,41 @@ const SkillCard: React.FC<{
   );
 };
 
-const PlacementHubScreen: React.FC<PlacementHubScreenProps> = ({ user, onHome, onStartSkill }) => {
+const PlacementHubScreen: React.FC<PlacementHubScreenProps> = ({ user, onHome, onStartSkill, onUserUpdate }) => {
   const frBalance = user.gamification.frBalance ?? 0;
+
+  // ── Compra do reteste dentro do cooldown ─────────────────────
+  // Habilidade em cooldown NÃO abre o teste direto: primeiro este
+  // modal confirma a compra (FR$10). O desconto é atômico na API —
+  // ou desconta e libera, ou nada acontece (ex.: saldo insuficiente).
+  const [confirmSkill, setConfirmSkill] = useState<PlacementSkill | null>(null);
+  const [charging, setCharging] = useState(false);
+
+  const handleSkillClick = (skill: PlacementSkill) => {
+    const status = api.getSkillPlacementStatus(user, skill);
+    if (status.state === 'cooldown') setConfirmSkill(skill);
+    else onStartSkill?.(skill);
+  };
+
+  const confirmRetake = async () => {
+    if (!confirmSkill || charging) return;
+    setCharging(true);
+    try {
+      const { newBalance } = await api.chargePlacementRetake(user.userId, confirmSkill);
+      onUserUpdate?.({ ...user, gamification: { ...user.gamification, frBalance: newBalance } });
+      const started = confirmSkill;
+      setConfirmSkill(null);
+      setCharging(false);
+      showToast('Reteste liberado! FR$ 10,00 descontados do seu saldo. Boa sorte! 💪', 'success');
+      onStartSkill?.(started);
+    } catch (error) {
+      setCharging(false);
+      showToast(error instanceof Error ? error.message : 'Não consegui processar a compra. Tente novamente.', 'error', 7000);
+    }
+  };
+
+  const confirmMeta = confirmSkill ? SKILL_META[confirmSkill] : null;
+  const confirmStatus = confirmSkill ? api.getSkillPlacementStatus(user, confirmSkill) : null;
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-6 pb-32 animate-fade-in">
@@ -164,9 +201,42 @@ const PlacementHubScreen: React.FC<PlacementHubScreenProps> = ({ user, onHome, o
       {/* Grade dos quatro cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {SKILL_ORDER.map(skill => (
-          <SkillCard key={skill} skill={skill} user={user} onStart={onStartSkill} />
+          <SkillCard key={skill} skill={skill} user={user} onStart={handleSkillClick} />
         ))}
       </div>
+
+      {/* ── Modal: confirmar compra do reteste (FR$10) ── */}
+      {confirmSkill && confirmMeta && (
+        <div className="fixed inset-0 z-[600] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => !charging && setConfirmSkill(null)}>
+          <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-[#f7931e]/50 p-8 text-center space-y-5 animate-pop shadow-[0_0_50px_rgba(247,147,30,0.2)]" onClick={e => e.stopPropagation()}>
+            <div className="w-20 h-20 bg-[#f7931e]/10 rounded-full flex items-center justify-center mx-auto text-[#f7931e]">{confirmMeta.icon}</div>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Refazer {confirmMeta.label}?</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              O reteste gratuito de <span className="text-white font-black">{confirmMeta.label}</span> libera em{' '}
+              <span className="text-white font-black">{confirmStatus?.daysLeft} {confirmStatus?.daysLeft === 1 ? 'dia' : 'dias'}</span>.
+              Para refazer <span className="text-[#f7931e] font-black">agora</span>, o valor de{' '}
+              <span className="text-[#f7931e] font-black">FR$ {(confirmStatus?.retakeCost ?? 10).toFixed(2)}</span> será descontado do seu saldo.
+            </p>
+            <div className="flex items-center justify-between bg-[#222222] rounded-2xl px-5 py-3 border border-white/5">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seu saldo</span>
+              <span className="flex items-center gap-2 text-[#f7931e] font-black text-lg"><Coins className="w-5 h-5" /> FR$ {frBalance.toFixed(2)}</span>
+            </div>
+            <button
+              onClick={confirmRetake}
+              disabled={charging || frBalance < (confirmStatus?.retakeCost ?? 10)}
+              className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2">
+              {charging ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+              {charging ? 'Processando...' : `Pagar FR$ ${(confirmStatus?.retakeCost ?? 10).toFixed(2)} e refazer`}
+            </button>
+            {frBalance < (confirmStatus?.retakeCost ?? 10) && (
+              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Saldo insuficiente — complete exercícios para ganhar FR$</p>
+            )}
+            <button onClick={() => setConfirmSkill(null)} disabled={charging} className="w-full py-3 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all flex items-center justify-center gap-2">
+              <X className="w-4 h-4" /> Esperar o prazo gratuito
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
