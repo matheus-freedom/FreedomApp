@@ -1,0 +1,1289 @@
+From 6bc2dce04eb9f4db83b9a1cb6c3873e9272b9d80 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 24 Aug 2026 23:52:30 +0000
+Subject: [PATCH] =?UTF-8?q?Journey:=201=20Step=20novo/dia=20por=20jornada,?=
+ =?UTF-8?q?=20cota=20separada=20da=20pr=C3=A1tica=20livre,=20Step=20extra?=
+ =?UTF-8?q?=20FR$30,=20recomenda=C3=A7=C3=A3o=20de=20outra=20jornada=20e?=
+ =?UTF-8?q?=20c=C3=B3digos=20de=20libera=C3=A7=C3=A3o=20de=20Season?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Journey sai da cota de 8 da prática livre (sessões separadas)
+- Limite: 1 Step NOVO por dia POR JORNADA (Review conta como o Step
+  do dia; terminar Step pela metade e refazer exercícios é livre);
+  trava no servidor (journey-content + award-activity), dia de Brasília
+- Compra de +1 Step novo hoje por FR$30 (qualquer jornada, acumulável)
+- Teto de XP diário: 800 → 2800 (28 exercícios possíveis/dia)
+- Ao concluir os 5 exercícios do Step do dia, recomenda outra jornada
+- Códigos de liberação de Season (alternativa ao nivelamento):
+  frees2, liberab1, b2unlocked, desbloqueiaavancado
+- 33 testes novos (149 no total, todos verdes)
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_019bT7YzGgPZZ6ScKrskJBqi
+---
+ App.tsx                                       |  87 ++++++--
+ components/JourneyScreen.tsx                  | 209 ++++++++++++++++--
+ journeys.ts                                   | 114 +++++++++-
+ netlify/functions/award-activity.js           |  25 ++-
+ netlify/functions/journey-content.js          |  36 ++-
+ netlify/functions/lib/journey-core.js         | 110 ++++++++-
+ netlify/functions/lib/journey-curriculum.json |   8 +-
+ services/api.ts                               |  65 +++++-
+ test-journey-server.mjs                       |  90 ++++++++
+ test-journey.mjs                              |  62 ++++++
+ types.ts                                      |  15 ++
+ 11 files changed, 775 insertions(+), 46 deletions(-)
+
+diff --git a/App.tsx b/App.tsx
+index 73fe7d4..85f0cf1 100644
+--- a/App.tsx
++++ b/App.tsx
+@@ -23,7 +23,7 @@ import RankingHistoryScreen from './components/RankingHistoryScreen';
+ import JourneyScreen from './components/JourneyScreen';
+ import GapFillScreen from './components/GapFillScreen';
+ import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
+-import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS } from './journeys';
++import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, JOURNEY_EXTRA_STEP_COST } from './journeys';
+ import { generateQuizContent } from './services/geminiService';
+ import { api } from './services/api';
+ import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle, Zap, Coins } from 'lucide-react';
+@@ -101,6 +101,9 @@ const App: React.FC = () => {
+   // Modal do pacote extra de exercícios (+8 por FR$10) e trava da compra.
+   const [showExtraModal, setShowExtraModal] = useState(false);
+   const [buyingExtra, setBuyingExtra] = useState(false);
++  // Modal do Step extra da Journey (+1 Step novo hoje por FR$30).
++  const [showExtraStepModal, setShowExtraStepModal] = useState(false);
++  const [buyingExtraStep, setBuyingExtraStep] = useState(false);
+   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
+   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+   // Muda a cada exercício de trilha concluído: é o sinal para a
+@@ -301,14 +304,11 @@ const App: React.FC = () => {
+     if (isStartingRef.current) return false;
+     isStartingRef.current = true;
+ 
+-    const today = new Date().toISOString().split('T')[0];
+-    const dailyCount = getDailyUsage(state.user.gamification);
+-    if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
+-      // Em vez do popup do navegador: oferece o pacote extra de exercícios.
+-      setShowExtraModal(true);
+-      isStartingRef.current = false;
+-      return false;
+-    }
++    // A Journey NÃO consome mais a cota de 8 da prática livre: são
++    // duas sessões separadas (decisão do Matheus, 24/08/2026). O
++    // limite da trilha agora é outro — 1 Step novo por dia por
++    // jornada — e quem o aplica de verdade é o SERVIDOR
++    // (journey-content/award-activity); aqui só tratamos a recusa.
+ 
+     const level = SEASONS[season].level;
+     const theme = KIND_META[kind].theme;
+@@ -324,11 +324,6 @@ const App: React.FC = () => {
+ 
+     try {
+       const { content } = await api.getJourneyExercise(journeyId, season, node.index, kind);
+-      const newCount = await api.incrementActivityCount(state.user.userId);
+-      const applyCount = (prev: AppState): UserSession | null => prev.user && ({
+-        ...prev.user,
+-        gamification: { ...prev.user.gamification, dailyActivitiesCount: newCount, lastActivityDate: today },
+-      });
+ 
+       isStartingRef.current = false;
+ 
+@@ -338,12 +333,20 @@ const App: React.FC = () => {
+         kind === 'writing' ? (content.gapItems?.length ? 'gapfill' : 'writing') : 'quiz';
+ 
+       setState(prev => ({
+-        ...prev, user: applyCount(prev), status: nextStatus, content,
++        ...prev, status: nextStatus, content,
+         score: 0, currentQuestionIndex: 0, loadingMessage: undefined,
+       }));
+       return true;
+     } catch (error) {
+       isStartingRef.current = false;
++      // Limite diário da trilha: não é um erro — devolve o aluno ao
++      // mapa e abre a oferta do Step extra (FR$30) por cima.
++      if ((error as Error & { code?: string })?.code === 'DAILY_STEP_LIMIT') {
++        setJourneyReload(n => n + 1);
++        setState(prev => ({ ...prev, status: 'journey', content: null, journeyContext: null, loadingMessage: undefined }));
++        setShowExtraStepModal(true);
++        return false;
++      }
+       setState(prev => ({
+         ...prev, status: 'error', loadingMessage: undefined,
+         errorMessage: error instanceof Error ? error.message : 'Não consegui preparar este exercício. Tente novamente.',
+@@ -413,7 +416,11 @@ const App: React.FC = () => {
+       // soma 1 de novo aqui: com o "+1" o modal de meta concluída
+       // aparecia já no 7º de 8 exercícios, mandando o aluno embora com
+       // um exercício ainda disponível.
+-      if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= getDailyAllowance(state.user.gamification)) setShowDailyLimitModal(true);
++      // Só vale para a PRÁTICA LIVRE: a Journey tem cota própria (1
++      // Step/dia por jornada) e não mexe neste contador — sem o filtro,
++      // o aluno que zerou os 8 livres de manhã veria este modal de novo
++      // ao fim de cada exercício da trilha.
++      if (!state.journeyContext && !state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= getDailyAllowance(state.user.gamification)) setShowDailyLimitModal(true);
+     } catch (error) {
+       // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
+       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
+@@ -446,6 +453,24 @@ const App: React.FC = () => {
+     setBuyingExtra(false);
+   };
+ 
++  // ── Compra do Step extra da Journey (+1 Step novo hoje, FR$30) ─
++  // Mesmo desenho da compra de exercícios: transação atômica na API.
++  // Depois da compra o aluno volta ao mapa com o slot já disponível
++  // (o user atualizado re-renderiza a JourneyScreen e solta o cadeado).
++  const handleBuyExtraStep = async () => {
++    if (!state.user || buyingExtraStep) return;
++    setBuyingExtraStep(true);
++    try {
++      const { user } = await api.purchaseExtraJourneyStep(state.user.userId);
++      setState(p => p.user ? ({ ...p, user: { ...p.user, gamification: user.gamification } }) : p);
++      setShowExtraStepModal(false);
++      showToast('Step extra liberado! Você pode abrir mais 1 Step novo hoje, em qualquer jornada. 🎉', 'success');
++    } catch (error) {
++      showToast(error instanceof Error ? error.message : 'Não consegui concluir a compra. Tente novamente.', 'error', 7000);
++    }
++    setBuyingExtraStep(false);
++  };
++
+   // Rótulo "Season 1 · Step 3 · Gramática" mostrado durante o
+   // exercício e no resultado, para o aluno nunca perder a noção de
+   // onde está dentro da trilha.
+@@ -497,6 +522,34 @@ const App: React.FC = () => {
+           </div>
+         </div>
+       )}
++      {showExtraStepModal && state.user && (
++        <div className="fixed inset-0 z-[600] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => !buyingExtraStep && setShowExtraStepModal(false)}>
++          <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-[#f7931e]/50 p-8 text-center space-y-5 animate-pop shadow-[0_0_50px_rgba(247,147,30,0.2)]" onClick={e => e.stopPropagation()}>
++            <div className="w-20 h-20 bg-[#f7931e]/10 rounded-full flex items-center justify-center mx-auto"><Zap className="w-10 h-10 text-[#f7931e]" /></div>
++            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Step Extra da Jornada</h3>
++            <p className="text-gray-400 text-sm leading-relaxed">
++              Você já abriu o <span className="text-white font-black">Step de hoje</span> desta jornada.
++              Dica: cada jornada libera 1 Step novo por dia — você ainda pode avançar nas <span className="text-white font-black">outras jornadas</span> de graça!
++              Ou compre <span className="text-[#f7931e] font-black">+1 Step novo</span> — válido só para hoje, em qualquer jornada.
++            </p>
++            <div className="flex items-center justify-between bg-[#222222] rounded-2xl px-5 py-3 border border-white/5">
++              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seu saldo</span>
++              <span className="flex items-center gap-2 text-[#f7931e] font-black text-lg"><Coins className="w-5 h-5" /> FR$ {(state.user.gamification.frBalance || 0).toFixed(2)}</span>
++            </div>
++            <button
++              onClick={handleBuyExtraStep}
++              disabled={buyingExtraStep || (state.user.gamification.frBalance || 0) < JOURNEY_EXTRA_STEP_COST}
++              className="w-full py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center gap-2">
++              {buyingExtraStep ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
++              {buyingExtraStep ? 'Processando...' : `Comprar +1 Step por FR$ ${JOURNEY_EXTRA_STEP_COST.toFixed(2)}`}
++            </button>
++            {(state.user.gamification.frBalance || 0) < JOURNEY_EXTRA_STEP_COST && (
++              <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Saldo insuficiente — complete exercícios para ganhar FR$</p>
++            )}
++            <button onClick={() => setShowExtraStepModal(false)} disabled={buyingExtraStep} className="w-full py-3 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all">Deixar para amanhã</button>
++          </div>
++        </div>
++      )}
+       {state.status === 'level_up' && state.newTierReached && (
+         <div className="fixed inset-0 z-[300] bg-[#222222]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+             <div className="relative mb-8"><PartyPopper className="w-24 h-24 text-yellow-400 animate-bounce" /><Sparkles className="absolute -top-4 -right-4 w-12 h-12 text-[#f7931e] animate-pulse" /></div>
+@@ -646,6 +699,8 @@ const App: React.FC = () => {
+             onHome={handleHome}
+             onStartExercise={handleStartJourney}
+             reloadToken={journeyReload}
++            onBuyExtraStep={() => setShowExtraStepModal(true)}
++            onUserUpdate={handleUserUpdate}
+           />
+         )}
+         {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={state.user?.guide} userName={state.user?.userName} journeyLabel={journeyLabel} />}
+diff --git a/components/JourneyScreen.tsx b/components/JourneyScreen.tsx
+index 2590c99..1b881f8 100644
+--- a/components/JourneyScreen.tsx
++++ b/components/JourneyScreen.tsx
+@@ -4,11 +4,14 @@ import {
+   JOURNEYS, JourneyDef, JourneyId, JourneyKind, JourneyNode, JourneyProgressDoc,
+   KIND_META, SEASONS, STEP_PASS_PCT, getJourney, journeyOverview, nodeKeyOf,
+   seasonsSkippedByPlacement, placementSkillsMissing, JOURNEY_KINDS,
++  JOURNEY_EXTRA_STEP_COST, journeyDayKey, journeyDailyOf, journeyDailyStatusOf,
++  journeyDayStepCompleted,
+ } from '../journeys';
+ import { api } from '../services/api';
++import { showToast } from './Toast';
+ import {
+   Home, Lock, Check, Star, Play, ChevronRight, ChevronLeft, X, Loader2,
+-  Trophy, Sparkles, Map as MapIcon, RefreshCw, Compass, Flag, Zap,
++  Trophy, Sparkles, Map as MapIcon, RefreshCw, Compass, Flag, Zap, Moon, CalendarCheck, KeyRound,
+ } from 'lucide-react';
+ 
+ // ══════════════════════════════════════════════════════════════
+@@ -33,8 +36,16 @@ interface JourneyScreenProps {
+   onStartExercise: (journeyId: JourneyId, season: number, node: JourneyNode, kind: JourneyKind) => Promise<boolean> | void;
+   // Recarrega o progresso quando o aluno volta de um exercício.
+   reloadToken?: number;
++  // Abre a oferta do Step extra (FR$30) — o modal mora no App.
++  onBuyExtraStep?: () => void;
++  // Propaga o user atualizado (ex.: resgate de código de Season).
++  onUserUpdate?: (user: UserSession) => void;
+ }
+ 
++// A recomendação "vá para outra jornada" aparece UMA vez por dia por
++// jornada concluída — repetir a cada volta ao mapa viraria spam.
++const LS_RECO_KEY = (uid: string, day: string, j: JourneyId) => `journey_reco_${uid}_${day}_${j}`;
++
+ const StarRow: React.FC<{ stars?: number; size?: string }> = ({ stars = 0, size = 'w-3 h-3' }) => (
+   <div className="flex gap-0.5">
+     {[1, 2, 3].map(i => (
+@@ -60,7 +71,7 @@ const ProgressRing: React.FC<{ pct: number; size?: number; stroke?: number; clas
+   );
+ };
+ 
+-const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExercise, reloadToken = 0 }) => {
++const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExercise, reloadToken = 0, onBuyExtraStep, onUserUpdate }) => {
+   const [progress, setProgress] = useState<JourneyProgressDoc | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [journeyId, setJourneyId] = useState<JourneyId | null>(null);
+@@ -68,13 +79,33 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+   const [seasonIdx, setSeasonIdx] = useState(0);
+   const [openNode, setOpenNode] = useState<JourneyNode | null>(null);
+   const [starting, setStarting] = useState<JourneyKind | null>(null);
++  // Jornadas sugeridas quando o Step do dia é concluído (null = fechado).
++  const [reco, setReco] = useState<JourneyId[] | null>(null);
++  // Código de liberação de Season (alternativa ao nivelamento).
++  const [codeInput, setCodeInput] = useState('');
++  const [redeeming, setRedeeming] = useState(false);
++
++  const redeemCode = async () => {
++    if (!codeInput.trim() || redeeming) return;
++    setRedeeming(true);
++    try {
++      const { user: updated, skipped: newSkip, seasonTitle } = await api.redeemJourneyCode(user.userId, codeInput);
++      setCodeInput('');
++      onUserUpdate?.(updated);
++      showToast(`Código aceito! Você começa direto na ${seasonTitle} — as anteriores ficam abertas como revisão livre. 🎉`, 'success', 8000);
++      setSeasonIdx(Math.min(newSkip, SEASONS.length - 1));
++    } catch (e) {
++      showToast(e instanceof Error ? e.message : 'Não consegui validar o código. Tente novamente.', 'error', 7000);
++    }
++    setRedeeming(false);
++  };
+ 
+   // Nível liberado pelo nivelamento: MENOR nível entre as habilidades
+   // já testadas (regra definida pelo Matheus). Sem nivelamento, começa
+   // do zero — ninguém pula Season por engano.
+   const skipped = useMemo(
+-    () => seasonsSkippedByPlacement(user.gamification.placementResults as any, user.gamification.lastPlacementLevel),
+-    [user.gamification.placementResults, user.gamification.lastPlacementLevel]
++    () => seasonsSkippedByPlacement(user.gamification.placementResults as any, user.gamification.lastPlacementLevel, user.gamification.journeyUnlockedSeasons || 0),
++    [user.gamification.placementResults, user.gamification.lastPlacementLevel, user.gamification.journeyUnlockedSeasons]
+   );
+   const missingSkills = useMemo(
+     () => placementSkillsMissing(user.gamification.placementResults as any),
+@@ -101,6 +132,30 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+     [journeyId, progress, skipped]
+   );
+ 
++  // ── Limite diário: 1 Step novo por dia por jornada ──────────
++  // Tudo aqui é espelho do servidor (journeys.ts ↔ journey-core.js);
++  // serve para a tela desenhar cadeados honestos e ofertas na hora
++  // certa. A palavra final é sempre da function.
++  const daily = useMemo(() => journeyDailyOf(progress), [progress, reloadToken]);
++  const dailyStatusFor = (jId: JourneyId, key: string) =>
++    journeyDailyStatusOf(progress, user.gamification, jId, key);
++
++  // Recomendação: concluiu os 5 exercícios do Step de hoje? Sugere
++  // outra jornada que ainda tem o Step do dia livre (1x por dia).
++  useEffect(() => {
++    if (loading || !journeyId || picking) return;
++    if (!journeyDayStepCompleted(progress, journeyId)) return;
++    const day = journeyDayKey();
++    const lsKey = LS_RECO_KEY(user.userId, day, journeyId);
++    if (localStorage.getItem(lsKey)) return;
++    const others = JOURNEYS
++      .filter(j => j.id !== journeyId && !(daily.newNodes[j.id] || []).length)
++      .map(j => j.id);
++    if (!others.length) return;
++    localStorage.setItem(lsKey, '1');
++    setReco(others);
++  }, [loading, journeyId, picking, progress, reloadToken]);
++
+   // Ao abrir, posiciona na Season onde o aluno está de fato.
+   useEffect(() => {
+     if (overview?.next) setSeasonIdx(overview.next.season);
+@@ -155,6 +210,9 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+           {JOURNEYS.map(j => {
+             const ov = journeyOverview(j.id, progress, skipped);
+             const started = !!progress?.journeys?.[j.id];
++            // Situação do Step do dia desta jornada (1 Step novo/dia).
++            const openedToday = (daily.newNodes[j.id] || []).length > 0;
++            const doneToday = openedToday && journeyDayStepCompleted(progress, j.id);
+             return (
+               <button key={j.id} onClick={() => chooseJourney(j.id)}
+                 className="group relative overflow-hidden text-left rounded-[2.5rem] border border-white/10 bg-[#2a2a2a] p-7 hover:border-white/25 transition-all hover:-translate-y-1 shadow-xl">
+@@ -174,8 +232,17 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                     <p className={`text-[11px] font-black uppercase tracking-widest ${j.accent}`}>{j.tagline}</p>
+                   </div>
+                   <p className="text-sm text-gray-400 leading-relaxed">{j.description}</p>
+-                  <div className="flex items-center gap-2 pt-2 text-[10px] font-black uppercase tracking-widest text-white/70 group-hover:text-white transition-colors">
+-                    {started ? 'Continuar' : 'Começar'} <ChevronRight className="w-4 h-4" />
++                  <div className="flex items-center justify-between gap-2 pt-2">
++                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/70 group-hover:text-white transition-colors">
++                      {started ? 'Continuar' : 'Começar'} <ChevronRight className="w-4 h-4" />
++                    </div>
++                    {doneToday ? (
++                      <span className="text-[9px] font-black uppercase tracking-widest text-green-400 flex items-center gap-1"><Check className="w-3 h-3" /> Step de hoje feito</span>
++                    ) : openedToday ? (
++                      <span className="text-[9px] font-black uppercase tracking-widest text-[#f7931e]">Step de hoje em andamento</span>
++                    ) : (
++                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Step do dia livre</span>
++                    )}
+                   </div>
+                 </div>
+               </button>
+@@ -194,11 +261,37 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+ 
+   // ── 2) Mapa da jornada ──────────────────────────────────────
+   const journey: JourneyDef = getJourney(journeyId);
++
++  // Formulário do código de liberação — aparece na Season bloqueada
++  // e no aviso de nivelamento (mesmo formulário nos dois lugares).
++  const codeForm = (
++    <form
++      onSubmit={e => { e.preventDefault(); redeemCode(); }}
++      className="flex items-center gap-2 mt-3">
++      <div className="relative flex-1 max-w-[240px]">
++        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
++        <input
++          value={codeInput}
++          onChange={e => setCodeInput(e.target.value)}
++          placeholder="Código do professor"
++          className="w-full bg-[#222222] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs font-bold text-white placeholder-gray-600 focus:border-[#f7931e]/60 focus:outline-none transition-colors"
++        />
++      </div>
++      <button type="submit" disabled={!codeInput.trim() || redeeming}
++        className="px-4 py-2.5 bg-[#f7931e] text-[#222222] rounded-xl font-black uppercase tracking-widest text-[10px] disabled:opacity-40 hover:scale-105 transition-transform flex items-center gap-1.5">
++        {redeeming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Liberar
++      </button>
++    </form>
++  );
+   const season = SEASONS[seasonIdx];
+   const seasonState = overview.seasons[seasonIdx];
+   const seasonSkipped = seasonIdx < skipped;
+   const next = overview.next;
+   const progNodes = progress?.journeys?.[journeyId]?.nodes || {};
++  // O próximo exercício está atrás do cadeado do dia? (o Step de hoje
++  // desta jornada já foi aberto e o próximo nó seria um Step NOVO)
++  const nextDaily = next ? dailyStatusFor(journeyId, nodeKeyOf(next.season, next.node.index)) : null;
++  const todayDone = journeyDayStepCompleted(progress, journeyId);
+ 
+   return (
+     <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6 animate-fade-in pb-24">
+@@ -226,7 +319,35 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+               </button>
+             </div>
+ 
+-            {next ? (
++            {next && nextDaily && !nextDaily.allowed ? (
++              // O Step de hoje desta jornada já foi usado e o próximo
++              // seria um Step novo: em vez do botão de continuar, a
++              // tela explica e aponta os dois caminhos que EXISTEM —
++              // outra jornada (de graça) ou o Step extra (FR$30).
++              <div className="space-y-3">
++                <div className="flex items-center gap-3 justify-center md:justify-start">
++                  <CalendarCheck className="w-9 h-9 text-green-400 shrink-0" />
++                  <div>
++                    <p className="text-white font-black text-lg uppercase tracking-tight">{todayDone ? 'Step de hoje concluído!' : 'Step de hoje já aberto'}</p>
++                    <p className="text-xs text-gray-400 font-bold leading-relaxed">
++                      Cada jornada libera 1 Step novo por dia. Amanhã o próximo abre sozinho — ou continue agora em outra jornada.
++                    </p>
++                  </div>
++                </div>
++                <div className="flex flex-col md:flex-row gap-2">
++                  <button onClick={() => setPicking(true)}
++                    className="px-6 py-3.5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.03] transition-all shadow-xl shadow-[#f7931e]/25">
++                    <Compass className="w-4 h-4" /> Fazer Step de outra jornada
++                  </button>
++                  {onBuyExtraStep && (
++                    <button onClick={onBuyExtraStep}
++                      className="px-6 py-3.5 bg-[#333333] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-[#f7931e]/30 hover:bg-[#3d3d3d] transition-all">
++                      <Zap className="w-4 h-4 text-[#f7931e]" /> +1 Step hoje · FR$ {JOURNEY_EXTRA_STEP_COST.toFixed(2)}
++                    </button>
++                  )}
++                </div>
++              </div>
++            ) : next ? (
+               <div className="space-y-3">
+                 <div>
+                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Próximo exercício</p>
+@@ -260,16 +381,19 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+           <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
+             <Zap className="w-4 h-4 text-[#f7931e] shrink-0 mt-0.5" />
+             <p className="text-xs text-gray-400 leading-relaxed">
+-              Seu nivelamento liberou <span className="text-white font-black">{skipped} Season{skipped > 1 ? 's' : ''}</span>. Elas ficam abertas para revisar na ordem que você quiser — e valem XP normalmente.
++              {(user.gamification.journeyUnlockedSeasons || 0) >= skipped && missingSkills > 0 ? 'Seu código de liberação abriu' : 'Seu nivelamento liberou'} <span className="text-white font-black">{skipped} Season{skipped > 1 ? 's' : ''}</span>. Elas ficam abertas para revisar na ordem que você quiser — e valem XP normalmente.
+             </p>
+           </div>
+         )}
+         {skipped === 0 && missingSkills > 0 && (
+           <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
+             <Compass className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+-            <p className="text-xs text-gray-400 leading-relaxed">
+-              Quer começar de um nível mais alto? Faça o <span className="text-white font-black">nivelamento das 4 habilidades</span> (faltam {missingSkills}) — a trilha então já abre nas Seasons que você domina. Enquanto isso, você começa pela Season 1.
+-            </p>
++            <div className="flex-1">
++              <p className="text-xs text-gray-400 leading-relaxed">
++                Quer começar de um nível mais alto? Faça o <span className="text-white font-black">nivelamento das 4 habilidades</span> (faltam {missingSkills}) — ou, se seu professor te passou um <span className="text-white font-black">código de liberação</span>, digite-o abaixo. Enquanto isso, você começa pela Season 1.
++              </p>
++              {codeForm}
++            </div>
+           </div>
+         )}
+       </div>
+@@ -328,8 +452,9 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+           <Lock className="w-12 h-12 text-gray-600 mx-auto" />
+           <p className="text-white font-black uppercase tracking-tight">Season bloqueada</p>
+           <p className="text-sm text-gray-400 max-w-sm mx-auto leading-relaxed">
+-            Conclua a {SEASONS[seasonIdx - 1]?.title} (ou faça o nivelamento e alcance o nível {season.level}) para abrir esta etapa.
++            Conclua a {SEASONS[seasonIdx - 1]?.title}, faça o nivelamento e alcance o nível {season.level} — ou digite o código de liberação que seu professor te passou.
+           </p>
++          <div className="flex justify-center">{codeForm}</div>
+         </div>
+       ) : (
+         <div className="relative bg-[#2a2a2a] rounded-[2.5rem] border border-white/5 p-5 md:p-10 shadow-xl overflow-hidden">
+@@ -342,6 +467,9 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+               const done = ns.passed;
+               const current = ns.state === 'current';
+               const doneCount = ns.doneKinds.length;
++              // Cadeado do DIA: o nó está liberado pela trilha, mas é um
++              // Step novo e o slot de hoje desta jornada já foi usado.
++              const dailyLocked = !locked && !done && !dailyStatusFor(journeyId, ns.key).allowed;
+               return (
+                 <div key={ns.key} className={`relative flex flex-col ${side} py-2`}>
+                   <button
+@@ -350,6 +478,7 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                     className={`group w-full md:w-auto md:min-w-[300px] text-left flex items-center gap-4 p-4 rounded-3xl border-2 transition-all ${
+                       locked ? 'bg-[#222222] border-white/5 opacity-55 cursor-not-allowed'
+                       : done ? 'bg-green-500/5 border-green-500/30 hover:border-green-500/60'
++                      : dailyLocked ? 'bg-[#222222] border-white/10 opacity-75 hover:border-white/20'
+                       : current ? `bg-[#222222] border-[#f7931e] shadow-[0_0_25px_rgba(247,147,30,0.18)]`
+                       : 'bg-[#222222] border-white/10 hover:border-white/30'
+                     }`}>
+@@ -357,11 +486,13 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                     <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 border-2 ${
+                       locked ? 'bg-[#2a2a2a] border-white/5 text-gray-600'
+                       : done ? 'bg-green-500 border-green-400 text-[#222222]'
++                      : dailyLocked ? 'bg-[#2a2a2a] border-white/10 text-gray-400'
+                       : isReview ? `bg-gradient-to-br ${journey.gradient} border-white/20 text-white`
+                       : 'bg-[#333333] border-white/10 text-white'
+-                    } ${current ? 'ring-4 ring-[#f7931e]/30 animate-pulse' : ''}`}>
++                    } ${current && !dailyLocked ? 'ring-4 ring-[#f7931e]/30 animate-pulse' : ''}`}>
+                       {locked ? <Lock className="w-5 h-5" />
+                         : done ? <Check className="w-6 h-6" />
++                        : dailyLocked ? <Moon className="w-5 h-5" />
+                         : isReview ? <Flag className="w-6 h-6" />
+                         : ns.node.stepNumber}
+                     </div>
+@@ -371,7 +502,8 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                         <p className={`text-[9px] font-black uppercase tracking-widest ${isReview ? journey.accent : 'text-gray-500'}`}>
+                           {isReview ? `Review ${ns.node.stepNumber}` : `Step ${ns.node.stepNumber}`}
+                         </p>
+-                        {current && <span className="text-[8px] font-black uppercase tracking-widest bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded">Você está aqui</span>}
++                        {current && !dailyLocked && <span className="text-[8px] font-black uppercase tracking-widest bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded">Você está aqui</span>}
++                        {dailyLocked && <span className="text-[8px] font-black uppercase tracking-widest bg-white/10 text-gray-300 px-2 py-0.5 rounded">🌙 Amanhã</span>}
+                       </div>
+                       {/* Tema de vocabulário em destaque (é o que fala com o
+                           aluno); tópico gramatical menor, logo abaixo. Review
+@@ -408,11 +540,40 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+         </button>
+       </div>
+ 
++      {/* ── Recomendação: Step do dia concluído → outra jornada ── */}
++      {reco && (
++        <div className="fixed inset-0 z-[450] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4" onClick={() => setReco(null)}>
++          <div className="bg-[#2a2a2a] w-full max-w-md rounded-[2.5rem] border-2 border-green-500/40 p-8 text-center space-y-5 animate-pop shadow-[0_0_50px_rgba(34,197,94,0.15)]" onClick={e => e.stopPropagation()}>
++            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto"><Trophy className="w-10 h-10 text-green-400" /></div>
++            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Step de hoje concluído!</h3>
++            <p className="text-gray-400 text-sm leading-relaxed">
++              Você fechou os 5 exercícios do Step de hoje da <span className="text-white font-black">{journey.name}</span>.
++              Que tal manter o ritmo em outra jornada? A mesma gramática, num contexto novo — é o jeito mais eficiente de fixar.
++            </p>
++            <div className="space-y-2">
++              {reco.map(id => {
++                const j = getJourney(id);
++                return (
++                  <button key={id} onClick={() => { setReco(null); chooseJourney(id); }}
++                    className={`w-full py-3.5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 bg-gradient-to-br ${j.gradient} text-white hover:scale-[1.02] transition-transform shadow-lg`}>
++                    <span className="text-base">{j.emoji}</span> Fazer o Step da {j.name}
++                  </button>
++                );
++              })}
++            </div>
++            <button onClick={() => setReco(null)} className="w-full py-3 bg-[#333333] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:text-white transition-all">Por hoje chega — até amanhã!</button>
++          </div>
++        </div>
++      )}
++
+       {/* ── 3) Painel do Step ── */}
+       {openNode && (() => {
+         const ns = seasonState.nodes.find(n => n.node.index === openNode.index)!;
+         const nodeProg = progNodes[nodeKeyOf(seasonIdx, openNode.index)];
+         const isReview = openNode.type === 'review';
++        // Nó novo com o Step do dia já gasto: painel abre (o aluno vê
++        // o que vem por aí), mas os exercícios ficam para amanhã.
++        const panelDailyLocked = !dailyStatusFor(journeyId, ns.key).allowed;
+         return (
+           <div className="fixed inset-0 z-[400] bg-black/85 backdrop-blur-xl flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setOpenNode(null)}>
+             <div className="bg-[#2a2a2a] w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl max-h-[88vh] overflow-y-auto scrollbar-hide animate-pop" onClick={e => e.stopPropagation()}>
+@@ -427,6 +588,22 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+               </div>
+ 
+               <div className="p-6 space-y-3">
++                {panelDailyLocked && (
++                  <div className="flex items-start gap-3 bg-[#222222] border border-white/10 rounded-2xl p-4 mb-2">
++                    <Moon className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
++                    <div className="flex-1 space-y-2">
++                      <p className="text-xs text-gray-400 leading-relaxed">
++                        O <span className="text-white font-black">Step de hoje</span> desta jornada já foi aberto. Este aqui destrava <span className="text-white font-black">amanhã</span> — ou agora, com um Step extra. Enquanto isso, as outras jornadas têm o Step do dia livre!
++                      </p>
++                      {onBuyExtraStep && (
++                        <button onClick={() => { setOpenNode(null); onBuyExtraStep(); }}
++                          className="px-4 py-2 bg-[#333333] text-white rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 border border-[#f7931e]/30 hover:bg-[#3d3d3d] transition-all">
++                          <Zap className="w-3 h-3 text-[#f7931e]" /> +1 Step hoje · FR$ {JOURNEY_EXTRA_STEP_COST.toFixed(2)}
++                        </button>
++                      )}
++                    </div>
++                  </div>
++                )}
+                 {isReview && (
+                   <div className="flex items-start gap-3 bg-[#222222] border border-white/5 rounded-2xl p-4 mb-2">
+                     <Flag className={`w-4 h-4 shrink-0 mt-0.5 ${journey.accent}`} />
+@@ -445,7 +622,7 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                   const prevDone = i === 0 || !!nodeProg?.exercises?.[openNode.kinds[i - 1]];
+                   // Em Season liberada pelo nivelamento (revisão), a ordem
+                   // não prende ninguém — o aluno escolhe o que revisar.
+-                  const blocked = ns.state === 'locked' || (!prevDone && !ns.freeRoam);
++                  const blocked = ns.state === 'locked' || (!prevDone && !ns.freeRoam) || panelDailyLocked;
+                   return (
+                     <button key={kind} disabled={blocked || !!starting} onClick={() => startExercise(seasonIdx, openNode, kind)}
+                       className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+@@ -463,7 +640,7 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
+                           </div>
+                         ) : (
+                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">
+-                            {blocked ? 'Faça o exercício anterior' : 'Não iniciado'}
++                            {panelDailyLocked ? 'Disponível amanhã' : blocked ? 'Faça o exercício anterior' : 'Não iniciado'}
+                           </p>
+                         )}
+                       </div>
+diff --git a/journeys.ts b/journeys.ts
+index c0042d8..72cbdce 100644
+--- a/journeys.ts
++++ b/journeys.ts
+@@ -168,8 +168,16 @@ export interface JourneyExerciseResult {
+ export interface JourneyNodeProgress {
+   exercises: Partial<Record<JourneyKind, JourneyExerciseResult>>;
+ }
++// Consumo do LIMITE DIÁRIO (1 nó novo por jornada por dia). Gravado
++// exclusivamente pelo servidor quando um nó nunca iniciado é aberto.
++export interface JourneyDaily {
++  date: string;                                   // dia de Brasília, YYYY-MM-DD
++  newNodes: Partial<Record<JourneyId, string[]>>; // nós novos abertos hoje
++}
++
+ export interface JourneyProgressDoc {
+   activeJourney?: JourneyId;
++  daily?: JourneyDaily;
+   journeys: Partial<Record<JourneyId, {
+     startedAt: number;
+     nodes: Record<string, JourneyNodeProgress>;   // chave = nodeKeyOf(...)
+@@ -196,14 +204,32 @@ export const LEVEL_INDEX: Record<Level, number> = { A1: 0, A2: 1, B1: 2, B2: 3,
+ // monte de exercício fora do nível certo.
+ export const PLACEMENT_SKILL_KEYS = ['grammar', 'reading', 'listening', 'writing'];
+ 
+-export const seasonsSkippedByPlacement = (placementResults: Record<string, { level?: Level } | undefined> | undefined, legacyLevel?: Level): number => {
++// Além do nivelamento, o aluno pode liberar Seasons por CÓDIGO (dado
++// pelo professor, para quem não tem tempo de fazer as 4 provas). O
++// código gravado vira gamification.journeyUnlockedSeasons = N Seasons
++// puladas; vale o MAIOR entre os dois caminhos. Os códigos moram em
++// journey-curriculum.json (unlockCodes) — mesma fonte do servidor.
++export const JOURNEY_UNLOCK_CODES: Record<string, number> =
++  ((CURRICULUM as any).unlockCodes as Record<string, number>) || {};
++
++// Devolve quantas Seasons o código pula, ou null se o código não existe.
++export const journeyCodeSkip = (raw: string): number | null => {
++  const code = String(raw || '').trim().toLowerCase();
++  return Object.prototype.hasOwnProperty.call(JOURNEY_UNLOCK_CODES, code) ? JOURNEY_UNLOCK_CODES[code] : null;
++};
++
++export const seasonsSkippedByPlacement = (placementResults: Record<string, { level?: Level } | undefined> | undefined, legacyLevel?: Level, unlockedSeasons: number = 0): number => {
++  const byCode = Math.min(SEASONS.length - 1, Math.max(0, Math.floor(unlockedSeasons || 0)));
+   const results = placementResults || {};
+   const tested = PLACEMENT_SKILL_KEYS.filter(k => results[k]?.level);
++  let byPlacement: number;
+   if (tested.length < PLACEMENT_SKILL_KEYS.length) {
+     // Nivelamento incompleto: só o formato antigo (nível único) vale.
+-    return tested.length === 0 && legacyLevel ? LEVEL_INDEX[legacyLevel] : 0;
++    byPlacement = tested.length === 0 && legacyLevel ? LEVEL_INDEX[legacyLevel] : 0;
++  } else {
++    byPlacement = Math.min(...PLACEMENT_SKILL_KEYS.map(k => LEVEL_INDEX[results[k]!.level!]));
+   }
+-  return Math.min(...PLACEMENT_SKILL_KEYS.map(k => LEVEL_INDEX[results[k]!.level!]));
++  return Math.max(byCode, byPlacement);
+ };
+ 
+ // Quantas habilidades ainda faltam nivelar para o pulo de Season
+@@ -211,6 +237,88 @@ export const seasonsSkippedByPlacement = (placementResults: Record<string, { lev
+ export const placementSkillsMissing = (placementResults: Record<string, { level?: Level } | undefined> | undefined): number =>
+   PLACEMENT_SKILL_KEYS.filter(k => !(placementResults || {})[k]?.level).length;
+ 
++// ── Limite diário: 1 Step NOVO por dia por jornada ────────────
++// Espelho fiel de dailyCheck em netlify/functions/lib/journey-core.js
++// (o teste test-journey.mjs cobre os dois lados). A decisão que VALE
++// é a do servidor; aqui é só para a tela desenhar cadeados honestos.
++//
++// Regras (Matheus, 24/08/2026):
++//   • Nó novo (nunca iniciado) consome o slot do dia da jornada.
++//   • Terminar nó pela metade ou refazer exercício não consome nada.
++//   • Review conta como o Step do dia.
++//   • Steps extras comprados (FR$) valem para qualquer jornada, hoje.
++//   • isPro não é limitado.
++
++export const JOURNEY_STEPS_PER_DAY = 1;
++// Preço, em FR$, do "+1 Step novo hoje" (qualquer jornada).
++export const JOURNEY_EXTRA_STEP_COST = 30;
++
++// O dia da Journey vira à meia-noite de BRASÍLIA (igual ao ranking),
++// não às 21h como a cota de 8 da prática livre (que usa UTC).
++export const journeyDayKey = (ts: number = Date.now()): string =>
++  new Date(ts - 3 * 3600000).toISOString().split('T')[0];
++
++export const journeyDailyOf = (doc: JourneyProgressDoc | null, today: string = journeyDayKey()): JourneyDaily => {
++  const d = doc?.daily;
++  if (!d || d.date !== today) return { date: today, newNodes: {} };
++  return { date: d.date, newNodes: d.newNodes || {} };
++};
++
++export const journeyExtraStepsToday = (g: { journeyExtraSteps?: number; journeyExtraDate?: string | null }, today: string = journeyDayKey()): number =>
++  g.journeyExtraDate === today ? Math.max(0, g.journeyExtraSteps || 0) : 0;
++
++export const journeyExtrasUsed = (daily: JourneyDaily): number =>
++  Object.values(daily.newNodes || {}).reduce((acc, list) => acc + Math.max(0, (list || []).length - JOURNEY_STEPS_PER_DAY), 0);
++
++const journeyNodeHasProgress = (doc: JourneyProgressDoc | null, journeyId: JourneyId, nodeKey: string): boolean => {
++  const ex = doc?.journeys?.[journeyId]?.nodes?.[nodeKey]?.exercises || {};
++  return Object.keys(ex).length > 0;
++};
++
++export interface JourneyDailyStatus {
++  allowed: boolean;          // pode abrir este nó agora?
++  isNew: boolean;            // abrir consumiria um slot de hoje?
++  usedToday: string[];       // nós novos já abertos hoje NESTA jornada
++  extrasLeft: number;        // Steps extras comprados e ainda não usados
++}
++
++export const journeyDailyStatusOf = (
++  doc: JourneyProgressDoc | null,
++  g: { isPro?: boolean; journeyExtraSteps?: number; journeyExtraDate?: string | null },
++  journeyId: JourneyId,
++  nodeKey: string,
++  now: number = Date.now(),
++): JourneyDailyStatus => {
++  const today = journeyDayKey(now);
++  const daily = journeyDailyOf(doc, today);
++  const usedToday = daily.newNodes[journeyId] || [];
++  const extrasLeft = Math.max(0, journeyExtraStepsToday(g, today) - journeyExtrasUsed(daily));
++  if (g.isPro) return { allowed: true, isNew: false, usedToday, extrasLeft };
++  if (journeyNodeHasProgress(doc, journeyId, nodeKey) || usedToday.includes(nodeKey)) {
++    return { allowed: true, isNew: false, usedToday, extrasLeft };
++  }
++  const freeSlot = usedToday.length < JOURNEY_STEPS_PER_DAY;
++  return { allowed: freeSlot || extrasLeft > 0, isNew: true, usedToday, extrasLeft };
++};
++
++// O Step do dia desta jornada já foi CONCLUÍDO? (todos os exercícios
++// do nó novo aberto hoje feitos) — é o gatilho da recomendação
++// "continue em outra jornada".
++export const journeyDayStepCompleted = (doc: JourneyProgressDoc | null, journeyId: JourneyId, now: number = Date.now()): boolean => {
++  const daily = journeyDailyOf(doc, journeyDayKey(now));
++  const used = daily.newNodes[journeyId] || [];
++  if (!used.length) return false;
++  const nodes = doc?.journeys?.[journeyId]?.nodes || {};
++  return used.every(key => {
++    const m = key.match(/^s(\d+)_n(\d+)$/);
++    if (!m) return false;
++    const def = buildSeasonNodes(journeyId, Number(m[1]))[Number(m[2])];
++    if (!def) return false;
++    const ex = nodes[key]?.exercises || {};
++    return def.kinds.every(k => !!ex[k]);
++  });
++};
++
+ export interface NodeStatus {
+   node: JourneyNode;
+   key: string;
+diff --git a/netlify/functions/award-activity.js b/netlify/functions/award-activity.js
+index 0119e71..36c8849 100644
+--- a/netlify/functions/award-activity.js
++++ b/netlify/functions/award-activity.js
+@@ -29,9 +29,14 @@ const { getFirestore } = require("firebase-admin/firestore");
+ const { getAuth } = require("firebase-admin/auth");
+ const { randomUUID } = require("crypto");
+ const { weekKeyOf, monthKeyOf, SOURCE_TAG } = require("./lib/ranking-core");
+-const { resolvePosition, canAccess } = require("./lib/journey-core");
++const { resolvePosition, canAccess, dailyCheck, registerDailyNode } = require("./lib/journey-core");
+ 
+-const DAILY_XP_LIMIT = 800;
++// Era 800 (~8 exercícios perfeitos). Com a Journey fora da cota de 8
++// (até 4 Steps/dia = 20 exercícios + 8 livres), o teto antigo faria o
++// aluno terminar o dia trabalhando de graça — péssimo para o
++// engajamento, que é a dor nº 1. Agora todo exercício do dia pode
++// render XP. (Decisão do Matheus, 24/08/2026.)
++const DAILY_XP_LIMIT = 2800;
+ 
+ const ALLOWED_ORIGINS = [
+   "https://freedom.app.br",
+@@ -161,13 +166,27 @@ const saveJourneyProgress = async (db, uid, journey, pct) => {
+     // O aluno realmente podia estar neste Step? Sem esta conferência,
+     // um POST forjado marcaria a trilha inteira como concluída — e a
+     // sequência dos Steps, que é a espinha da Journey, viraria enfeite.
++    const gamification = (userSnap.data() || {}).gamification;
+     const pos = resolvePosition(journey);
+-    const access = pos ? canAccess(pos, snap.exists ? snap.data() : null, (userSnap.data() || {}).gamification) : { allowed: false };
++    const access = pos ? canAccess(pos, snap.exists ? snap.data() : null, gamification) : { allowed: false };
+     if (!access.allowed) {
+       console.warn("journey progress recusado (posição bloqueada):", uid, nodeKey);
+       return false;
+     }
+ 
++    // LIMITE DIÁRIO (defesa em profundidade): no caminho normal o nó
++    // já foi registrado em daily.newNodes pela journey-content ao
++    // entregar o exercício; aqui só barramos o POST forjado que tenta
++    // gravar progresso num nó novo sem slot. Se houver slot sobrando
++    // (ex.: exercício aberto antes desta atualização entrar no ar),
++    // registramos em vez de punir o aluno.
++    const chk = dailyCheck(pos, snap.exists ? snap.data() : null, gamification);
++    if (!chk.allowed) {
++      console.warn("journey progress recusado (limite diário):", uid, nodeKey);
++      return false;
++    }
++    if (chk.needsRegister) data.daily = registerDailyNode(chk.daily, journey.journeyId, chk.nodeKey);
++
+     if (!data.journeys) data.journeys = {};
+     if (!data.journeys[journey.journeyId]) data.journeys[journey.journeyId] = { startedAt: Date.now(), nodes: {} };
+     const j = data.journeys[journey.journeyId];
+diff --git a/netlify/functions/journey-content.js b/netlify/functions/journey-content.js
+index cab8b58..005733d 100644
+--- a/netlify/functions/journey-content.js
++++ b/netlify/functions/journey-content.js
+@@ -30,7 +30,7 @@ const { GoogleGenAI } = require("@google/genai");
+ const { initializeApp, getApps, cert } = require("firebase-admin/app");
+ const { getFirestore } = require("firebase-admin/firestore");
+ const { getAuth } = require("firebase-admin/auth");
+-const { resolvePosition, canAccess, buildSeasonNodes, LEVELS } = require("./lib/journey-core");
++const { resolvePosition, canAccess, buildSeasonNodes, LEVELS, dailyCheck, registerDailyNode } = require("./lib/journey-core");
+ const { signBankId } = require("./lib/journey-sign");
+ 
+ const MODEL = "gemini-3.5-flash";
+@@ -311,7 +311,8 @@ exports.handler = async (event) => {
+       db.collection("journey_progress").doc(uid).get(),
+       db.collection("users").doc(uid).get(),
+     ]);
+-    const access = canAccess(pos, progSnap.exists ? progSnap.data() : null, (userSnap.data() || {}).gamification);
++    const gamification = (userSnap.data() || {}).gamification;
++    const access = canAccess(pos, progSnap.exists ? progSnap.data() : null, gamification);
+     if (!access.allowed) {
+       return {
+         statusCode: 403, headers,
+@@ -323,6 +324,37 @@ exports.handler = async (event) => {
+       };
+     }
+ 
++    // 3b) LIMITE DIÁRIO: 1 nó NOVO por jornada por dia (+ extras
++    // comprados). A conferência de fora é só o atalho barato; a
++    // decisão que vale é a da TRANSAÇÃO abaixo, que relê o doc e
++    // grava o consumo de forma atômica — sem ela, dois pedidos
++    // simultâneos (duas abas) abririam dois Steps novos no mesmo dia.
++    const quick = dailyCheck(pos, progSnap.exists ? progSnap.data() : null, gamification);
++    const limitResponse = {
++      statusCode: 403, headers,
++      body: JSON.stringify({
++        code: "DAILY_STEP_LIMIT",
++        error: "Você já abriu o Step de hoje desta jornada. Continue um Step em andamento, avance em outra jornada ou compre um Step extra.",
++      }),
++    };
++    if (!quick.allowed) return limitResponse;
++    if (quick.needsRegister) {
++      const progRef = db.collection("journey_progress").doc(uid);
++      const registered = await db.runTransaction(async (tx) => {
++        const snap = await tx.get(progRef);
++        const data = snap.exists ? snap.data() : { journeys: {} };
++        const chk = dailyCheck(pos, data, gamification);
++        if (!chk.allowed) return false;
++        if (chk.needsRegister) {
++          data.daily = registerDailyNode(chk.daily, pos.journeyId, chk.nodeKey);
++          data.updatedAt = Date.now();
++          tx.set(progRef, data);
++        }
++        return true;
++      });
++      if (!registered) return limitResponse;
++    }
++
+     // 3) Já existe? Devolve sem gastar IA.
+     const snap = await ref.get();
+     if (snap.exists && snap.data()?.content) {
+diff --git a/netlify/functions/lib/journey-core.js b/netlify/functions/lib/journey-core.js
+index 9ac10d8..f3dd6a4 100644
+--- a/netlify/functions/lib/journey-core.js
++++ b/netlify/functions/lib/journey-core.js
+@@ -28,6 +28,8 @@ const KINDS = ["grammar", "vocabulary", "reading", "listening", "writing"];
+ const JOURNEY_IDS = ["freedom", "business", "young", "traveler"];
+ const REVIEW_EVERY = 3;
+ const STEP_PASS_PCT = 60;
++// Códigos de liberação de Season (código → nº de Seasons puladas).
++const UNLOCK_CODES = CURRICULUM.unlockCodes || {};
+ // Todas as quatro habilidades do nivelamento precisam estar testadas
+ // para o pulo de Season valer (ver seasonsSkipped abaixo).
+ const PLACEMENT_SKILLS = ["grammar", "reading", "listening", "writing"];
+@@ -82,15 +84,32 @@ const resolvePosition = (raw) => {
+ // nivelou só Reading em C1 pularia a trilha inteira sem que sua
+ // gramática ou escrita tivessem sido medidas.
+ const seasonsSkipped = (gamification) => {
++  // ── Via CÓDIGO de liberação ─────────────────────────────────
++  // Alternativa ao nivelamento para aluno sem tempo de fazer as 4
++  // provas: um código (dado pelo professor) grava
++  // gamification.journeyUnlockedSeasons = N e vale como "pule N
++  // Seasons". Os códigos moram em journey-curriculum.json
++  // (unlockCodes), a MESMA fonte lida pelo front.
++  const byCode = Math.min(
++    LEVELS.length - 1,
++    Math.max(0, Math.floor((gamification && gamification.journeyUnlockedSeasons) || 0))
++  );
++
++  // ── Via NIVELAMENTO (regra original: menor das 4 habilidades) ─
+   const results = (gamification && gamification.placementResults) || {};
+   const tested = PLACEMENT_SKILLS.filter((s) => results[s] && results[s].level);
++  let byPlacement = 0;
+   if (tested.length < PLACEMENT_SKILLS.length) {
+     // Nivelamento incompleto: cai no formato antigo (nível único), se houver.
+     const legacy = gamification && gamification.lastPlacementLevel;
+     const idx = LEVELS.indexOf(legacy);
+-    return tested.length === 0 && idx > 0 ? idx : 0;
++    byPlacement = tested.length === 0 && idx > 0 ? idx : 0;
++  } else {
++    byPlacement = Math.min(...PLACEMENT_SKILLS.map((s) => Math.max(0, LEVELS.indexOf(results[s].level))));
+   }
+-  return Math.min(...PLACEMENT_SKILLS.map((s) => Math.max(0, LEVELS.indexOf(results[s].level))));
++
++  // Vale o MAIOR dos dois caminhos — um não anula o outro.
++  return Math.max(byCode, byPlacement);
+ };
+ 
+ // ── Média e aprovação de um nó, a partir do progresso salvo ──
+@@ -142,7 +161,92 @@ const canAccess = (pos, progressDoc, gamification) => {
+   return { allowed: true, skipped };
+ };
+ 
++// ════════════════════════════════════════════════════════════
++// LIMITE DIÁRIO DA JOURNEY — 1 Step NOVO por dia, por jornada
++// ────────────────────────────────────────────────────────────
++// Regra decidida pelo Matheus (24/08/2026):
++//   • Por dia, cada jornada libera UM nó novo (Step ou Review —
++//     Review conta como o Step do dia daquela jornada).
++//   • Terminar um nó que ficou pela metade de dias anteriores
++//     NÃO gasta o Step do dia — só abrir um nó nunca iniciado.
++//   • Refazer exercícios já feitos (melhorar estrelas) é livre.
++//   • O aluno pode comprar "+1 Step novo hoje" por FR$ (campo
++//     journeyExtraSteps/journeyExtraDate no gamification). O
++//     extra vale para QUALQUER jornada.
++//   • PRO/Admin (isPro) não é limitado.
++//
++// O consumo do dia fica em journey_progress/{uid}.daily:
++//   { date: 'YYYY-MM-DD', newNodes: { freedom: ['s0_n3'], ... } }
++// Essa coleção só aceita escrita do SERVIDOR (regras do
++// Firestore), então o aluno não consegue forjar slots — diferente
++// do gamification, que hoje ainda é gravável pelo cliente.
++//
++// O dia vira no fuso de BRASÍLIA (mesma conta do ranking em
++// ranking-core), não em UTC: senão o "novo Step" chegaria às 21h.
++// ════════════════════════════════════════════════════════════
++
++const STEPS_PER_DAY = 1; // nós novos por jornada por dia
++
++const dayKeyOf = (ts = Date.now()) =>
++  new Date(ts - 3 * 3600000).toISOString().split("T")[0];
++
++// Normaliza o campo daily do doc de progresso: se o carimbo de data
++// não é o de hoje, o consumo zera (dia novo, slots novos).
++const normalizeDaily = (progressDoc, todayKey) => {
++  const d = (progressDoc && progressDoc.daily) || {};
++  if (d.date !== todayKey) return { date: todayKey, newNodes: {} };
++  return { date: d.date, newNodes: d.newNodes || {} };
++};
++
++// Steps extras comprados HOJE (compra some na virada do dia).
++const extraStepsToday = (gamification, todayKey) => {
++  const g = gamification || {};
++  return g.journeyExtraDate === todayKey ? Math.max(0, g.journeyExtraSteps || 0) : 0;
++};
++
++// Quantos extras o consumo de hoje já usou: em cada jornada, o 1º nó
++// novo é o slot grátis do dia; do 2º em diante, cada um é um extra.
++const extrasUsed = (daily) =>
++  Object.values(daily.newNodes || {}).reduce((acc, list) => acc + Math.max(0, (list || []).length - STEPS_PER_DAY), 0);
++
++// O nó já tem ALGUM exercício gravado? (aí não é "novo": terminar ou
++// refazer é livre e não consome o Step do dia)
++const nodeHasProgress = (progressDoc, journeyId, nodeKey) => {
++  const nodes = (((progressDoc || {}).journeys || {})[journeyId] || {}).nodes || {};
++  const ex = (nodes[nodeKey] || {}).exercises || {};
++  return Object.keys(ex).length > 0;
++};
++
++// A pergunta central: este aluno pode abrir ESTE nó HOJE?
++// Devolve { allowed, reason?, needsRegister, nodeKey, daily }.
++// needsRegister=true significa "é um nó novo consumindo slot de
++// hoje: grave-o em daily.newNodes antes de entregar o exercício".
++const dailyCheck = (pos, progressDoc, gamification, now = Date.now()) => {
++  const nodeKey = `s${pos.season}_n${pos.node}`;
++  const today = dayKeyOf(now);
++  const daily = normalizeDaily(progressDoc, today);
++  if (gamification && gamification.isPro) return { allowed: true, needsRegister: false, nodeKey, daily };
++  if (nodeHasProgress(progressDoc, pos.journeyId, nodeKey)) return { allowed: true, needsRegister: false, nodeKey, daily };
++  const list = daily.newNodes[pos.journeyId] || [];
++  if (list.includes(nodeKey)) return { allowed: true, needsRegister: false, nodeKey, daily };
++  const freeSlot = list.length < STEPS_PER_DAY;
++  const extrasLeft = extraStepsToday(gamification, today) - extrasUsed(daily);
++  if (freeSlot || extrasLeft > 0) return { allowed: true, needsRegister: true, nodeKey, daily };
++  return { allowed: false, reason: "DAILY_STEP_LIMIT", needsRegister: false, nodeKey, daily };
++};
++
++// Marca o nó como o consumo de hoje (puro — quem chama grava no doc).
++const registerDailyNode = (daily, journeyId, nodeKey) => {
++  const newNodes = { ...(daily.newNodes || {}) };
++  const list = [...(newNodes[journeyId] || [])];
++  if (!list.includes(nodeKey)) list.push(nodeKey);
++  newNodes[journeyId] = list;
++  return { date: daily.date, newNodes };
++};
++
+ module.exports = {
+-  LEVELS, KINDS, JOURNEY_IDS, REVIEW_EVERY, STEP_PASS_PCT,
++  LEVELS, KINDS, JOURNEY_IDS, REVIEW_EVERY, STEP_PASS_PCT, STEPS_PER_DAY, UNLOCK_CODES,
+   buildSeasonNodes, resolvePosition, seasonsSkipped, nodeAverage, canAccess,
++  dayKeyOf, normalizeDaily, extraStepsToday, extrasUsed, nodeHasProgress,
++  dailyCheck, registerDailyNode,
+ };
+diff --git a/netlify/functions/lib/journey-curriculum.json b/netlify/functions/lib/journey-curriculum.json
+index 8313d07..ad952a4 100644
+--- a/netlify/functions/lib/journey-curriculum.json
++++ b/netlify/functions/lib/journey-curriculum.json
+@@ -653,5 +653,11 @@
+     ]
+    }
+   }
++ },
++ "unlockCodes": {
++  "frees2": 1,
++  "liberab1": 2,
++  "b2unlocked": 3,
++  "desbloqueiaavancado": 4
+  }
+-}
+\ No newline at end of file
++}
+diff --git a/services/api.ts b/services/api.ts
+index 19fd681..2e55e0f 100644
+--- a/services/api.ts
++++ b/services/api.ts
+@@ -1,5 +1,5 @@
+ import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
+-import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
++import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc, JOURNEY_EXTRA_STEP_COST, journeyDayKey, journeyCodeSkip, SEASONS } from '../journeys';
+ import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
+ import { auth, db, storage } from './firebase';
+ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
+@@ -135,6 +135,11 @@ const ensureNewFields = (gamification: UserGamification): UserGamification => ({
+   // Pacote extra de exercícios: perfis antigos nascem sem compra
+   extraDailyAllowance: gamification.extraDailyAllowance ?? 0,
+   extraDailyDate: gamification.extraDailyDate ?? null,
++  // Step extra da Journey: perfis antigos nascem sem compra
++  journeyExtraSteps: gamification.journeyExtraSteps ?? 0,
++  journeyExtraDate: gamification.journeyExtraDate ?? null,
++  // Seasons liberadas por código: perfis antigos nascem sem nenhuma
++  journeyUnlockedSeasons: gamification.journeyUnlockedSeasons ?? 0,
+ });
+ 
+ export const api = {
+@@ -643,6 +648,58 @@ export const api = {
+     });
+   },
+ 
++  // ── Compra de +1 Step novo da Journey (FR$30, vale só hoje) ───
++  // Mesmo molde do pacote extra: transação atômica (ou desconta e
++  // credita, ou nada acontece). O carimbo de dia é o de BRASÍLIA
++  // (journeyDayKey), porque é assim que o servidor conta o consumo
++  // dos Steps em journey_progress/{uid}.daily — usar o dia UTC aqui
++  // faria a compra "sumir" 3 horas antes da meia-noite.
++  purchaseExtraJourneyStep: async (userId: string): Promise<{ newBalance: number; user: UserSession }> => {
++    const userRef = doc(db, 'users', userId);
++    return await runTransaction(db, async (tx) => {
++      const snap = await tx.get(userRef);
++      if (!snap.exists()) throw new Error("Usuário não encontrado.");
++      const user = snap.data() as UserSession;
++      user.gamification = ensureNewFields(user.gamification);
++      const balance = user.gamification.frBalance || 0;
++      if (balance < JOURNEY_EXTRA_STEP_COST) {
++        throw new Error(`Saldo insuficiente: você tem FR$ ${balance.toFixed(2)} e o Step extra custa FR$ ${JOURNEY_EXTRA_STEP_COST.toFixed(2)}. Complete exercícios para ganhar mais FR$!`);
++      }
++      const today = journeyDayKey();
++      const boughtToday = user.gamification.journeyExtraDate === today;
++      user.gamification.frBalance = balance - JOURNEY_EXTRA_STEP_COST;
++      user.gamification.journeyExtraSteps = (boughtToday ? (user.gamification.journeyExtraSteps || 0) : 0) + 1;
++      user.gamification.journeyExtraDate = today;
++      tx.set(userRef, clean(user));
++      return { newBalance: user.gamification.frBalance, user };
++    });
++  },
++
++  // ── Resgate de código de liberação de Season da Journey ───────
++  // Alternativa ao nivelamento: o professor passa o código, o aluno
++  // digita no mapa da trilha e a Season correspondente (e todas as
++  // anteriores, como revisão livre) abre. Só ANDA PARA FRENTE: um
++  // código menor que o progresso atual não rebaixa nada.
++  redeemJourneyCode: async (userId: string, rawCode: string): Promise<{ user: UserSession; skipped: number; seasonTitle: string }> => {
++    const skip = journeyCodeSkip(rawCode);
++    if (skip === null) throw new Error('Código inválido. Confira com seu professor e tente de novo.');
++    const userRef = doc(db, 'users', userId);
++    return await runTransaction(db, async (tx) => {
++      const snap = await tx.get(userRef);
++      if (!snap.exists()) throw new Error('Usuário não encontrado.');
++      const user = snap.data() as UserSession;
++      user.gamification = ensureNewFields(user.gamification);
++      const current = user.gamification.journeyUnlockedSeasons || 0;
++      if (skip <= current) {
++        // Nada muda, mas o aluno merece saber que o código é válido.
++        return { user, skipped: current, seasonTitle: SEASONS[Math.min(current, SEASONS.length - 1)].title };
++      }
++      user.gamification.journeyUnlockedSeasons = skip;
++      tx.set(userRef, clean(user));
++      return { user, skipped: skip, seasonTitle: SEASONS[Math.min(skip, SEASONS.length - 1)].title };
++    });
++  },
++
+   getPlan: async (userId: string): Promise<StudyPlan | null> => {
+     const snap = await getDoc(doc(db, 'plans', userId));
+     return snap.exists() ? (snap.data() as StudyPlan) : null;
+@@ -817,7 +874,11 @@ export const api = {
+     });
+     if (!res.ok) {
+       const e = await res.json().catch(() => ({}));
+-      throw new Error(e.error || `Erro ${res.status}`);
++      // O 'code' viaja junto para o App distinguir "limite diário da
++      // Journey" (abre a oferta de Step extra) de um erro comum.
++      const err = new Error(e.error || `Erro ${res.status}`) as Error & { code?: string };
++      if (e.code) err.code = e.code;
++      throw err;
+     }
+     const data = await res.json();
+     return { content: data.content as GeneratedContent, cached: !!data.cached };
+diff --git a/test-journey-server.mjs b/test-journey-server.mjs
+index c52d340..69d7c03 100644
+--- a/test-journey-server.mjs
++++ b/test-journey-server.mjs
+@@ -147,6 +147,96 @@ check('Nivelamento incompleto não abre nada',
+ check('Servidor e front concordam sobre quantas Seasons pular',
+   core.seasonsSkipped(allSkills('B2')) === 3 && core.seasonsSkipped({}) === 0);
+ 
++console.log('\n── Limite diário: 1 Step NOVO por dia por jornada ──');
++{
++  const hoje = core.dayKeyOf();
++  const ontem = core.dayKeyOf(Date.now() - 86400000);
++  const comDaily = (prog, date, newNodes) => ({ ...(prog || { journeys: {} }), daily: { date, newNodes } });
++
++  check('Dia limpo: abrir o 1º nó novo é permitido e registra',
++    (() => { const c = core.dailyCheck(P(0, 0), null, {}); return c.allowed && c.needsRegister; })());
++  check('Nó já registrado hoje segue liberado sem novo registro',
++    (() => { const c = core.dailyCheck(P(0, 0), comDaily(null, hoje, { freedom: ['s0_n0'] }), {}); return c.allowed && !c.needsRegister; })());
++  check('2º nó novo no MESMO dia e jornada é recusado (DAILY_STEP_LIMIT)',
++    (() => { const c = core.dailyCheck(P(0, 1), comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), hoje, { freedom: ['s0_n0'] }), {}); return !c.allowed && c.reason === 'DAILY_STEP_LIMIT'; })());
++  check('Registro de ONTEM não trava hoje (slot renova na virada)',
++    (() => { const c = core.dailyCheck(P(0, 1), comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), ontem, { freedom: ['s0_n0'] }), {}); return c.allowed && c.needsRegister; })());
++  check('Nó com progresso anterior (pela metade) não consome o dia',
++    (() => {
++      const prog = comDaily(progWith([doneNode(0, 0, ['grammar', 'reading'], 100)]), hoje, { freedom: ['s0_n5'] });
++      const c = core.dailyCheck(P(0, 0), prog, {}); return c.allowed && !c.needsRegister;
++    })());
++  check('Refazer nó antigo (revisão) é livre mesmo com o dia gasto',
++    (() => {
++      const prog = comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), hoje, { freedom: ['s0_n1'] });
++      const c = core.dailyCheck(P(0, 0), prog, {}); return c.allowed && !c.needsRegister;
++    })());
++  check('Jornada DIFERENTE tem slot próprio no mesmo dia',
++    (() => {
++      const pos = core.resolvePosition({ journeyId: 'business', season: 0, node: 0, kind: 'grammar' });
++      const c = core.dailyCheck(pos, comDaily(null, hoje, { freedom: ['s0_n0'] }), {}); return c.allowed && c.needsRegister;
++    })());
++  check('Review conta como o Step do dia (trava o Step seguinte)',
++    (() => {
++      const prog = comDaily(progWith([doneNode(0, 0, KINDS5, 80), doneNode(0, 1, KINDS5, 80), doneNode(0, 2, KINDS5, 80), doneNode(0, 3, ['grammar'], 80)]), hoje, { freedom: ['s0_n3'] });
++      const c = core.dailyCheck(P(0, 4), prog, {}); return !c.allowed && c.reason === 'DAILY_STEP_LIMIT';
++    })());
++  check('Step extra comprado HOJE libera um 2º nó novo',
++    (() => {
++      const g = { journeyExtraSteps: 1, journeyExtraDate: hoje };
++      const c = core.dailyCheck(P(0, 1), comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), hoje, { freedom: ['s0_n0'] }), g);
++      return c.allowed && c.needsRegister;
++    })());
++  check('Step extra JÁ USADO não libera um 3º',
++    (() => {
++      const g = { journeyExtraSteps: 1, journeyExtraDate: hoje };
++      const prog = comDaily(progWith([doneNode(0, 0, KINDS5, 80), doneNode(0, 1, KINDS5, 80)]), hoje, { freedom: ['s0_n0', 's0_n1'] });
++      const c = core.dailyCheck(P(0, 2), prog, g); return !c.allowed;
++    })());
++  check('Step extra comprado ONTEM não vale hoje',
++    (() => {
++      const g = { journeyExtraSteps: 3, journeyExtraDate: ontem };
++      const c = core.dailyCheck(P(0, 1), comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), hoje, { freedom: ['s0_n0'] }), g);
++      return !c.allowed;
++    })());
++  check('Extra vale para QUALQUER jornada (usado na business)',
++    (() => {
++      const g = { journeyExtraSteps: 1, journeyExtraDate: hoje };
++      const pos = core.resolvePosition({ journeyId: 'business', season: 0, node: 1, kind: 'grammar' });
++      const prog = {
++        journeys: { business: { nodes: Object.fromEntries([doneNode(0, 0, KINDS5, 80)]) } },
++        daily: { date: hoje, newNodes: { freedom: ['s0_n0'], business: ['s0_n0'] } },
++      };
++      const c = core.dailyCheck(pos, prog, g); return c.allowed && c.needsRegister;
++    })());
++  check('isPro não é limitado',
++    core.dailyCheck(P(0, 1), comDaily(progWith([doneNode(0, 0, KINDS5, 80)]), hoje, { freedom: ['s0_n0'] }), { isPro: true }).allowed === true);
++  check('registerDailyNode grava sem duplicar',
++    (() => {
++      let d = { date: hoje, newNodes: {} };
++      d = core.registerDailyNode(d, 'freedom', 's0_n0');
++      d = core.registerDailyNode(d, 'freedom', 's0_n0');
++      return d.newNodes.freedom.length === 1 && d.newNodes.freedom[0] === 's0_n0';
++    })());
++}
++
++console.log('\n── Códigos de liberação de Season ──');
++{
++  check('Os 4 códigos combinados existem no currículo',
++    core.UNLOCK_CODES.frees2 === 1 && core.UNLOCK_CODES.liberab1 === 2 &&
++    core.UNLOCK_CODES.b2unlocked === 3 && core.UNLOCK_CODES.desbloqueiaavancado === 4);
++  check('Código gravado (journeyUnlockedSeasons=2) abre a Season 3',
++    core.canAccess(P(2, 0), null, { journeyUnlockedSeasons: 2 }).allowed === true);
++  check('Código de Season 3 NÃO abre a Season 4',
++    core.canAccess(P(3, 0), null, { journeyUnlockedSeasons: 2 }).allowed === false);
++  check('Seasons anteriores ao código viram revisão livre',
++    core.canAccess(P(1, 10), null, { journeyUnlockedSeasons: 2 }).allowed === true);
++  check('Vale o MAIOR entre código e nivelamento',
++    core.seasonsSkipped({ ...allSkills('A2'), journeyUnlockedSeasons: 3 }) === 3 &&
++    core.seasonsSkipped({ ...allSkills('B2'), journeyUnlockedSeasons: 1 }) === 3);
++  check('Valor absurdo é limitado a 4 Seasons', core.seasonsSkipped({ journeyUnlockedSeasons: 99 }) === 4);
++}
++
+ console.log('\n── Assinatura interna das chamadas de áudio ──');
+ process.env.FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY || 'chave-de-teste';
+ const bid = 'freedom_s0_n2_listening';
+diff --git a/test-journey.mjs b/test-journey.mjs
+index 908e523..81ab966 100644
+--- a/test-journey.mjs
++++ b/test-journey.mjs
+@@ -135,5 +135,67 @@ check('Ignora pontuação final', isCorrect('is not.', item));
+ check('Recusa resposta errada', !isCorrect('are not', item));
+ check('Recusa resposta vazia', !isCorrect('   ', item));
+ 
++console.log('\n── Limite diário (espelho do servidor) e códigos de Season ──');
++{
++  const hoje = J.journeyDayKey();
++  const ontem = J.journeyDayKey(Date.now() - 86400000);
++  const g = {};
++  const doc0 = null;
++  check('Dia limpo: nó novo permitido e marcado como novo',
++    (() => { const s = J.journeyDailyStatusOf(doc0, g, 'freedom', 's0_n0'); return s.allowed && s.isNew; })());
++  check('Slot do dia usado trava o 2º nó novo da mesma jornada',
++    (() => {
++      const doc = { journeys: {}, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      const s = J.journeyDailyStatusOf(doc, g, 'freedom', 's0_n1'); return !s.allowed;
++    })());
++  check('Outra jornada continua com o slot livre',
++    (() => {
++      const doc = { journeys: {}, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      return J.journeyDailyStatusOf(doc, g, 'business', 's0_n0').allowed;
++    })());
++  check('Consumo de ontem zera hoje',
++    (() => {
++      const doc = { journeys: {}, daily: { date: ontem, newNodes: { freedom: ['s0_n0'] } } };
++      return J.journeyDailyStatusOf(doc, g, 'freedom', 's0_n1').allowed;
++    })());
++  check('Nó com progresso anterior não é "novo" (terminar é livre)',
++    (() => {
++      const doc = { journeys: { freedom: { nodes: { s0_n0: { exercises: { grammar: { bestPct: 80 } } } } } }, daily: { date: hoje, newNodes: { freedom: ['s0_n5'] } } };
++      const s = J.journeyDailyStatusOf(doc, g, 'freedom', 's0_n0'); return s.allowed && !s.isNew;
++    })());
++  check('Step extra comprado hoje libera um 2º nó',
++    (() => {
++      const doc = { journeys: {}, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      const gx = { journeyExtraSteps: 1, journeyExtraDate: hoje };
++      const s = J.journeyDailyStatusOf(doc, gx, 'freedom', 's0_n1'); return s.allowed && s.extrasLeft === 1;
++    })());
++  check('isPro nunca é travado',
++    (() => {
++      const doc = { journeys: {}, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      return J.journeyDailyStatusOf(doc, { isPro: true }, 'freedom', 's0_n1').allowed;
++    })());
++  check('journeyDayStepCompleted: só com os 5 exercícios do nó do dia',
++    (() => {
++      const kinds = ['grammar', 'vocabulary', 'reading', 'listening', 'writing'];
++      const full = Object.fromEntries(kinds.map(k => [k, { bestPct: 80, attempts: 1, stars: 2, completedAt: 1 }]));
++      const part = { grammar: { bestPct: 80, attempts: 1, stars: 2, completedAt: 1 } };
++      const docFull = { journeys: { freedom: { startedAt: 1, nodes: { s0_n0: { exercises: full } } } }, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      const docPart = { journeys: { freedom: { startedAt: 1, nodes: { s0_n0: { exercises: part } } } }, daily: { date: hoje, newNodes: { freedom: ['s0_n0'] } } };
++      return J.journeyDayStepCompleted(docFull, 'freedom') && !J.journeyDayStepCompleted(docPart, 'freedom');
++    })());
++  check('Sem nó novo hoje, não há o que recomendar',
++    !J.journeyDayStepCompleted({ journeys: {} }, 'freedom'));
++
++  check('Códigos: os 4 combinados, minúsculos e com espaços tolerados',
++    J.journeyCodeSkip('frees2') === 1 && J.journeyCodeSkip('  LiberaB1  ') === 2 &&
++    J.journeyCodeSkip('b2unlocked') === 3 && J.journeyCodeSkip('desbloqueiaavancado') === 4);
++  check('Código inexistente devolve null', J.journeyCodeSkip('naoexiste') === null && J.journeyCodeSkip('') === null);
++  check('seasonsSkippedByPlacement respeita o código (maior dos dois)',
++    J.seasonsSkippedByPlacement({}, undefined, 2) === 2 &&
++    J.seasonsSkippedByPlacement({ grammar: { level: 'B2' }, reading: { level: 'B2' }, listening: { level: 'B2' }, writing: { level: 'B2' } }, undefined, 1) === 3);
++  check('Sem código, nada muda no cálculo antigo',
++    J.seasonsSkippedByPlacement({}, undefined) === 0);
++}
++
+ console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} passaram, ${fail} falharam\n`);
+ process.exit(fail === 0 ? 0 : 1);
+diff --git a/types.ts b/types.ts
+index 77b8dc6..438f25d 100644
+--- a/types.ts
++++ b/types.ts
+@@ -281,6 +281,21 @@ export interface UserGamification {
+   // hoje, o extra não vale mais. Compras no mesmo dia se somam.
+   extraDailyAllowance?: number;
+   extraDailyDate?: string | null;
++
++  // ── Novo: Step extra da Journey (compra com FR$) ──────────
++  // A Journey libera 1 Step novo por dia POR JORNADA; cada compra
++  // soma +1 Step novo válido só hoje, em qualquer jornada. O dia
++  // aqui é o de BRASÍLIA (journeyDayKey), igual ao consumo gravado
++  // pelo servidor em journey_progress/{uid}.daily.
++  journeyExtraSteps?: number;
++  journeyExtraDate?: string | null;
++
++  // ── Novo: Seasons liberadas por CÓDIGO (alternativa ao
++  // nivelamento). N = quantas Seasons ficam "puladas" (viram
++  // revisão livre) — ex.: código "liberab1" grava 2 (A1 e A2
++  // liberadas, aluno começa na B1). Vale o maior entre isto e o
++  // que o nivelamento der.
++  journeyUnlockedSeasons?: number;
+ }
+ 
+ export interface AdminNotification {
+-- 
+2.43.0
+
