@@ -105,9 +105,27 @@ export const InteractiveWord: React.FC<{ word: string; voiceGender?: VoiceGender
   const [loadingTranslation, setLoadingTranslation] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  // Posição do balão de tradução NA TELA (não dentro do cartão).
+  // O texto de leitura vive num contêiner com rolagem, e contêiner
+  // com rolagem corta qualquer coisa que ultrapasse a borda — era
+  // por isso que a tradução aparecia espremida/cortada. Com posição
+  // fixa na tela, o balão flutua por cima de tudo, sem corte.
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const wordRef = useRef<HTMLSpanElement | null>(null);
   const cleanWord = word.trim().replace(/[^\w\s-]/gi, '');
 
+  const showTip = () => {
+    const rect = wordRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    // Centraliza no meio da palavra, mas nunca deixa o balão sair
+    // da tela (margem de 130px de cada lado ≈ metade da largura máx).
+    const margin = 130;
+    const x = Math.min(Math.max(rect.left + rect.width / 2, margin), window.innerWidth - margin);
+    setTipPos({ x, y: rect.top });
+  };
+
   const handleMouseEnter = async () => {
+    showTip();
     if (cleanWord.length < 2 || translation || loadingTranslation) return;
     setLoadingTranslation(true);
     try {
@@ -157,19 +175,25 @@ export const InteractiveWord: React.FC<{ word: string; voiceGender?: VoiceGender
   if (!cleanWord) return <span>{word}</span>;
 
   return (
-    <span 
-      className={`relative group cursor-pointer inline-block mx-0.5 transition-all rounded px-0.5 ${isPlaying || loadingAudio ? 'text-[#f7931e] font-bold bg-[#f7931e]/10 scale-105' : 'hover:text-[#f7931e] hover:bg-white/5'}`}
+    <span
+      ref={wordRef}
+      className={`group cursor-pointer inline-block mx-0.5 transition-all rounded px-0.5 ${isPlaying || loadingAudio ? 'text-[#f7931e] font-bold bg-[#f7931e]/10 scale-105' : 'hover:text-[#f7931e] hover:bg-white/5'}`}
       onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setTipPos(null)}
       onClick={handleClick}
     >
       <span className={`decoration-dotted underline-offset-4 group-hover:underline ${loadingAudio ? 'animate-pulse' : ''}`}>{word}</span>
-      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-[250] pointer-events-none animate-pop">
-         <div className="bg-[#1a1a1a] text-white text-[11px] px-3 py-2 rounded-xl border-2 border-[#f7931e] shadow-[0_10px_30px_rgba(0,0,0,0.5)] whitespace-normal max-w-[150px] text-center flex items-center justify-center gap-2">
-            {loadingTranslation ? <Loader2 className="w-3 h-3 animate-spin text-[#f7931e]" /> : <span className="font-bold">{translation || "..."}</span>}
-            {(isPlaying || loadingAudio) && <Volume2 className={`w-3 h-3 text-[#f7931e] ${loadingAudio ? 'animate-bounce' : 'animate-pulse'}`} />}
-            <div className="absolute top-[98%] left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-[#f7931e]"></div>
-         </div>
-      </span>
+      {tipPos && (
+        <span
+          className="fixed z-[950] -translate-x-1/2 pointer-events-none animate-pop"
+          style={{ left: tipPos.x, top: tipPos.y - 12, transform: 'translate(-50%, -100%)' }}
+        >
+          <span className="bg-[#1a1a1a] text-white text-xs px-4 py-2.5 rounded-xl border-2 border-[#f7931e] shadow-[0_10px_30px_rgba(0,0,0,0.6)] whitespace-normal min-w-[110px] max-w-[240px] text-center leading-snug flex items-center justify-center gap-2">
+            {loadingTranslation ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#f7931e] shrink-0" /> : <span className="font-bold break-words">{translation || "..."}</span>}
+            {(isPlaying || loadingAudio) && <Volume2 className={`w-3.5 h-3.5 text-[#f7931e] shrink-0 ${loadingAudio ? 'animate-bounce' : 'animate-pulse'}`} />}
+          </span>
+        </span>
+      )}
     </span>
   );
 };

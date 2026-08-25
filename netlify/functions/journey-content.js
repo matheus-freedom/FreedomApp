@@ -230,12 +230,23 @@ const normalizeContent = (kind, seasonIndex, data, req) => {
   return out;
 };
 
+// Conserta "\n" LITERAL (barra + n) que o modelo às vezes deixa
+// dentro das strings do JSON. Sem isto, o texto chega à tela com
+// "\n\n" visível e o TTS leria a sequência em voz alta. Aplicado a
+// TODAS as strings do conteúdo antes de validar/gravar no banco.
+const fixEscapedText = (v) => {
+  if (typeof v === "string") return v.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\t/g, " ");
+  if (Array.isArray(v)) return v.map(fixEscapedText);
+  if (v && typeof v === "object") { const o = {}; for (const k of Object.keys(v)) o[k] = fixEscapedText(v[k]); return o; }
+  return v;
+};
+
 const parseLoose = (text) => {
   let clean = String(text || "").replace(/```json|```/g, "").trim();
-  try { return JSON.parse(clean); } catch { /* repara */ }
+  try { return fixEscapedText(JSON.parse(clean)); } catch { /* repara */ }
   const a = clean.indexOf("{"), b = clean.lastIndexOf("}");
   if (a >= 0 && b > a) clean = clean.slice(a, b + 1);
-  return JSON.parse(clean.replace(/,\s*([}\]])/g, "$1"));
+  return fixEscapedText(JSON.parse(clean.replace(/,\s*([}\]])/g, "$1")));
 };
 
 const generate = async (ai, req, kind, seasonIndex) => {

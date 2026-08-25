@@ -4,6 +4,7 @@ import {
   StudyDay, StudyTask, GuideCharacter, ChatMessage
 } from '../types';
 import { db } from './firebase';
+import { deepFixEscapedText } from '../textFix';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { PlacementSkill } from '../types';
 
@@ -145,14 +146,14 @@ export const normalizeTheme = (raw: any, focusSkill?: string): Theme => {
 // plano inteiro, tentamos reparar antes de desistir.
 export const parseJsonLoose = (text: any): any => {
   let clean = String(text || '').replace(/```json|```/g, '').trim();
-  try { return JSON.parse(clean); } catch { /* tenta reparar */ }
+  try { return deepFixEscapedText(JSON.parse(clean)); } catch { /* tenta reparar */ }
 
   const first = clean.indexOf('{');
   const last = clean.lastIndexOf('}');
   if (first >= 0 && last > first) clean = clean.slice(first, last + 1);
   clean = clean.replace(/,\s*([}\]])/g, '$1');
 
-  return JSON.parse(clean);
+  return deepFixEscapedText(JSON.parse(clean));
 };
 
 const QUIZ_SCHEMA = {
@@ -192,7 +193,7 @@ export const generatePlacementGrammar = async (): Promise<GeneratedContent> => {
         responseSchema: QUIZ_SCHEMA,
       },
     });
-    return JSON.parse(result.text || "{}") as GeneratedContent;
+    return deepFixEscapedText(JSON.parse(result.text || "{}")) as GeneratedContent;
   } catch (error) { throw handleError(error); }
 };
 
@@ -207,7 +208,7 @@ export const generateAdaptivePlacementStep = async (step: Theme, seedLevel: Leve
         responseSchema: QUIZ_SCHEMA,
       },
     });
-    return JSON.parse(result.text || "{}") as GeneratedContent;
+    return deepFixEscapedText(JSON.parse(result.text || "{}")) as GeneratedContent;
   } catch (error) { throw handleError(error); }
 };
 
@@ -227,7 +228,7 @@ ${buildVarietyInstruction()}`,
         responseSchema: QUIZ_SCHEMA,
       },
     });
-    const data = JSON.parse(result.text || "{}") as GeneratedContent;
+    const data = deepFixEscapedText(JSON.parse(result.text || "{}")) as GeneratedContent;
     data.voiceConfig = { gender: voiceGender, accent: voiceAccent };
     return data;
   } catch (error) { throw handleError(error); }
@@ -273,7 +274,7 @@ export const evaluateWritingExercise = async (
         responseSchema: WRITING_SCHEMA,
       },
     });
-    return JSON.parse(result.text || "{}") as WritingFeedback;
+    return deepFixEscapedText(JSON.parse(result.text || "{}")) as WritingFeedback;
   } catch (error) {
     console.error("Erro na avaliação de escrita:", error);
     return { score: 0, feedback: "Erro técnico ao avaliar. Tente novamente.", annotatedHtml: userText, suggestions: [], recommendedTopics: [] };

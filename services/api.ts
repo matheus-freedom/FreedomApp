@@ -1,6 +1,7 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
+import { deepFixEscapedText } from '../textFix';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
@@ -511,7 +512,8 @@ export const api = {
     }
     if (entries.length === 0) return null;
     const idx = Math.floor(Math.random() * entries.length);
-    return entries[idx];
+    // Conserta "\n" literal gravado por gerações antigas (textFix.ts)
+    return deepFixEscapedText(entries[idx]);
   },
 
   // ── Verificar se o banco de uma habilidade precisa de mais variações ──
@@ -684,7 +686,8 @@ export const api = {
     const snap = await getDocs(q);
     const matches = snap.docs.map(d => d.data());
     if (matches.length < minVariations) return null;
-    return matches[Math.floor(Math.random() * matches.length)];
+    // Conserta "\n" literal gravado por gerações antigas (textFix.ts)
+    return deepFixEscapedText(matches[Math.floor(Math.random() * matches.length)]);
   },
 
   cleanupExpiredActivities: async (): Promise<void> => {
@@ -820,6 +823,7 @@ export const api = {
       throw new Error(e.error || `Erro ${res.status}`);
     }
     const data = await res.json();
-    return { content: data.content as GeneratedContent, cached: !!data.cached };
+    // Conserta "\n" literal em exercícios já gravados no journey_bank
+    return { content: deepFixEscapedText(data.content as GeneratedContent), cached: !!data.cached };
   },
 };
