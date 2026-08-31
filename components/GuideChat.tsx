@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GuideCharacter, ChatMessage, Level, Theme, UserSession } from '../types';
 import { chatWithGuide } from '../services/geminiService';
 import { api } from '../services/api';
-import { Bot, User, MessageCircle, X, Send, Play, Loader2, AlertCircle, Clock } from 'lucide-react';
+import { User, MessageCircle, X, Send, Play, Loader2, AlertCircle, Clock } from 'lucide-react';
+import { FRED_FACE } from './FredAvatar';
 
 interface GuideChatProps {
   guide: GuideCharacter;
@@ -118,9 +119,9 @@ const GuideChat: React.FC<GuideChatProps> = ({ guide, userName, user, onUserUpda
           {/* Header */}
           <div className="bg-[#333333] p-4 flex items-center justify-between border-b border-[#444444]">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${guide === 'Fred' ? 'bg-blue-900/50 border-blue-500' : 'bg-pink-900/50 border-pink-500'}`}>
-                {guide === 'Fred' 
-                  ? <Bot className="w-6 h-6 text-blue-400" /> 
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 overflow-hidden ${guide === 'Fred' ? 'bg-blue-900/50 border-blue-500' : 'bg-pink-900/50 border-pink-500'}`}>
+                {guide === 'Fred'
+                  ? <img src={FRED_FACE} alt="Fred" className="w-full h-full object-cover select-none" draggable={false} />
                   : <User className="w-6 h-6 text-pink-400" />
                 }
               </div>
@@ -223,7 +224,11 @@ const GuideChat: React.FC<GuideChatProps> = ({ guide, userName, user, onUserUpda
           <X className="w-8 h-8 text-[#222222]" />
         ) : (
           <>
-             {guide === 'Fred' ? <Bot className="w-8 h-8 text-[#222222]" /> : <User className="w-8 h-8 text-[#222222]" />}
+             {/* O rosto do Fred preenche o botão inteiro (a borda laranja
+                 vira uma "moldura"), para ele ficar bem visível e carismático */}
+             {guide === 'Fred'
+               ? <img src={FRED_FACE} alt="Abrir chat com o Fred" className="w-full h-full rounded-full object-cover border-[3px] border-[#f7931e] select-none" draggable={false} />
+               : <User className="w-8 h-8 text-[#222222]" />}
              {!isLimitReached && (
                <span className="absolute -top-1 -right-1 w-6 h-6 bg-[#222222] border-2 border-[#f7931e] rounded-full flex items-center justify-center text-[10px] font-black text-[#f7931e] animate-bounce">
                  {MAX_DAILY_CHAT - chatCount}

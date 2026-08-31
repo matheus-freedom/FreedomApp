@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { GuideCharacter } from '../types';
-import { Bot, User, ArrowLeft } from 'lucide-react';
+import { User, ArrowLeft } from 'lucide-react';
+import FredAvatar from './FredAvatar';
 
 interface GuideSelectionScreenProps {
   onSelect: (guide: GuideCharacter) => void;
@@ -35,8 +36,8 @@ const GuideSelectionScreen: React.FC<GuideSelectionScreenProps> = ({ onSelect, u
           onClick={() => onSelect('Fred')}
           className="group relative bg-[#333333] border-2 border-[#444444] hover:border-[#f7931e] rounded-3xl p-8 flex flex-col items-center transition-all duration-300 hover:transform hover:scale-105 hover:shadow-[0_0_30px_rgba(247,147,30,0.2)]"
         >
-          <div className="w-32 h-32 bg-blue-500/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-blue-500/30 transition-colors">
-             <Bot className="w-16 h-16 text-blue-400" />
+          <div className="w-32 h-32 bg-blue-500/20 rounded-full flex items-end justify-center mb-6 group-hover:bg-blue-500/30 transition-colors overflow-hidden">
+             <FredAvatar expression="perfil" className="w-28 h-32 translate-y-2 group-hover:scale-110 transition-transform" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-2">Fred</h3>
           <p className="text-gray-400 text-center text-sm mb-6">
@@ -47,22 +48,27 @@ const GuideSelectionScreen: React.FC<GuideSelectionScreenProps> = ({ onSelect, u
           </div>
         </button>
 
-        {/* Frida */}
-        <button 
-          onClick={() => onSelect('Frida')}
-          className="group relative bg-[#333333] border-2 border-[#444444] hover:border-[#f7931e] rounded-3xl p-8 flex flex-col items-center transition-all duration-300 hover:transform hover:scale-105 hover:shadow-[0_0_30px_rgba(247,147,30,0.2)]"
+        {/* Frida — temporariamente desativada. O botão fica visível mas
+            "apagado" e sem onClick, criando expectativa para o lançamento
+            sem deixar o aluno escolher algo que ainda não tem arte/voz. */}
+        <div
+          className="relative bg-[#333333] border-2 border-[#444444] rounded-3xl p-8 flex flex-col items-center opacity-50 cursor-not-allowed select-none"
+          aria-disabled="true"
         >
-          <div className="w-32 h-32 bg-pink-500/20 rounded-full flex items-center justify-center mb-6 group-hover:bg-pink-500/30 transition-colors">
+          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-[#f7931e]/20 border border-[#f7931e]/40 text-[#f7931e] text-[10px] font-black uppercase tracking-widest">
+            Em breve
+          </div>
+          <div className="w-32 h-32 bg-pink-500/20 rounded-full flex items-center justify-center mb-6 grayscale">
              <User className="w-16 h-16 text-pink-400" />
           </div>
           <h3 className="text-2xl font-bold text-white mb-2">Frida</h3>
           <p className="text-gray-400 text-center text-sm mb-6">
             Energetic, creative, and fun! I'll encourage you to speak and learn through practice.
           </p>
-          <div className="mt-auto px-6 py-2 rounded-full bg-[#222222] text-[#f7931e] font-bold text-sm border border-[#f7931e]/30 group-hover:bg-[#f7931e] group-hover:text-[#222222] transition-colors">
-            Select Frida
+          <div className="mt-auto px-6 py-2 rounded-full bg-[#222222] text-gray-500 font-bold text-sm border border-[#444444]">
+            Coming soon
           </div>
-        </button>
+        </div>
       </div>
     </div>
   );

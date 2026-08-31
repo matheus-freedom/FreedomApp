@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { GuideCharacter } from '../types';
-import { Bot, User } from 'lucide-react';
+import FredAvatar, { FredExpression } from './FredAvatar';
 
 // ══════════════════════════════════════════════════════════════
 // REAÇÃO DO GUIA (Fred / Frida)
@@ -60,12 +60,14 @@ export type ReactionEvent = {
 } | null;
 
 interface GuideReactionProps {
-  guide: GuideCharacter;
+  // Mantido na interface para as telas que já passam o guia; hoje só o
+  // Fred está ativo (Frida chega depois), então o visual é sempre dele.
+  guide?: GuideCharacter;
   userName: string;
   event: ReactionEvent;
 }
 
-const GuideReaction: React.FC<GuideReactionProps> = ({ guide, userName, event }) => {
+const GuideReaction: React.FC<GuideReactionProps> = ({ userName, event }) => {
   const [visible, setVisible] = useState(false);
   const firstName = (userName || '').split(' ')[0] || 'você';
 
@@ -90,9 +92,27 @@ const GuideReaction: React.FC<GuideReactionProps> = ({ guide, userName, event })
     return () => clearTimeout(t);
   }, [event?.seq]);
 
+  // ── Qual "cara" o Fred faz em cada situação? ──────────────────
+  // A ordem das checagens importa: os casos mais especiais (5 seguidas,
+  // 2+ erros seguidos) vêm ANTES dos casos genéricos (acertou/errou),
+  // senão o genérico "engoliria" o especial.
+  const expression: FredExpression = useMemo(() => {
+    if (!event) return 'perfil';
+    if (event.correct) {
+      // 5 acertos seguidos (ou 10, 15...) → Fred de queixo caído
+      if (event.correctStreak >= 5 && event.correctStreak % 5 === 0) return 'surpreso';
+      // Acertou → Fred comemorando com confetes
+      return 'feliz';
+    }
+    // 2+ erros seguidos → Fred motivador ("respira, você consegue")
+    if (event.wrongStreak >= 2) return 'motivado';
+    // Errou uma → Fred tristinho
+    return 'triste';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event?.seq]);
+
   if (!event || !message) return null;
 
-  const isFred = guide === 'Fred';
   const good = event.correct;
 
   return (
@@ -103,19 +123,19 @@ const GuideReaction: React.FC<GuideReactionProps> = ({ guide, userName, event })
       aria-live="polite"
     >
       <div
-        className={`flex items-center gap-3 pl-2 pr-5 py-2.5 rounded-full backdrop-blur-xl border-2 shadow-2xl max-w-[92vw] md:max-w-sm ${
+        className={`flex items-center gap-2 pl-1 pr-5 py-1.5 rounded-full backdrop-blur-xl border-2 shadow-2xl max-w-[92vw] md:max-w-sm ${
           good
             ? 'bg-green-500/15 border-green-400/60 shadow-green-500/20'
             : 'bg-[#f7931e]/15 border-[#f7931e]/60 shadow-[#f7931e]/20'
         }`}
       >
-        <div
-          className={`w-11 h-11 rounded-full flex items-center justify-center border-2 shrink-0 ${
-            isFred ? 'bg-blue-900/60 border-blue-400' : 'bg-pink-900/60 border-pink-400'
-          } ${good ? 'animate-bounce' : ''}`}
-        >
-          {isFred ? <Bot className="w-6 h-6 text-blue-300" /> : <User className="w-6 h-6 text-pink-300" />}
-        </div>
+        {/* O Fred aparece "inteiro", maior que a pílula, estilo Duolingo.
+            A animação de pulinho só toca no acerto para não parecer que
+            ele está comemorando um erro. */}
+        <FredAvatar
+          expression={expression}
+          className={`w-16 h-20 -my-3 shrink-0 drop-shadow-lg ${good ? 'animate-bounce' : ''}`}
+        />
         <p className={`text-sm font-black leading-tight ${good ? 'text-green-200' : 'text-[#ffd9a8]'}`}>{message}</p>
       </div>
     </div>

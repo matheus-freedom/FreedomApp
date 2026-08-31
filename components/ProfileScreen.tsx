@@ -7,6 +7,7 @@ import {
   Check, X, Loader2, AtSign, Shield, Zap, Flame, Star, Layers, Save, Trash2, Coins,
   Clock, UserCheck, UserX, Bot
 } from 'lucide-react';
+import { FRED_FACE } from './FredAvatar';
 
 interface ProfileScreenProps {
   user: UserSession;
@@ -194,7 +195,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
               <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em]">{user.fullName}</p>
               {/* Badge do guia atual */}
               <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.guide === 'Fred' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-pink-500/10 border-pink-500/30 text-pink-400'}`}>
-                <Bot className="w-3 h-3" />
+                <img src={FRED_FACE} alt="" className="w-4 h-4 rounded-full object-cover" draggable={false} />
                 Guia: {user.guide || 'Fred'}
               </div>
             </div>
@@ -365,11 +366,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onHome, onUpdate })
                     className="w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-4 pl-4 pr-10 focus:border-[#f7931e] outline-none text-sm appearance-none cursor-pointer"
                   >
                     <option value="Fred">Fred — Analítico e detalhista, explica gramática em detalhes</option>
-                    <option value="Frida">Frida — Energética e criativa, incentiva você a praticar</option>
+                    {/* Frida desativada até as artes dela ficarem prontas.
+                        "disabled" mantém a opção visível (gera expectativa)
+                        mas impossível de selecionar. */}
+                    <option value="Frida" disabled>Frida — Em breve!</option>
                   </select>
-                  {/* Ícone indicativo da seleção atual */}
-                  <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center ${selectedGuide === 'Fred' ? 'bg-blue-500/20 text-blue-400' : 'bg-pink-500/20 text-pink-400'}`}>
-                    <Bot className="w-3 h-3" />
+                  {/* Foto do Fred indicando a seleção atual */}
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full overflow-hidden bg-blue-500/20">
+                    <img src={FRED_FACE} alt="" className="w-full h-full object-cover" draggable={false} />
                   </div>
                 </div>
                 {selectedGuide !== user.guide && (

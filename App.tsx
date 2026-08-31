@@ -23,7 +23,7 @@ import RankingHistoryScreen from './components/RankingHistoryScreen';
 import JourneyScreen from './components/JourneyScreen';
 import GapFillScreen from './components/GapFillScreen';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
-import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, NextJourneyTarget, buildSeasonNodes, getNextJourneyTarget, seasonsSkippedByPlacement } from './journeys';
+import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS } from './journeys';
 import { generateQuizContent } from './services/geminiService';
 import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle, Zap, Coins } from 'lucide-react';
@@ -106,10 +106,6 @@ const App: React.FC = () => {
   // Muda a cada exercício de trilha concluído: é o sinal para a
   // JourneyScreen reler o progresso no servidor ao voltar do exercício.
   const [journeyReload, setJourneyReload] = useState(0);
-  // O "e agora?" calculado ao terminar um exercício da trilha: é o
-  // que a tela de resultados usa para oferecer "Próximo exercício",
-  // "Iniciar próximo Step" etc. sem obrigar a volta ao mapa.
-  const [journeyNext, setJourneyNext] = useState<NextJourneyTarget | null>(null);
 
   // ── TRAVA ANTI-CLIQUE-DUPLO ───────────────────────────────────
   // useRef é síncrono: bloqueia instantaneamente, antes mesmo do
@@ -376,7 +372,6 @@ const App: React.FC = () => {
         // progresso do Step (melhor nota e estrelas).
         journey: state.journeyContext || undefined,
       });
-      let nextTarget: NextJourneyTarget | null = null;
       if (state.journeyContext) {
         setJourneyReload(n => n + 1);
         // O XP entrou, mas o progresso do Step não foi gravado. Se
@@ -385,19 +380,8 @@ const App: React.FC = () => {
         // à toa. Melhor avisar na hora.
         if (journeyProgressSaved === false) {
           showToast('Seu XP foi registrado, mas não consegui salvar o progresso deste exercício na trilha. Se ele continuar como não feito, refaça-o (o XP já está garantido).', 'error', 10000);
-        } else {
-          // Relê o progresso (já com este exercício gravado pelo
-          // servidor) e calcula a continuação natural para a tela de
-          // resultados oferecer. Se a leitura falhar, nada quebra: a
-          // tela apenas mostra os botões de sempre.
-          try {
-            const progressDoc = await api.getJourneyProgress(state.user.userId);
-            const skipped = seasonsSkippedByPlacement(state.user.gamification.placementResults as any, state.user.gamification.lastPlacementLevel);
-            nextTarget = getNextJourneyTarget(state.journeyContext.journeyId, state.journeyContext.season, state.journeyContext.node, progressDoc, skipped);
-          } catch { /* segue sem sugestão */ }
         }
       }
-      setJourneyNext(nextTarget);
 
       const calculateTier = (xp: number) => TIER_THRESHOLDS.find(t => xp >= t.min && xp <= t.max)?.tier || UserTier.Starter;
       const prevTier = calculateTier(state.user.gamification.xp);
@@ -434,20 +418,6 @@ const App: React.FC = () => {
       // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
       setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
     }
-  };
-
-  // ── Botão "Próximo exercício" da tela de resultados ───────────
-  // Reconstrói o nó da trilha a partir do alvo calculado e reaproveita
-  // o handleStartJourney inteiro — trava de clique duplo, cota diária
-  // (abre o modal do pacote extra se estourou) e banco compartilhado.
-  // Devolve false quando o início foi recusado, para o botão destravar.
-  const handleJourneyNext = async (): Promise<boolean> => {
-    const target = journeyNext;
-    const ctx = state.journeyContext;
-    if (!target || !ctx || target.type === 'journey_end') return false;
-    const node = buildSeasonNodes(ctx.journeyId, target.season)[target.nodeIndex];
-    if (!node) return false;
-    return handleStartJourney(ctx.journeyId, target.season, node, target.kind);
   };
 
   const handlePlacementFinish = async (level: Level) => {
@@ -678,8 +648,11 @@ const App: React.FC = () => {
             reloadToken={journeyReload}
           />
         )}
-        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={state.user?.guide} userName={state.user?.userName} journeyLabel={journeyLabel} />}
-        {state.status === 'gapfill' && state.content && state.user && <GapFillScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={handleFinish} onHome={handleExitActivity} guide={state.user.guide} userName={state.user.userName} />}
+        {/* Enquanto a Frida está desativada, passamos 'Fred' fixo em vez de
+            state.user.guide: assim até quem escolheu Frida no passado vê o
+            Fred. Quando a Frida for lançada, basta voltar para state.user.guide. */}
+        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={'Fred'} userName={state.user?.userName} journeyLabel={journeyLabel} />}
+        {state.status === 'gapfill' && state.content && state.user && <GapFillScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={handleFinish} onHome={handleExitActivity} guide={'Fred'} userName={state.user.userName} />}
         {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleExitActivity} />}
         {state.status === 'results' && (
           <ResultsScreen
@@ -691,8 +664,6 @@ const App: React.FC = () => {
             frGained={state.lastFrGained}
             wasRepeat={state.lastWasRepeat}
             journeyLabel={journeyLabel}
-            journeyNext={state.journeyContext ? journeyNext : null}
-            onJourneyNext={handleJourneyNext}
           />
         )}
       </main>
@@ -700,7 +671,8 @@ const App: React.FC = () => {
       {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'keyword_check' && (
         <div className="fixed bottom-0 right-0 z-[200] pointer-events-none">
           <div className="pointer-events-auto">
-             <GuideChat guide={state.user.guide} userName={state.user.userName} user={state.user} onUserUpdate={handleUserUpdate} onGenerateActivity={handleStart} />
+             {/* guide fixo em 'Fred' enquanto a Frida não é lançada (ver comentário acima) */}
+             <GuideChat guide={'Fred'} userName={state.user.userName} user={state.user} onUserUpdate={handleUserUpdate} onGenerateActivity={handleStart} />
           </div>
         </div>
       )}
