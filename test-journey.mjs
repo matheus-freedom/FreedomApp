@@ -118,6 +118,46 @@ check('90%+ = 3 estrelas', J.starsFor(90) === 3 && J.starsFor(100) === 3);
 check('75-89% = 2 estrelas', J.starsFor(75) === 2 && J.starsFor(89) === 2);
 check('abaixo de 75% = 1 estrela', J.starsFor(74) === 1 && J.starsFor(0) === 1);
 
+console.log('\n── Próximo passo após o exercício (tela de resultados) ──');
+// Progresso falso com TODOS os nós até "upTo" completos com a mesma nota.
+const withNodes = (journeyId, season, upTo, pct) => {
+  const doc = { journeys: { [journeyId]: { startedAt: 1, nodes: {} } } };
+  J.buildSeasonNodes(journeyId, season).slice(0, upTo + 1).forEach(n => {
+    doc.journeys[journeyId].nodes[J.nodeKeyOf(season, n.index)] = {
+      exercises: Object.fromEntries(n.kinds.map(k => [k, { bestPct: pct, attempts: 1, stars: J.starsFor(pct), completedAt: 1 }])),
+    };
+  });
+  return doc;
+};
+
+let nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, ['grammar', 'vocabulary'], 100), 0);
+check('Step incompleto → próximo exercício na ordem (reading)', nx && nx.type === 'exercise' && nx.kind === 'reading' && nx.nodeIndex === 0, `(deu ${JSON.stringify(nx)})`);
+
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 80), 0);
+check('Step aprovado → oferece o Step seguinte', nx && nx.type === 'step' && nx.nodeIndex === 1 && nx.kind === 'grammar', `(deu ${JSON.stringify(nx)})`);
+
+nx = J.getNextJourneyTarget('freedom', 0, 2, withNodes('freedom', 0, 2, 80), 0);
+check('Depois do Step 3 a oferta é o Review', nx && nx.type === 'step' && nx.label.includes('Review'), `(deu ${JSON.stringify(nx)})`);
+
+const failDoc = withNode('freedom', 0, 0, KINDS, 55);
+failDoc.journeys.freedom.nodes['s0_n0'].exercises.listening = { bestPct: 20, attempts: 1, stars: 1, completedAt: 1 };
+nx = J.getNextJourneyTarget('freedom', 0, 0, failDoc, 0);
+check('Step reprovado → refazer o exercício de PIOR nota', nx && nx.type === 'redo' && nx.kind === 'listening' && nx.pct < 60, `(deu ${JSON.stringify(nx)})`);
+
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 50), 1);
+check('Reprovado em Season PULADA segue adiante (zona livre)', nx && nx.type === 'step' && nx.nodeIndex === 1, `(deu ${JSON.stringify(nx)})`);
+
+const lastIdx = J.buildSeasonNodes('freedom', 0).length - 1;
+nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNodes('freedom', 0, lastIdx, 80), 0);
+check('Fechou a Season inteira → oferece a Season seguinte', nx && nx.type === 'season' && nx.season === 1 && nx.nodeIndex === 0, `(deu ${JSON.stringify(nx)})`);
+
+const lastS4 = J.buildSeasonNodes('freedom', 4).length - 1;
+nx = J.getNextJourneyTarget('freedom', 4, lastS4, withNodes('freedom', 4, lastS4, 80), 0);
+check('Fechou a ÚLTIMA Season → fim da trilha', nx && nx.type === 'journey_end', `(deu ${JSON.stringify(nx)})`);
+
+nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNode('freedom', 0, lastIdx, KINDS, 80), 0);
+check('Último nó ok mas Season com buracos → sem sugestão (o mapa orienta)', nx === null, `(deu ${JSON.stringify(nx)})`);
+
 console.log('\n── Correção das lacunas (mesma regra do GapFillScreen) ──');
 const normalize = (s) => String(s || '').toLowerCase().replace(/[’‘`´]/g, "'").replace(/[.,!?;:]+$/g, '').replace(/\s+/g, ' ').trim();
 const isCorrect = (typed, item) => {

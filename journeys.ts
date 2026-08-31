@@ -291,3 +291,92 @@ export const journeyOverview = (journeyId: JourneyId, doc: JourneyProgressDoc | 
   }
   return { seasons, overall, next };
 };
+
+// ── "E agora?" — o destino após terminar um exercício ─────────
+// Usado pela tela de RESULTADOS para oferecer o próximo passo sem
+// obrigar o aluno a voltar ao mapa a cada exercício. É um cálculo
+// puro (sem rede): recebe o progresso já gravado pelo servidor —
+// incluindo o exercício que acabou de terminar — e responde qual é
+// a continuação natural:
+//   exercise → ainda faltam exercícios neste Step (vai ao próximo tipo)
+//   step     → Step completo e aprovado (>= 60%) → oferece o Step seguinte
+//   season   → era o último Step da Season e ela foi concluída → Season seguinte
+//   redo     → Step completo mas média < 60% → aponta o exercício de PIOR
+//              nota (o caminho mais curto para destravar o próximo Step)
+//   journey_end → acabou a última Season: não há para onde ir, só comemorar
+export interface NextJourneyTarget {
+  type: 'exercise' | 'step' | 'season' | 'redo' | 'journey_end';
+  season: number;
+  nodeIndex: number;
+  kind: JourneyKind;
+  label: string;   // texto pronto para o botão/mensagem da tela de resultados
+  pct?: number;    // média do Step (usada na mensagem do 'redo')
+}
+
+export const getNextJourneyTarget = (
+  journeyId: JourneyId,
+  seasonIndex: number,
+  nodeIndex: number,
+  doc: JourneyProgressDoc | null,
+  skipped: number,
+): NextJourneyTarget | null => {
+  const nodes = buildSeasonNodes(journeyId, seasonIndex);
+  const node = nodes[nodeIndex];
+  if (!node) return null;
+  const progNodes = doc?.journeys?.[journeyId]?.nodes || {};
+  const stats = nodeStats(node, progNodes[nodeKeyOf(seasonIndex, nodeIndex)]);
+
+  // 1) Ainda há exercício por fazer neste Step → próximo tipo, na ordem.
+  const pending = node.kinds.find(k => !stats.doneKinds.includes(k));
+  if (pending) {
+    return {
+      type: 'exercise', season: seasonIndex, nodeIndex, kind: pending,
+      label: KIND_META[pending].label,
+    };
+  }
+
+  // 2) Step completo mas reprovado. Em Season liberada pelo nivelamento
+  //    (zona livre) nada tranca, então segue adiante mesmo assim; nas
+  //    demais, o próximo Step está trancado — refazer é o único caminho.
+  const freeRoam = seasonIndex < skipped;
+  if (!stats.passed && !freeRoam) {
+    const ex = progNodes[nodeKeyOf(seasonIndex, nodeIndex)]?.exercises || {};
+    const worst = [...node.kinds].sort((a, b) => (ex[a]?.bestPct ?? 0) - (ex[b]?.bestPct ?? 0))[0];
+    return {
+      type: 'redo', season: seasonIndex, nodeIndex, kind: worst,
+      label: KIND_META[worst].label, pct: stats.pct,
+    };
+  }
+
+  // 3) Step concluído → oferece o próximo nó da Season (Step ou Review).
+  const nextNode = nodes[nodeIndex + 1];
+  if (nextNode) {
+    const nextStats = nodeStats(nextNode, progNodes[nodeKeyOf(seasonIndex, nextNode.index)]);
+    const kind = nextNode.kinds.find(k => !nextStats.doneKinds.includes(k)) || nextNode.kinds[0];
+    const label = nextNode.type === 'review'
+      ? `Review ${nextNode.stepNumber} · ${nextNode.grammarTopic}`
+      : `Step ${nextNode.stepNumber} · ${nextNode.vocabTheme}`;
+    return { type: 'step', season: seasonIndex, nodeIndex: nextNode.index, kind, label };
+  }
+
+  // 4) Era o último nó da Season. A Season seguinte só abre se ESTA
+  //    Season inteira foi aprovada (ou se o nivelamento já a liberou).
+  const seasonDone = seasonStatus(journeyId, seasonIndex, doc, freeRoam, true).passed;
+  const nextSeason = seasonIndex + 1;
+  if (nextSeason < SEASONS.length && (seasonDone || nextSeason < skipped)) {
+    const first = buildSeasonNodes(journeyId, nextSeason)[0];
+    const firstStats = nodeStats(first, progNodes[nodeKeyOf(nextSeason, 0)]);
+    const kind = first.kinds.find(k => !firstStats.doneKinds.includes(k)) || first.kinds[0];
+    return {
+      type: 'season', season: nextSeason, nodeIndex: 0, kind,
+      label: `${SEASONS[nextSeason].title} (${SEASONS[nextSeason].level})`,
+    };
+  }
+
+  // 5) Última Season concluída (ou Season atual incompleta em pontos
+  //    anteriores — nesse caso o mapa é quem orienta melhor).
+  if (nextSeason >= SEASONS.length && seasonDone) {
+    return { type: 'journey_end', season: seasonIndex, nodeIndex, kind: node.kinds[0], label: '' };
+  }
+  return null;
+};
