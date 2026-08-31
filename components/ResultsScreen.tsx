@@ -1,7 +1,8 @@
 
-import React, { useEffect } from 'react';
-import { RotateCcw, Award, ThumbsUp, Repeat, Zap, Home, Coins, Map as MapIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { RotateCcw, Award, ThumbsUp, Trophy, Repeat, Zap, Home, Coins, Map as MapIcon, ArrowRight, PartyPopper, Loader2 } from 'lucide-react';
 import FredAvatar from './FredAvatar';
+import { NextJourneyTarget } from '../journeys';
 
 interface ResultsScreenProps {
   score: number;
@@ -14,14 +15,32 @@ interface ResultsScreenProps {
   // Quando o exercício veio da Journey, o botão principal volta para o
   // MAPA da trilha (e não para o menu), para o aluno emendar o próximo.
   journeyLabel?: string;
+  // A continuação natural dentro da trilha (próximo exercício, próximo
+  // Step, próxima Season...), calculada pelo App após salvar o resultado.
+  journeyNext?: NextJourneyTarget | null;
+  // Inicia o alvo acima. Devolve false quando o início foi recusado
+  // (cota diária estourada abre o modal de compra) — aí o botão destrava
+  // e o aluno continua nesta tela.
+  onJourneyNext?: () => Promise<boolean>;
 }
 
 const formatFR = (value: number) => {
   return "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false, journeyLabel }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false, journeyLabel, journeyNext, onJourneyNext }) => {
   const percentage = Math.round((score / (totalQuestions || 1)) * 100);
+
+  // Trava do botão "Próximo": evita clique duplo e mostra o spinner
+  // enquanto o exercício seguinte é preparado. Se o início for recusado
+  // (ex.: cota do dia estourada), destrava para o aluno decidir.
+  const [startingNext, setStartingNext] = useState(false);
+  const handleNext = async () => {
+    if (!onJourneyNext || startingNext) return;
+    setStartingNext(true);
+    const started = await onJourneyNext();
+    if (!started) setStartingNext(false);
+  };
 
   let resultType: 'gold' | 'silver' | 'bronze' | 'sad';
   let icon;
@@ -146,21 +165,82 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, on
           </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md z-10">
-          <button
-            onClick={onRetry}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#333333] text-white border border-[#444444] rounded-xl font-bold hover:bg-[#444444] hover:border-gray-500 transition-all"
-          >
-            <Repeat className="w-5 h-5" />
-            Refazer
-          </button>
-          <button
-            onClick={onHome}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-xl font-bold hover:bg-[#e08215] transition-all transform hover:scale-105 shadow-lg uppercase tracking-tighter text-xs"
-          >
-            {journeyLabel ? <MapIcon className="w-5 h-5" /> : <Home className="w-5 h-5" />}
-            {journeyLabel ? 'Voltar à trilha' : 'Menu principal'}
-          </button>
+      {/* ── Continuação da trilha ──────────────────────────────────
+          Mensagens de "e agora?" quando o exercício veio da Journey:
+          Step fechado, Season fechada, média abaixo de 60% ou o fim
+          da trilha inteira. O botão laranja logo abaixo executa a ação. */}
+      {journeyNext?.type === 'step' && (
+        <div className="bg-gradient-to-br from-[#f7931e]/15 to-transparent border border-[#f7931e]/40 p-6 rounded-2xl max-w-md text-center mb-8 z-10 shadow-xl animate-pop">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <PartyPopper className="w-6 h-6 text-[#f7931e]" />
+            <p className="text-white font-black uppercase tracking-tighter text-xl">Step concluído!</p>
+          </div>
+          <p className="text-gray-300 text-sm leading-relaxed">Parabéns, você fechou todos os exercícios deste Step! Quer já emendar o próximo?</p>
+        </div>
+      )}
+      {journeyNext?.type === 'season' && (
+        <div className="bg-gradient-to-br from-yellow-400/15 to-transparent border border-yellow-400/40 p-6 rounded-2xl max-w-md text-center mb-8 z-10 shadow-xl animate-pop">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Trophy className="w-6 h-6 text-yellow-400" />
+            <p className="text-white font-black uppercase tracking-tighter text-xl">Season concluída!</p>
+          </div>
+          <p className="text-gray-300 text-sm leading-relaxed">Você fechou a Season inteira — isso é um marco de verdade. A próxima já está desbloqueada. Vamos nessa?</p>
+        </div>
+      )}
+      {journeyNext?.type === 'redo' && (
+        <div className="bg-[#333333] border border-[#f7931e]/30 p-6 rounded-2xl max-w-md text-center mb-8 z-10 shadow-xl">
+          <p className="text-white font-black uppercase tracking-tighter mb-2">Quase lá!</p>
+          <p className="text-gray-300 text-sm leading-relaxed">
+            Você completou o Step, mas a média ficou em <span className="text-white font-black">{journeyNext.pct}%</span> — precisa de <span className="text-[#f7931e] font-black">60%</span> para destravar o próximo.
+            O caminho mais curto é refazer o exercício de menor nota: <span className="text-white font-black">{journeyNext.label}</span>.
+          </p>
+        </div>
+      )}
+      {journeyNext?.type === 'journey_end' && (
+        <div className="bg-gradient-to-br from-yellow-400/20 to-transparent border border-yellow-400/50 p-6 rounded-2xl max-w-md text-center mb-8 z-10 shadow-xl animate-pop">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Trophy className="w-6 h-6 text-yellow-400" />
+            <p className="text-white font-black uppercase tracking-tighter text-xl">Trilha concluída!</p>
+          </div>
+          <p className="text-gray-300 text-sm leading-relaxed">Você completou TODAS as Seasons desta jornada. Isso é para pouquíssimos alunos — parabéns! 🏆</p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 w-full max-w-md z-10">
+          {journeyNext && journeyNext.type !== 'journey_end' && onJourneyNext && (
+            <button
+              onClick={handleNext}
+              disabled={startingNext}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-xl font-black hover:bg-[#e08215] transition-all transform hover:scale-105 shadow-lg shadow-[#f7931e]/20 uppercase tracking-tighter text-sm disabled:opacity-60 disabled:scale-100 disabled:cursor-wait"
+            >
+              {startingNext ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              {startingNext ? 'Preparando...'
+                : journeyNext.type === 'exercise' ? `Próximo exercício: ${journeyNext.label}`
+                : journeyNext.type === 'step' ? `Iniciar ${journeyNext.label}`
+                : journeyNext.type === 'season' ? `Começar: ${journeyNext.label}`
+                : `Refazer ${journeyNext.label} agora`}
+            </button>
+          )}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={onRetry}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#333333] text-white border border-[#444444] rounded-xl font-bold hover:bg-[#444444] hover:border-gray-500 transition-all"
+            >
+              <Repeat className="w-5 h-5" />
+              Refazer
+            </button>
+            {/* Com o botão laranja de "próximo" na tela, o "Voltar à trilha"
+                vira secundário (cinza) para não disputar a atenção do aluno. */}
+            <button
+              onClick={onHome}
+              className={journeyNext && journeyNext.type !== 'journey_end'
+                ? "flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#333333] text-white border border-[#444444] rounded-xl font-bold hover:bg-[#444444] hover:border-gray-500 transition-all uppercase tracking-tighter text-xs"
+                : "flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-xl font-bold hover:bg-[#e08215] transition-all transform hover:scale-105 shadow-lg uppercase tracking-tighter text-xs"}
+            >
+              {journeyLabel ? <MapIcon className="w-5 h-5" /> : <Home className="w-5 h-5" />}
+              {journeyLabel ? 'Voltar à trilha' : 'Menu principal'}
+            </button>
+          </div>
       </div>
     </div>
   );
