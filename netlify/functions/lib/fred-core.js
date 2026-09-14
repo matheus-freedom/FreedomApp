@@ -31,7 +31,10 @@ const LESSON_PASS_PCT = 60;
 // raciocínio). Como cada tema é gerado UMA vez para a escola inteira,
 // a diferença de custo é irrelevante. Se o Pro falhar (ou a chave não
 // tiver acesso), cai para o Flash — o mesmo modelo da Journey.
-const MODELS = ["gemini-3.5-pro", "gemini-3.5-flash"];
+// "gemini-3.5-pro" NÃO existe na API (404 em produção — a 1ª aula caiu
+// no Flash por causa disso). O Pro disponível hoje é o 3.1 preview; se
+// a Google renomear de novo, o fallback para o Flash segura a barra.
+const MODELS = ["gemini-3.1-pro-preview", "gemini-3.5-flash"];
 
 // ── Slug: "Verbo to be (presente)" → "verbo-to-be-presente" ──────
 // O id do documento no banco é `${nível}_${slug}`. Usar o TEXTO do
@@ -42,7 +45,7 @@ const MODELS = ["gemini-3.5-pro", "gemini-3.5-flash"];
 // é diferente — é intencional.
 const slugify = (text) =>
   String(text || "")
-    .normalize("NFD").replace(/[̀-ͯ]/g, "") // tira acentos
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // tira acentos
     .toLowerCase()
     .replace(/&/g, " e ")
     .replace(/[^a-z0-9]+/g, "-")

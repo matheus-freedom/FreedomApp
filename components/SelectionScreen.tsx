@@ -122,6 +122,20 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
     if (openJourney) onOpenJourney();
   };
 
+  // ── Aviso da novidade (Fred explica) ─────────────────────────
+  // Mesmo mecanismo do aviso da Journey: uma vez por aluno, guardado
+  // no localStorage. Só aparece depois que o aviso da Journey foi
+  // fechado (aluno novo veria os dois em sequência, nunca empilhados).
+  const fredNoticeKey = `fred_notice_v1_${user.userId}`;
+  const [showFredNotice, setShowFredNotice] = useState(
+    () => !localStorage.getItem(fredNoticeKey)
+  );
+  const closeFredNotice = (open: boolean) => {
+    localStorage.setItem(fredNoticeKey, Date.now().toString());
+    setShowFredNotice(false);
+    if (open) onOpenFredExplains();
+  };
+
   const isChallengeOnly = user.accessType === AccessType.CHALLENGE_ONLY;
   const isAdmin = user.username.toLowerCase() === 'admin' || user.isAdmin === true;
   const today = new Date().toISOString().split('T')[0];
@@ -325,6 +339,64 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
                   <Compass className="w-5 h-5" /> Conhecer a trilha
                 </button>
                 <button onClick={() => closeJourneyNotice(false)}
+                  className="w-full py-4 bg-transparent text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:text-white transition-all">
+                  Agora não
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Aviso da novidade: Fred explica ── */}
+      {showFredNotice && !showJourneyNotice && !showWelcomeModal && (
+        <div className="fixed inset-0 z-[480] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="bg-[#2a2a2a] w-full max-w-lg rounded-[2.5rem] border-2 border-[#f7931e]/50 shadow-[0_0_60px_rgba(247,147,30,0.25)] overflow-hidden animate-pop max-h-[92vh] overflow-y-auto scrollbar-hide">
+            <div className="relative p-6 md:p-8 bg-gradient-to-br from-[#f7931e] to-[#ff5e3a] overflow-hidden">
+              <div className="absolute -right-10 -bottom-16 w-56 h-56 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-center gap-4">
+                <FredAvatar expression="professor" className="w-24 h-28 shrink-0 drop-shadow-[0_10px_25px_rgba(0,0,0,0.35)]" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Novidade na plataforma</p>
+                  <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter leading-none">Fred explica</h3>
+                  <p className="text-xs font-bold text-white/85 mt-1">Gramática descomplicada, do A1 ao C1</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8 space-y-5">
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Oi, <span className="text-white font-black">{user.userName}</span>! Aqui é o <span className="text-[#f7931e] font-black">Fred</span>. 👋
+                Sei que estudar gramática costuma ser <span className="text-white font-bold">um pesadelo</span> — regra em cima de regra, sem ninguém explicar o porquê. Então resolvi explicar eu mesmo, do meu jeito: <span className="text-white font-bold">todos os temas de gramática da Freedom</span>, com exemplos de verdade, comparação com o português e uns mini-quizzes no caminho.
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { icon: '📚', title: 'Todos os temas, do A1 ao C1', text: 'Os mesmos tópicos das suas aulas e da Journey. Busque por nome ou filtre pelo seu nível.' },
+                  { icon: '🇧🇷', title: 'Comparando com o português', text: 'Cada aula mostra onde o inglês é igual, onde é diferente e as pegadinhas que pegam brasileiro.' },
+                  { icon: '🎯', title: 'Mini-quizzes + checkpoint', text: 'Você se testa enquanto lê. No fim, um checkpoint de 5 questões vale +40 XP — sem gastar sua cota de exercícios.' },
+                  { icon: '🧭', title: 'Dentro da Journey também', text: 'Em cada Step da trilha tem o botão "Fred explica este tópico" para entender antes de praticar.' },
+                ].map(item => (
+                  <div key={item.title} className="flex items-start gap-3 bg-[#222222] p-4 rounded-2xl border border-white/5">
+                    <span className="text-xl shrink-0">{item.icon}</span>
+                    <div>
+                      <p className="text-white font-black text-xs uppercase tracking-tight">{item.title}</p>
+                      <p className="text-[11px] text-gray-400 leading-relaxed mt-0.5">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-gray-400 text-xs leading-relaxed italic">
+                Tirou nota baixa num exercício de gramática? Eu apareço na tela de resultado oferecendo a aula daquele tema. Bora descomplicar? 💪
+              </p>
+
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <button onClick={() => closeFredNotice(true)}
+                  className="w-full py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-xl shadow-[#f7931e]/20 flex items-center justify-center gap-2">
+                  <GraduationCap className="w-5 h-5" /> Conhecer o Fred explica
+                </button>
+                <button onClick={() => closeFredNotice(false)}
                   className="w-full py-4 bg-transparent text-gray-500 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:text-white transition-all">
                   Agora não
                 </button>

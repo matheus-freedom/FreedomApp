@@ -98,7 +98,9 @@ const QuizCard: React.FC<{
             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${correct ? 'text-green-400' : 'text-red-400'}`}>
               {correct ? `Isso, ${userName}!` : 'Quase!'}
             </p>
-            <p className="text-sm text-gray-300 leading-relaxed">{quiz.explanation || (correct ? 'Você pegou a ideia.' : `A certa era a ${letters[quiz.correctIndex]}.`)}</p>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              {parseBold(quiz.explanation || (correct ? 'Você pegou a ideia.' : `A certa era a ${letters[quiz.correctIndex]}.`)).map((piece, j) => piece.bold ? <strong key={j} className="text-white font-black">{piece.text}</strong> : <React.Fragment key={j}>{piece.text}</React.Fragment>)}
+            </p>
           </div>
         </div>
       )}
@@ -383,7 +385,9 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
                 {s.tip && (
                   <div className="flex items-start gap-3 bg-yellow-400/5 border border-yellow-400/20 rounded-2xl p-4">
                     <Lightbulb className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
-                    <p className="text-sm text-gray-200 leading-relaxed font-medium">{s.tip}</p>
+                    <p className="text-sm text-gray-200 leading-relaxed font-medium">
+                      {parseBold(s.tip).map((piece, j) => piece.bold ? <strong key={j} className="text-[#f7931e] font-black">{piece.text}</strong> : <React.Fragment key={j}>{piece.text}</React.Fragment>)}
+                    </p>
                   </div>
                 )}
 

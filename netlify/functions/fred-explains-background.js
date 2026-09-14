@@ -31,7 +31,7 @@ const ATTEMPTS_PER_MODEL = 2;
 // Tempo máximo de UMA chamada ao Gemini. Sem isto, uma chamada travada
 // segura a function até o limite de 15 min e a aula nunca sai do
 // "generating" (e o aluno fica olhando o relógio).
-const CALL_TIMEOUT_MS = { "gemini-3.5-pro": 240000, "gemini-3.5-flash": 120000 };
+const CALL_TIMEOUT_MS = { "gemini-3.1-pro-preview": 240000, "gemini-3.5-flash": 120000 };
 
 const initFirebase = () => {
   if (getApps().length === 0) {
