@@ -339,7 +339,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'gapfill' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history' | 'journey';
+  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'gapfill' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history' | 'journey' | 'fred_explains' | 'fred_lesson';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -370,6 +370,11 @@ export interface AppState {
   journeyContext?: import('./journeys').JourneyContext | null;
   // Mensagem de carregamento em etapas (ex.: "Gerando seu exercício...").
   loadingMessage?: string;
+  // ── Fred explica ──────────────────────────────────────────
+  // Tema aberto na tela da aula (catálogo em fredExplains.ts).
+  fredLesson?: import('./fredExplains').CatalogEntry | null;
+  // Nível pré-filtrado ao abrir o catálogo (ex.: vindo da Journey).
+  fredInitialLevel?: Level | null;
 }
 
 export interface StudyPlanInput {

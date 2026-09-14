@@ -41,6 +41,16 @@
 [functions.ranking-snapshot-background]
   timeout = 900
 
+# Fred explica — porta de entrada das aulas de gramática. Só consulta o
+# banco (fred_lessons) e dispara a geração; nunca chama a IA direto.
+[functions.fred-explains]
+  timeout = 26
+
+# Geração de UMA aula do Fred (3-5 mil tokens, modelo Pro): leva
+# 40-90s, por isso background (até 15 min). Roda uma vez por tema.
+[functions.fred-explains-background]
+  timeout = 900
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

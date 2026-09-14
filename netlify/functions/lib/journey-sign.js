@@ -33,4 +33,19 @@ const verifyBankId = (bankId, signature) => {
   return timingSafeEqual(expected, got);
 };
 
-module.exports = { signBankId, verifyBankId };
+// ── Versão genérica (usada pelo "Fred explica") ───────────────
+// Mesma ideia, com um "escopo" no texto assinado: a assinatura de
+// um id do Fred nunca serve para disparar um áudio da Journey e
+// vice-versa, mesmo que os ids coincidam por acaso.
+const signScoped = (scope, id) =>
+  createHmac("sha256", secret()).update(`${scope}:${id}`).digest("hex");
+
+const verifyScoped = (scope, id, signature) => {
+  if (!secret() || typeof signature !== "string") return false;
+  const expected = Buffer.from(signScoped(scope, id), "utf8");
+  const got = Buffer.from(signature, "utf8");
+  if (expected.length !== got.length) return false;
+  return timingSafeEqual(expected, got);
+};
+
+module.exports = { signBankId, verifyBankId, signScoped, verifyScoped };

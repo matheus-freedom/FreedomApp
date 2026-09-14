@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { RotateCcw, Award, ThumbsUp, Trophy, Repeat, Zap, Home, Coins, Map as MapIcon, ArrowRight, PartyPopper, Loader2 } from 'lucide-react';
+import { RotateCcw, Award, ThumbsUp, Trophy, Repeat, Zap, Home, Coins, Map as MapIcon, ArrowRight, PartyPopper, Loader2, GraduationCap } from 'lucide-react';
 import FredAvatar from './FredAvatar';
 import { NextJourneyTarget } from '../journeys';
 
@@ -22,13 +22,22 @@ interface ResultsScreenProps {
   // (cota diária estourada abre o modal de compra) — aí o botão destrava
   // e o aluno continua nesta tela.
   onJourneyNext?: () => Promise<boolean>;
+  // "Quer revisar esse conteúdo? Fred explica" — aparece quando a nota
+  // ficou abaixo de REVIEW_SUGGEST_PCT e o tópico do exercício tem aula
+  // no catálogo do Fred (o App só passa a prop quando existe).
+  onReviewWithFred?: () => void;
+  reviewTopic?: string;
 }
+
+// Nota abaixo disto = o aluno provavelmente não entendeu a regra; vale
+// mais revisar a teoria do que refazer o exercício no chute.
+const REVIEW_SUGGEST_PCT = 70;
 
 const formatFR = (value: number) => {
   return "FR$ " + (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false, journeyLabel, journeyNext, onJourneyNext }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, onRetry, onHome, xpGained = 0, frGained = 0, wasRepeat = false, journeyLabel, journeyNext, onJourneyNext, onReviewWithFred, reviewTopic }) => {
   const percentage = Math.round((score / (totalQuestions || 1)) * 100);
 
   // Trava do botão "Próximo": evita clique duplo e mostra o spinner
@@ -164,6 +173,22 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ score, totalQuestions, on
               "{message}"
           </p>
       </div>
+
+      {/* ── Sugestão de revisão com o Fred ─────────────────────────
+          Nota baixa em gramática: em vez de mandar refazer no escuro,
+          oferece a aula do tema. Não gasta cota e ainda rende XP. */}
+      {onReviewWithFred && percentage < REVIEW_SUGGEST_PCT && (
+        <button onClick={onReviewWithFred}
+          className="group w-full max-w-md mb-8 z-10 flex items-center gap-4 p-4 rounded-[1.75rem] bg-sky-500/10 border-2 border-sky-400/30 hover:border-sky-400/70 hover:bg-sky-500/15 transition-all text-left animate-fade-in">
+          <FredAvatar expression="professor" className="w-14 h-[4.5rem] shrink-0 group-hover:scale-105 transition-transform" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300 mb-0.5">Quer revisar esse conteúdo?</p>
+            <p className="text-white font-black leading-tight">Fred explica{reviewTopic ? `: ${reviewTopic}` : ''}</p>
+            <p className="text-[11px] text-gray-400 font-bold mt-1">Aula rápida com exemplos e comparação com o português · não gasta cota</p>
+          </div>
+          <GraduationCap className="w-5 h-5 text-sky-300 shrink-0 group-hover:translate-x-1 transition-transform" />
+        </button>
+      )}
 
       {/* ── Continuação da trilha ──────────────────────────────────
           Mensagens de "e agora?" quando o exercício veio da Journey:

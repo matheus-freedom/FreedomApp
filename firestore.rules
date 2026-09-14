@@ -68,6 +68,29 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Fred explica (aulas de gramática) ─────────────────────
+    // fred_lessons: conteúdo COMPARTILHADO (uma aula por tema, para
+    // a escola inteira). O aluno pode LER direto — é o que permite
+    // acompanhar em tempo real (onSnapshot) a aula ficando pronta —
+    // mas só o servidor escreve, senão um aluno poderia reescrever
+    // a aula que todos veem.
+    match /fred_lessons/{aula} {
+      allow read: if logado();
+      allow write: if false;
+    }
+    // Índice leve com os ids das aulas prontas (para o catálogo).
+    match /fred_meta/{doc} {
+      allow read: if logado();
+      allow write: if false;
+    }
+    // Progresso do aluno nas aulas (concluído, melhor nota, XP): ele
+    // lê o próprio; quem grava é a function fred-explains depois de
+    // corrigir o checkpoint no servidor.
+    match /fred_progress/{userId} {
+      allow read: if logado() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
     // ── Demais coleções (comportamento preservado) ────────────
     // Mesma permissão que o curinga anterior dava, só que declarada
     // coleção por coleção — para que journey_bank e journey_progress

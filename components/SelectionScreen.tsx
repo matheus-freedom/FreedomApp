@@ -8,8 +8,9 @@ import {
   Brain, Target, Flame, Zap, Trophy, Crown, Shield, Info, Sparkles,
   User as UserIcon, X, Calendar, Globe, BookOpen, Sword,
   ArrowRight, AlertTriangle, Lock, Wallet, ShieldAlert, Compass, Play,
-  Clock, Mic, Loader2, PenLine, History, Activity
+  Clock, Mic, Loader2, PenLine, History, Activity, GraduationCap
 } from 'lucide-react';
+import FredAvatar from './FredAvatar';
 
 interface SelectionScreenProps {
   user: UserSession;
@@ -25,6 +26,7 @@ interface SelectionScreenProps {
   onOpenAdmin?: () => void;
   onOpenRankingHistory: () => void;
   onOpenJourney: () => void;
+  onOpenFredExplains: () => void;
   isLoading: boolean;
   initialLevel?: Level | null;
   initialTheme?: Theme | null;
@@ -74,7 +76,7 @@ const PODIUM_CONFIG: Record<number, { emoji: string; color: string; bg: string; 
 
 const SelectionScreen: React.FC<SelectionScreenProps> = ({
   user, onStart, onOpenStudyPlan, onStartPlacement, onOpenActivities,
-  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory, onOpenJourney,
+  onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory, onOpenJourney, onOpenFredExplains,
   isLoading, initialLevel = null, initialTheme = null, initialTopic = null,
   hasActivePlan, onUserUpdate, onBuyExtra
 }) => {
@@ -495,6 +497,31 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           </div>
           <div className="shrink-0 flex items-center gap-2 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs group-hover:scale-105 transition-transform shadow-lg">
             <Compass className="w-5 h-5" /> Abrir trilha
+          </div>
+        </div>
+      </button>
+
+      {/* ── FRED EXPLICA ── */}
+      {/* Logo abaixo da trilha: a Journey é a prática; o Fred explica é
+          a teoria. Quem trava num exercício de gramática tem para onde
+          ir sem sair do app. */}
+      <button onClick={onOpenFredExplains}
+        className="group relative w-full overflow-hidden rounded-[2.5rem] border-2 border-white/10 hover:border-[#f7931e]/70 bg-[#2a2a2a] p-5 md:p-6 text-left transition-all hover:-translate-y-0.5 shadow-xl">
+        <div className="absolute -left-16 -top-16 w-64 h-64 rounded-full bg-gradient-to-br from-sky-500 to-purple-500 opacity-10 blur-3xl group-hover:opacity-20 transition-opacity" />
+        <div className="relative flex items-center gap-4 md:gap-6">
+          <FredAvatar expression="professor" className="w-20 h-24 md:w-24 md:h-28 shrink-0 group-hover:scale-105 transition-transform drop-shadow-[0_10px_25px_rgba(247,147,30,0.25)]" />
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-[#f7931e] text-[#222222] px-2 py-0.5 rounded">Novo</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Gramática descomplicada</span>
+            </div>
+            <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter">Fred explica</h3>
+            <p className="text-xs md:text-sm text-gray-400 font-medium leading-relaxed">
+              Todos os temas de gramática do A1 ao C1 explicados do jeito do Fred: exemplos reais, comparação com o português e mini-quizzes. Sem gastar sua cota de exercícios.
+            </p>
+          </div>
+          <div className="hidden md:flex shrink-0 items-center gap-2 px-5 py-3 bg-[#333333] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] group-hover:bg-[#f7931e] group-hover:text-[#222222] transition-colors">
+            <GraduationCap className="w-4 h-4" /> Estudar
           </div>
         </div>
       </button>

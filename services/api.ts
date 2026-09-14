@@ -1,10 +1,11 @@
 import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
+import { FredLesson, FredProgressDoc, LessonProgress, LessonDocStatus } from '../fredExplains';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
 import { deepFixEscapedText } from '../textFix';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Endpoint da function que concede XP/moedas no servidor (à prova de fraude).
@@ -17,6 +18,12 @@ const AWARD_URL = import.meta.env.DEV
 const JOURNEY_URL = import.meta.env.DEV
   ? 'http://localhost:8888/.netlify/functions/journey-content'
   : '/.netlify/functions/journey-content';
+
+// Endpoint do "Fred explica" (aulas de gramática). Nunca chama a IA
+// diretamente: devolve a aula do banco ou manda gerar em background.
+const FRED_URL = import.meta.env.DEV
+  ? 'http://localhost:8888/.netlify/functions/fred-explains'
+  : '/.netlify/functions/fred-explains';
 
 // ── Helpers de período ────────────────────────────────────────
 
@@ -825,5 +832,102 @@ export const api = {
     const data = await res.json();
     // Conserta "\n" literal em exercícios já gravados no journey_bank
     return { content: deepFixEscapedText(data.content as GeneratedContent), cached: !!data.cached };
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  // FRED EXPLICA — aulas de gramática na voz do Fred
+  // ══════════════════════════════════════════════════════════════
+
+  // Chamada genérica à function (todas as ações passam por aqui).
+  _fredCall: async (payload: Record<string, unknown>): Promise<any> => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sua sessão expirou. Faça login novamente.');
+    const res = await fetch(FRED_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || `Erro ${res.status}`);
+    }
+    return res.json();
+  },
+
+  // Pede a aula. Se já existe, volta pronta; se não, o servidor manda
+  // gerar e responde "generating" — aí o front acompanha o documento
+  // em tempo real com subscribeFredLesson até ficar pronta.
+  getFredLesson: async (id: string): Promise<{ status: LessonDocStatus; lesson?: FredLesson; progress?: LessonProgress | null; error?: string; model?: string | null }> => {
+    const data = await api._fredCall({ action: 'get', id });
+    if (data.lesson) data.lesson = deepFixEscapedText(data.lesson as FredLesson);
+    return data;
+  },
+
+  // Escuta fred_lessons/{id}: quando a background function grava a
+  // aula, o callback recebe o conteúdo sem o aluno precisar recarregar.
+  // Devolve a função que cancela a escuta (chamar ao sair da tela).
+  subscribeFredLesson: (
+    id: string,
+    onChange: (doc: { status: LessonDocStatus; lesson?: FredLesson; attempts?: number; model?: string } | null) => void
+  ): (() => void) => {
+    return onSnapshot(doc(db, 'fred_lessons', id), (snap) => {
+      if (!snap.exists()) { onChange(null); return; }
+      const d = snap.data() as any;
+      onChange({
+        status: d.status,
+        lesson: d.content ? deepFixEscapedText(d.content as FredLesson) : undefined,
+        attempts: d.attempts,
+        model: d.model,
+      });
+    }, (err) => {
+      console.error('Erro ao acompanhar a aula do Fred:', err);
+      onChange(null);
+    });
+  },
+
+  // Checkpoint final: o servidor corrige e dá o XP (uma vez por tema).
+  completeFredLesson: async (id: string, answers: number[]): Promise<{
+    score: number; total: number; pct: number; passed: boolean;
+    xpGained: number; totalXp: number | null; alreadyCompleted: boolean; progress: LessonProgress;
+  }> => api._fredCall({ action: 'complete', id, answers }),
+
+  sendFredFeedback: async (id: string, vote: 'up' | 'down'): Promise<void> => {
+    await api._fredCall({ action: 'feedback', id, vote });
+  },
+
+  // Admin: descarta a aula atual e gera outra.
+  regenerateFredLesson: async (id: string): Promise<void> => {
+    await api._fredCall({ action: 'regenerate', id });
+  },
+
+  // Progresso do aluno em todas as aulas (só leitura; quem grava é o servidor).
+  getFredProgress: async (userId: string): Promise<FredProgressDoc | null> => {
+    try {
+      const snap = await getDoc(doc(db, 'fred_progress', userId));
+      return snap.exists() ? (snap.data() as FredProgressDoc) : null;
+    } catch (e) {
+      console.error('Erro ao ler progresso do Fred explica:', e);
+      return null;
+    }
+  },
+
+  // Índice leve com os ids das aulas já prontas — para o catálogo
+  // marcar "pronta" x "o Fred ainda vai preparar" sem baixar tudo.
+  getFredReadyIndex: async (): Promise<Record<string, boolean>> => {
+    try {
+      const snap = await getDoc(doc(db, 'fred_meta', 'index'));
+      return snap.exists() ? ((snap.data() as any).ready || {}) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  // Admin: lista de todas as aulas (status, modelo, feedback).
+  listFredLessons: async (): Promise<Array<{ id: string; level: string; topic: string; status: string; model?: string; attempts?: number; lastError?: string | null; feedback?: { up: number; down: number }; generatedAt?: number }>> => {
+    const snap = await getDocs(collection(db, 'fred_lessons'));
+    return snap.docs.map(d => {
+      const x = d.data() as any;
+      return { id: d.id, level: x.level, topic: x.topic, status: x.status, model: x.model, attempts: x.attempts, lastError: x.lastError, feedback: x.feedback ? { up: x.feedback.up || 0, down: x.feedback.down || 0 } : undefined, generatedAt: x.generatedAt };
+    });
   },
 };

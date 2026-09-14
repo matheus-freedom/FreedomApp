@@ -11,6 +11,8 @@ import {
   PenTool, Trophy, Heart
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import FredAdminSection from './FredAdminSection';
+import { GraduationCap } from 'lucide-react';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -23,7 +25,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const [selectedUser, setSelectedUser] = useState<UserSession | null>(null);
   const [userHistory, setUserHistory] = useState<ActivityRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'general' | 'challenge'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'challenge' | 'fred'>('general');
   
   // Modais de Ação
   const [showResetModal, setShowResetModal] = useState(false);
@@ -198,9 +200,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
           >
             <Trophy className="w-4 h-4" /> Easter Challenge
           </button>
+          <button 
+            onClick={() => { setActiveTab('fred'); setSelectedUser(null); }}
+            className={`px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition-all flex items-center gap-2 ${activeTab === 'fred' ? 'bg-[#f7931e] text-[#222222]' : 'bg-[#333333] text-gray-500 hover:text-white'}`}
+          >
+            <GraduationCap className="w-4 h-4" /> Fred explica
+          </button>
         </div>
 
-        {activeTab === 'general' ? (
+        {activeTab === 'fred' ? (
+          <FredAdminSection />
+        ) : activeTab === 'general' ? (
           <>
             {/* Global Stats Dashboard */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

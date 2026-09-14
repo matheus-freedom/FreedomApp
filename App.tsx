@@ -22,6 +22,9 @@ import ChatScreen from './components/ChatScreen';
 import RankingHistoryScreen from './components/RankingHistoryScreen';
 import JourneyScreen from './components/JourneyScreen';
 import GapFillScreen from './components/GapFillScreen';
+import FredExplainsScreen from './components/FredExplainsScreen';
+import FredLessonScreen from './components/FredLessonScreen';
+import { CatalogEntry, findCatalogEntry, matchCatalogEntry } from './fredExplains';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
 import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, NextJourneyTarget, buildSeasonNodes, getNextJourneyTarget, seasonsSkippedByPlacement } from './journeys';
 import { generateQuizContent } from './services/geminiService';
@@ -204,9 +207,25 @@ const App: React.FC = () => {
     if (state.user) {
       // Libera a trava ao voltar para a tela inicial
       isStartingRef.current = false;
-      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null }));
+      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null, fredLesson: null }));
     }
   }, [state.user]);
+
+  // ── Fred explica ──────────────────────────────────────────────
+  // Abre o catálogo (opcionalmente já filtrado num nível) ou uma aula.
+  const openFredCatalog = useCallback((level?: Level | null) => {
+    setState(p => ({ ...p, status: 'fred_explains', fredLesson: null, fredInitialLevel: level ?? null }));
+  }, []);
+  const openFredLesson = useCallback((entry: CatalogEntry) => {
+    setState(p => ({ ...p, status: 'fred_lesson', fredLesson: entry }));
+  }, []);
+  // Vindo da Journey: o Step tem (nível, tópico) — se o tópico existir
+  // no catálogo, abre a aula direto; se for um Review (3 tópicos
+  // juntos), cai no catálogo filtrado no nível.
+  const openFredForTopic = useCallback((level: Level, topic: string) => {
+    const entry = findCatalogEntry(level, topic);
+    if (entry) openFredLesson(entry); else openFredCatalog(level);
+  }, [openFredLesson, openFredCatalog]);
 
   // ── Sair de um exercício ──────────────────────────────────────
   // Se o exercício veio da trilha, o destino natural é o MAPA da
@@ -479,6 +498,14 @@ const App: React.FC = () => {
   // Rótulo "Season 1 · Step 3 · Gramática" mostrado durante o
   // exercício e no resultado, para o aluno nunca perder a noção de
   // onde está dentro da trilha.
+  // Tema do exercício atual que tem aula no "Fred explica" (para a tela
+  // de resultados sugerir revisão quando a nota ficou baixa). Reviews da
+  // trilha juntam 3 tópicos ("A + B + C") e não casam com o catálogo —
+  // aí a sugestão simplesmente não aparece.
+  const reviewEntry = state.level && state.theme === Theme.Grammar && state.subTopic
+    ? matchCatalogEntry(state.level, state.subTopic)
+    : undefined;
+
   const journeyLabel = state.journeyContext
     ? `${SEASONS[state.journeyContext.season].title} · ${KIND_META[state.journeyContext.kind].label}`
     : undefined;
@@ -599,6 +626,7 @@ const App: React.FC = () => {
             onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))}
             onOpenRankingHistory={() => setState(p => ({ ...p, status: 'ranking_history' }))}
             onOpenJourney={() => { setJourneyReload(n => n + 1); setState(p => ({ ...p, status: 'journey' })); }}
+            onOpenFredExplains={() => openFredCatalog(null)}
             isLoading={state.status === 'loading'}
             hasActivePlan={!!state.studyPlan}
             onUserUpdate={handleUserUpdate}
@@ -676,6 +704,25 @@ const App: React.FC = () => {
             onHome={handleHome}
             onStartExercise={handleStartJourney}
             reloadToken={journeyReload}
+            onExplain={openFredForTopic}
+          />
+        )}
+        {state.status === 'fred_explains' && state.user && (
+          <FredExplainsScreen
+            user={state.user}
+            onHome={handleHome}
+            onOpenLesson={openFredLesson}
+            initialLevel={state.fredInitialLevel}
+          />
+        )}
+        {state.status === 'fred_lesson' && state.user && state.fredLesson && (
+          <FredLessonScreen
+            user={state.user}
+            entry={state.fredLesson}
+            onBack={() => openFredCatalog(state.fredLesson?.level ?? null)}
+            onOpenLesson={openFredLesson}
+            onUserUpdate={handleUserUpdate}
+            onPractice={(level, theme, topic) => { handleStart(level, theme, topic); }}
           />
         )}
         {/* Enquanto a Frida está desativada, passamos 'Fred' fixo em vez de
@@ -696,6 +743,11 @@ const App: React.FC = () => {
             journeyLabel={journeyLabel}
             journeyNext={state.journeyContext ? journeyNext : null}
             onJourneyNext={handleJourneyNext}
+            // Só oferece a revisão quando o tópico do exercício existe no
+            // catálogo do Fred (gramática da trilha ou da prática livre
+            // com o mesmo nome de tema).
+            reviewTopic={reviewEntry?.topic}
+            onReviewWithFred={reviewEntry ? () => { isStartingRef.current = false; openFredLesson(reviewEntry); } : undefined}
           />
         )}
       </main>

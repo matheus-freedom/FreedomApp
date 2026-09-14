@@ -8,8 +8,9 @@ import {
 import { api } from '../services/api';
 import {
   Home, Lock, Check, Star, Play, ChevronRight, ChevronLeft, X, Loader2,
-  Trophy, Sparkles, Map as MapIcon, RefreshCw, Compass, Flag, Zap,
+  Trophy, Sparkles, Map as MapIcon, RefreshCw, Compass, Flag, Zap, GraduationCap,
 } from 'lucide-react';
+import FredAvatar from './FredAvatar';
 
 // ══════════════════════════════════════════════════════════════
 // JOURNEY TO FLUENCY — mapa da trilha
@@ -31,6 +32,8 @@ interface JourneyScreenProps {
   onHome: () => void;
   // Abre o exercício. Devolve false se o app recusou (limite diário etc).
   onStartExercise: (journeyId: JourneyId, season: number, node: JourneyNode, kind: JourneyKind) => Promise<boolean> | void;
+  // Abre a aula do "Fred explica" sobre o tópico gramatical do Step.
+  onExplain?: (level: Level, topic: string) => void;
   // Recarrega o progresso quando o aluno volta de um exercício.
   reloadToken?: number;
 }
@@ -60,7 +63,7 @@ const ProgressRing: React.FC<{ pct: number; size?: number; stroke?: number; clas
   );
 };
 
-const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExercise, reloadToken = 0 }) => {
+const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExercise, reloadToken = 0, onExplain }) => {
   const [progress, setProgress] = useState<JourneyProgressDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [journeyId, setJourneyId] = useState<JourneyId | null>(null);
@@ -434,6 +437,21 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
                       Revisão dos 3 steps anteriores num quiz só. Serve para fixar antes de seguir — e vale XP como qualquer exercício.
                     </p>
                   </div>
+                )}
+
+                {/* Teoria antes da prática: a aula do Fred sobre a
+                    gramática deste Step. Não gasta cota nem trava nada —
+                    é só um atalho para quem quer entender antes de fazer. */}
+                {onExplain && !isReview && (
+                  <button onClick={() => onExplain(season.level, openNode.grammarTopic)}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-sky-400/25 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-400/60 transition-all text-left mb-1">
+                    <FredAvatar expression="professor" className="w-10 h-12 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-black text-xs uppercase tracking-tight">Fred explica este tópico</p>
+                      <p className="text-[10px] text-gray-400 font-bold truncate">Entenda a gramática antes de praticar · sem gastar cota</p>
+                    </div>
+                    <GraduationCap className="w-4 h-4 text-sky-300 shrink-0" />
+                  </button>
                 )}
 
                 {openNode.kinds.map((kind, i) => {

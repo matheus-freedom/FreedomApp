@@ -20,7 +20,8 @@ import React from 'react';
 // - surpreso: o aluno acertou 5 seguidas (momento "uau!")
 // - triste:   o aluno errou uma alternativa
 // - motivado: mensagem de incentivo (2+ erros seguidos, nota baixa)
-export type FredExpression = 'perfil' | 'feliz' | 'surpreso' | 'triste' | 'motivado';
+// - professor: Fred com livro e ponteira — capa do "Fred explica"
+export type FredExpression = 'perfil' | 'feliz' | 'surpreso' | 'triste' | 'motivado' | 'professor';
 
 export const FRED_IMAGES: Record<FredExpression, string> = {
   perfil: '/fred/fred-perfil.webp',
@@ -28,6 +29,7 @@ export const FRED_IMAGES: Record<FredExpression, string> = {
   surpreso: '/fred/fred-surpreso.webp',
   triste: '/fred/fred-triste.webp',
   motivado: '/fred/fred-motivado.webp',
+  professor: '/fred/fred-professor.webp',
 };
 
 // Versão quadrada, recortada no rosto — ideal para círculos pequenos
