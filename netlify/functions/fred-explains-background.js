@@ -28,6 +28,10 @@ const { verifyScoped } = require("./lib/journey-sign");
 const { resolveLesson, FRED_PERSONA, buildPrompt, LESSON_SCHEMA, normalizeLesson, MODELS } = require("./lib/fred-core");
 
 const ATTEMPTS_PER_MODEL = 2;
+// Tempo máximo de UMA chamada ao Gemini. Sem isto, uma chamada travada
+// segura a function até o limite de 15 min e a aula nunca sai do
+// "generating" (e o aluno fica olhando o relógio).
+const CALL_TIMEOUT_MS = { "gemini-3.5-pro": 240000, "gemini-3.5-flash": 120000 };
 
 const initFirebase = () => {
   if (getApps().length === 0) {
@@ -66,6 +70,7 @@ const generateLesson = async (ai, entry, log = console.log) => {
             responseSchema: LESSON_SCHEMA,
             // Um pouco de criatividade para as analogias, sem virar caos.
             temperature: 0.8,
+            httpOptions: { timeout: CALL_TIMEOUT_MS[model] || 120000 },
           },
         });
         const lesson = normalizeLesson(parseLoose(response.text));

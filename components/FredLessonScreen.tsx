@@ -152,6 +152,11 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
           } else if (d.status === 'error' && (d.attempts || 0) >= 3) {
             setErrorMsg('O Fred tentou algumas vezes e não conseguiu preparar esta aula. Avise o professor, por favor.');
             setDocState('failed'); unsub?.(); unsub = null;
+          } else if (d.status === 'error') {
+            // Falhou, mas ainda há tentativas: pedir de novo faz o servidor
+            // redisparar a geração. Sem isto o aluno ficaria esperando
+            // um doc que nunca mais mudaria.
+            api.getFredLesson(entry.id).catch(() => {});
           }
         });
       } catch (e) {

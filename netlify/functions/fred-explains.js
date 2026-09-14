@@ -35,7 +35,7 @@ const DAILY_XP_LIMIT = 800;
 const MAX_ATTEMPTS = 3;
 // Um pedido "em geração" mais velho que isto é considerado travado
 // (a background function morreu no meio) e pode ser disparado de novo.
-const STALE_MS = 6 * 60 * 1000;
+const STALE_MS = 10 * 60 * 1000;
 
 const ALLOWED_ORIGINS = [
   "https://freedom.app.br",
@@ -66,19 +66,32 @@ const initFirebase = () => {
 
 const reply = (headers, statusCode, body) => ({ statusCode, headers, body: JSON.stringify(body) });
 
-// ── Dispara a geração (fire-and-forget, assinada) ─────────────
-const triggerGeneration = (id, force = false) => {
+// ── Dispara a geração (assinada) ──────────────────────────────
+// IMPORTANTE: o disparo é AGUARDADO (await). Numa function da Netlify
+// (AWS Lambda por baixo), assim que o handler devolve a resposta o
+// processo é congelado — um fetch "solto" (fire-and-forget) pode nem
+// chegar a sair. Foi exatamente isso que travou a 1ª aula em produção:
+// o doc ficava "generating" para sempre porque a background function
+// nunca era chamada. Como uma background function responde 202 na
+// hora (o trabalho continua depois), esperar custa ~100-300 ms.
+const triggerGeneration = async (id, force = false) => {
   const base = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL;
   if (!base) { console.error("fred-explains: sem URL base para disparar a geração"); return false; }
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 2000);
-  fetch(`${base}/.netlify/functions/fred-explains-background`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, force, signature: signScoped("fred-lesson", id) }),
-    signal: ctrl.signal,
-  }).catch(() => { /* melhor esforço: o front re-pede se travar */ }).finally(() => clearTimeout(t));
-  return true;
+  const t = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    const res = await fetch(`${base}/.netlify/functions/fred-explains-background`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, force, signature: signScoped("fred-lesson", id) }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok && res.status !== 202) console.error("fred-explains: disparo respondeu", res.status, id);
+    return true;
+  } catch (e) {
+    console.error("fred-explains: falha ao disparar a geração", id, String(e?.message || e));
+    return false;
+  } finally { clearTimeout(t); }
 };
 
 // ── Chaves de período (idênticas ao award-activity) ────────────
@@ -106,7 +119,7 @@ const handleGet = async (db, uid, entry, headers) => {
       // Geração travada? Dispara de novo.
       if (now - (d.updatedAt || d.createdAt || 0) > STALE_MS) {
         await ref.set({ updatedAt: now }, { merge: true });
-        triggerGeneration(entry.id);
+        await triggerGeneration(entry.id);
       }
       return reply(headers, 200, { status: "generating", id: entry.id });
     }
@@ -115,7 +128,7 @@ const handleGet = async (db, uid, entry, headers) => {
       return reply(headers, 200, { status: "failed", id: entry.id, error: "O Fred tentou algumas vezes e não conseguiu preparar esta aula. Avise o professor, por favor." });
     }
     await ref.set({ status: "generating", updatedAt: now }, { merge: true });
-    triggerGeneration(entry.id);
+    await triggerGeneration(entry.id);
     return reply(headers, 200, { status: "generating", id: entry.id });
   }
 
@@ -131,7 +144,7 @@ const handleGet = async (db, uid, entry, headers) => {
     if (!isRace) throw e;
     return reply(headers, 200, { status: "generating", id: entry.id });
   }
-  triggerGeneration(entry.id);
+  await triggerGeneration(entry.id);
   return reply(headers, 200, { status: "generating", id: entry.id });
 };
 
@@ -249,7 +262,7 @@ const handleRegenerate = async (db, uid, entry, headers) => {
     feedback: FieldValue.delete(),
   }, { merge: true });
   await db.collection("fred_meta").doc("index").set({ ready: { [entry.id]: FieldValue.delete() }, updatedAt: now }, { merge: true }).catch(() => {});
-  triggerGeneration(entry.id, true);
+  await triggerGeneration(entry.id, true);
   return reply(headers, 200, { status: "generating", id: entry.id });
 };
 

@@ -265,17 +265,24 @@ const generate = async (ai, req, kind, seasonIndex) => {
 // A chamada vai ASSINADA (HMAC com a credencial do Firebase): a
 // URL da background function é pública, e sem assinatura qualquer
 // um poderia disparar gerações de áudio pagas em looping.
-const triggerAudio = (bankId) => {
+// AGUARDADO (await): a Lambda congela o processo assim que o handler
+// responde, então um fetch solto podia nem sair — era por isso que o
+// áudio da Journey nunca aparecia no Storage. A background function
+// responde 202 na hora; esperar custa poucos ms.
+const triggerAudio = async (bankId) => {
   const base = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL;
   if (!base) return;
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 2000);
-  fetch(`${base}/.netlify/functions/journey-audio-background`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bankId, signature: signBankId(bankId) }),
-    signal: ctrl.signal,
-  }).catch(() => { /* melhor esforço */ }).finally(() => clearTimeout(t));
+  const t = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    await fetch(`${base}/.netlify/functions/journey-audio-background`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bankId, signature: signBankId(bankId) }),
+      signal: ctrl.signal,
+    });
+  } catch (e) { console.error("journey-content: falha ao disparar o áudio", bankId, String(e?.message || e)); }
+  finally { clearTimeout(t); }
 };
 
 // Exposto só para os testes (test-journey-server.mjs). Não é usado
@@ -340,7 +347,7 @@ exports.handler = async (event) => {
       const cachedContent = snap.data().content;
       // Listening antigo que ficou sem áudio (a geração falhou na
       // primeira vez): tenta de novo em segundo plano.
-      if (kind === "listening" && cachedContent.listeningScript && !cachedContent.audioUrl) triggerAudio(bankId);
+      if (kind === "listening" && cachedContent.listeningScript && !cachedContent.audioUrl) await triggerAudio(bankId);
       return { statusCode: 200, headers, body: JSON.stringify({ bankId, cached: true, content: cachedContent }) };
     }
 
@@ -383,7 +390,7 @@ exports.handler = async (event) => {
     // Listening: manda preparar o áudio em segundo plano. Este aluno
     // ainda ouve o TTS gerado pelo navegador (caminho antigo); do
     // próximo em diante todos tocam o arquivo pronto do Storage.
-    if (created && kind === "listening") triggerAudio(bankId);
+    if (created && kind === "listening") await triggerAudio(bankId);
 
     return { statusCode: 200, headers, body: JSON.stringify({ bankId, cached: false, content }) };
   } catch (error) {
