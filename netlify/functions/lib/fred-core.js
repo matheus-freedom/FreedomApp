@@ -18,6 +18,7 @@
 // ============================================================
 
 const CURRICULUM = require("./journey-curriculum.json");
+const { shuffleQuestion } = require("./shuffle");
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1"];
 
@@ -218,7 +219,8 @@ const normalizeQuiz = (q) => {
   if (question.length < 5 || options.length !== 4 || !Number.isInteger(idx) || idx < 0 || idx > 3) return null;
   // Opções duplicadas tornam a questão ambígua (duas "certas").
   if (new Set(options.map((o) => o.toLowerCase())).size !== 4) return null;
-  return { question, options, correctIndex: idx, explanation: str(q.explanation) };
+  // Embaralha: a IA tende a deixar a certa sempre na "letra A".
+  return shuffleQuestion({ question, options, correctIndex: idx, explanation: str(q.explanation) });
 };
 
 const normalizeLesson = (raw) => {

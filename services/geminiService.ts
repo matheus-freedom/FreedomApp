@@ -5,6 +5,7 @@ import {
 } from '../types';
 import { db } from './firebase';
 import { deepFixEscapedText } from '../textFix';
+import { deepShuffleQuestions } from '../shuffleOptions';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { PlacementSkill } from '../types';
 
@@ -193,7 +194,7 @@ export const generatePlacementGrammar = async (): Promise<GeneratedContent> => {
         responseSchema: QUIZ_SCHEMA,
       },
     });
-    return deepFixEscapedText(JSON.parse(result.text || "{}")) as GeneratedContent;
+    return deepShuffleQuestions(deepFixEscapedText(JSON.parse(result.text || "{}"))) as GeneratedContent;
   } catch (error) { throw handleError(error); }
 };
 
@@ -208,7 +209,7 @@ export const generateAdaptivePlacementStep = async (step: Theme, seedLevel: Leve
         responseSchema: QUIZ_SCHEMA,
       },
     });
-    return deepFixEscapedText(JSON.parse(result.text || "{}")) as GeneratedContent;
+    return deepShuffleQuestions(deepFixEscapedText(JSON.parse(result.text || "{}"))) as GeneratedContent;
   } catch (error) { throw handleError(error); }
 };
 

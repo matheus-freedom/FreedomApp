@@ -3,6 +3,7 @@ import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../j
 import { FredLesson, FredProgressDoc, LessonProgress, LessonDocStatus } from '../fredExplains';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
 import { deepFixEscapedText } from '../textFix';
+import { deepShuffleQuestions } from '../shuffleOptions';
 import { auth, db, storage } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, query, where, deleteDoc, addDoc, runTransaction, onSnapshot } from 'firebase/firestore';
@@ -519,8 +520,9 @@ export const api = {
     }
     if (entries.length === 0) return null;
     const idx = Math.floor(Math.random() * entries.length);
-    // Conserta "\n" literal gravado por gerações antigas (textFix.ts)
-    return deepFixEscapedText(entries[idx]);
+    // Conserta "\n" literal gravado por gerações antigas (textFix.ts) e
+    // embaralha as alternativas (provas antigas têm a certa sempre na A).
+    return deepShuffleQuestions(deepFixEscapedText(entries[idx]));
   },
 
   // ── Verificar se o banco de uma habilidade precisa de mais variações ──

@@ -121,7 +121,7 @@ exports.handler = async (event) => {
     const { lesson, model } = await generateLesson(ai, entry);
     await ref.set({
       id, level: entry.level, topic: entry.topic,
-      status: "ready", content: lesson, model,
+      status: "ready", content: lesson, model, shuffled: true,
       generatedAt: Date.now(), updatedAt: Date.now(),
       attempts: (current.attempts || 0) + 1, lastError: null,
     }, { merge: true });

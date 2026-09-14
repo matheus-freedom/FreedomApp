@@ -13,6 +13,7 @@
 // upload ao Storage, carimbo de job). Adaptado para nivelamento.
 // ============================================================
 
+const { shuffleQuestion } = require("./lib/shuffle");
 const { GoogleGenAI, Modality } = require("@google/genai");
 const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -465,7 +466,9 @@ exports.handler = async (event) => {
         }
 
         // Normaliza, forçando o nível correto (o desta iteração).
-        levelQs = levelQs.slice(0, QUESTIONS_PER_LEVEL).map((q) => ({
+        // shuffleQuestion embaralha as alternativas (a IA deixa a certa
+        // quase sempre na primeira posição) e corrige o índice junto.
+        levelQs = levelQs.slice(0, QUESTIONS_PER_LEVEL).map((q) => shuffleQuestion({
           level,
           question: q.question || "",
           questionPT: q.questionPT || "",

@@ -103,15 +103,48 @@ const good = {
   check('parseLoose tolera ```json e vírgula sobrando', bg.parseLoose('```json\n{"a": [1,2,],}\n```').a.length === 2);
 }
 
+console.log('\n── Embaralhamento das alternativas (bug da "letra A") ──');
+{
+  const sh = require('./netlify/functions/lib/shuffle.js');
+  execSync('npx esbuild shuffleOptions.ts --bundle --format=cjs --platform=node --outfile=/tmp/fred-shuffle.cjs --log-level=error');
+  const front = require('/tmp/fred-shuffle.cjs');
+  const q = { question: 'Q?', options: ['certa', 'b', 'c', 'd'], correctAnswerIndex: 0, explanation: 'x' };
+  let okAll = true; const positions = new Set();
+  for (let i = 0; i < 200; i++) {
+    const r = sh.shuffleQuestion(q);
+    if (r.options[r.correctAnswerIndex] !== 'certa' || r.options.length !== 4 || new Set(r.options).size !== 4) okAll = false;
+    positions.add(r.correctAnswerIndex);
+  }
+  check('Servidor: a certa continua certa depois de embaralhar (200x)', okAll);
+  check('Servidor: a certa aparece em todas as 4 posições ao longo de 200 sorteios', positions.size === 4, `(${[...positions].join(',')})`);
+  let okF = true; const posF = new Set();
+  for (let i = 0; i < 200; i++) {
+    const r = front.shuffleQuestion({ question: 'Q?', options: ['a', 'certa', 'c', 'd'], correctIndex: 1 });
+    if (r.options[r.correctIndex] !== 'certa') okF = false;
+    posF.add(r.correctIndex);
+  }
+  check('Front: mesmo comportamento com correctIndex (Fred explica)', okF && posF.size === 4);
+  const lesson = core.normalizeLesson(good);
+  const allSame = lesson.finalQuiz.every(x => x.correctIndex === 1) && lesson.sections.every(s => !s.quiz[0] || s.quiz[0].correctIndex === 1);
+  check('normalizeLesson embaralha o gabarito (não fica tudo na mesma letra)', !allSame && lesson.finalQuiz.every((x, i) => x.options[x.correctIndex] === 'b' + (10 + i)));
+  const nested = sh.deepShuffleQuestions({ questions: [q, q], readingText: 'texto', sections: [{ quiz: [{ options: ['x', 'y', 'z', 'w'], correctIndex: 3 }] }] });
+  check('deepShuffle atinge questões aninhadas e preserva o resto', nested.readingText === 'texto' && nested.questions.every(x => x.options[x.correctAnswerIndex] === 'certa') && nested.sections[0].quiz[0].options[nested.sections[0].quiz[0].correctIndex] === 'w');
+  check('Questão sem índice válido passa intacta', sh.shuffleQuestion({ options: ['a', 'b'], correctAnswerIndex: 7 }).correctAnswerIndex === 7 && sh.shuffleQuestion({ sentence: 'gap ____' }).sentence === 'gap ____');
+}
+
 console.log('\n── Correção do checkpoint (servidor) ──');
 {
   const lesson = core.normalizeLesson(good);
-  const r = core.scoreFinalQuiz(lesson, [1, 1, 1, 0, 0]);
+  // O gabarito agora é embaralhado, então as respostas "certas" são
+  // lidas da própria aula normalizada (e as erradas, deslocadas em 1).
+  const right = lesson.finalQuiz.map(x => x.correctIndex);
+  const wrong = right.map(i => (i + 1) % 4);
+  const r = core.scoreFinalQuiz(lesson, [right[0], right[1], right[2], wrong[3], wrong[4]]);
   check('3/5 = 60% aprova', r.score === 3 && r.pct === 60 && r.passed === true);
-  const r2 = core.scoreFinalQuiz(lesson, [1, 1, 0, 0, 0]);
+  const r2 = core.scoreFinalQuiz(lesson, [right[0], right[1], wrong[2], wrong[3], wrong[4]]);
   check('2/5 = 40% reprova', r2.score === 2 && r2.passed === false);
-  check('Respostas faltando contam como erro', core.scoreFinalQuiz(lesson, [1]).score === 1);
-  check('Resposta inválida não quebra', core.scoreFinalQuiz(lesson, 'x').score === 0 && core.scoreFinalQuiz(lesson, ['1', null, 1, 1, 1]).score === 4);
+  check('Respostas faltando contam como erro', core.scoreFinalQuiz(lesson, [right[0]]).score === 1);
+  check('Resposta inválida não quebra', core.scoreFinalQuiz(lesson, 'x').score === 0 && core.scoreFinalQuiz(lesson, [String(right[0]), undefined, right[2], right[3], right[4]]).score === 4);
 }
 
 console.log('\n── Assinatura entre functions ──');
@@ -158,14 +191,25 @@ console.log('\n── Handler fred-explains (mock do Firestore) ──');
   check('Marca "abriu" no progresso do aluno', !!store.get('fred_progress/u1')?.lessons?.A1_will?.openedAt);
   const g2 = await call({ action: 'get', id: 'A1_will' });
   check('2º pedido só acompanha (não duplica)', g2.status === 'generating');
-  store.set('fred_lessons/A1_will', { status: 'ready', content: core.normalizeLesson(good) });
+  const storedLesson = core.normalizeLesson(good);
+  const R = storedLesson.finalQuiz.map(x => x.correctIndex), W = R.map(i => (i + 1) % 4);
+  store.set('fred_lessons/A1_will', { status: 'ready', content: storedLesson, shuffled: true });
   const g3 = await call({ action: 'get', id: 'A1_will' });
   check('Aula pronta volta com conteúdo', g3.status === 'ready' && g3.lesson.finalQuiz.length === 5);
+  // Aula antiga (sem a marca "shuffled"): o get embaralha e REGRAVA,
+  // para o gabarito do servidor e o que o aluno vê baterem.
+  const oldLesson = { ...storedLesson, finalQuiz: storedLesson.finalQuiz.map(x => ({ ...x, options: ['certa', 'b', 'c', 'd'], correctIndex: 0 })) };
+  store.set('fred_lessons/A1_going-to', { status: 'ready', content: oldLesson });
+  const g4 = await call({ action: 'get', id: 'A1_going-to' });
+  const saved = store.get('fred_lessons/A1_going-to');
+  check('Aula antiga é embaralhada e regravada com a marca shuffled',
+    saved.shuffled === true && saved.content.finalQuiz.every(x => x.options[x.correctIndex] === 'certa') && JSON.stringify(g4.lesson) === JSON.stringify(saved.content));
+  store.set('fred_lessons/A1_going-to', { status: 'generating' });
   check('complete recusa aula não pronta', !!(await call({ action: 'complete', id: 'A1_going-to', answers: [1] })).error);
   store.set('users/u1', { username: 'aluno', gamification: { xp: 100, dailyXpEarned: 0 } });
-  const c1 = await call({ action: 'complete', id: 'A1_will', answers: [1, 1, 1, 0, 0] });
+  const c1 = await call({ action: 'complete', id: 'A1_will', answers: [R[0], R[1], R[2], W[3], W[4]] });
   check('Checkpoint 60% → passa e ganha XP', c1.passed && c1.xpGained === core.LESSON_XP && c1.totalXp === 100 + core.LESSON_XP);
-  const c2 = await call({ action: 'complete', id: 'A1_will', answers: [1, 1, 1, 1, 1] });
+  const c2 = await call({ action: 'complete', id: 'A1_will', answers: R });
   check('Repetir não dá XP de novo, mas guarda melhor nota', c2.xpGained === 0 && c2.alreadyCompleted && c2.progress.bestPct === 100);
   check('XP do aluno subiu só uma vez', store.get('users/u1').gamification.xp === 140);
   const c3 = await call({ action: 'complete', id: 'A1_going-to', answers: [] });

@@ -25,6 +25,7 @@ import GapFillScreen from './components/GapFillScreen';
 import FredExplainsScreen from './components/FredExplainsScreen';
 import FredLessonScreen from './components/FredLessonScreen';
 import { CatalogEntry, findCatalogEntry, matchCatalogEntry } from './fredExplains';
+import { deepShuffleQuestions } from './shuffleOptions';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
 import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, NextJourneyTarget, buildSeasonNodes, getNextJourneyTarget, seasonsSkippedByPlacement } from './journeys';
 import { generateQuizContent } from './services/geminiService';
@@ -274,9 +275,12 @@ const App: React.FC = () => {
       let content: GeneratedContent;
 
       if (cached) {
-        content = cached.content;
+        // Banco antigo: a IA deixava a certa quase sempre na "letra A".
+        // Embaralhar aqui conserta todas as atividades já gravadas.
+        content = deepShuffleQuestions(cached.content);
       } else {
-        content = await generateQuizContent(level, theme, subTopic, voiceGender, voiceAccent);
+        // Embaralha ANTES de gravar: o banco passa a nascer sem o vício.
+        content = deepShuffleQuestions(await generateQuizContent(level, theme, subTopic, voiceGender, voiceAccent));
         await api.saveToActivityBank(level, theme, subTopic, content);
       }
 
@@ -346,7 +350,9 @@ const App: React.FC = () => {
     }));
 
     try {
-      const { content } = await api.getJourneyExercise(journeyId, season, node.index, kind);
+      // Embaralha as alternativas (cobre os exercícios já gravados no
+      // journey_bank com a resposta sempre na "letra A").
+      const content = deepShuffleQuestions((await api.getJourneyExercise(journeyId, season, node.index, kind)).content);
       const newCount = await api.incrementActivityCount(state.user.userId);
       const applyCount = (prev: AppState): UserSession | null => prev.user && ({
         ...prev.user,

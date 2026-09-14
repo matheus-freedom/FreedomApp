@@ -32,6 +32,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { resolvePosition, canAccess, buildSeasonNodes, LEVELS } = require("./lib/journey-core");
 const { signBankId } = require("./lib/journey-sign");
+const { shuffleQuestion } = require("./lib/shuffle");
 
 const MODEL = "gemini-3.5-flash";
 const QUESTIONS_PER_QUIZ = 10;
@@ -224,7 +225,10 @@ const normalizeContent = (kind, seasonIndex, data, req) => {
     return out;
   }
   if (!validQuestions(data.questions)) return null;
-  out.questions = data.questions.slice(0, QUESTIONS_PER_QUIZ).map((q, i) => ({ id: i + 1, question: q.question, questionPT: q.questionPT || "", options: q.options, correctAnswerIndex: q.correctAnswerIndex, explanation: q.explanation || "" }));
+  // shuffleQuestion: a IA deixa a certa quase sempre na "letra A" —
+  // embaralhamos antes de gravar no banco compartilhado. (O front
+  // também embaralha ao abrir, o que cobre os exercícios antigos.)
+  out.questions = data.questions.slice(0, QUESTIONS_PER_QUIZ).map((q, i) => shuffleQuestion({ id: i + 1, question: q.question, questionPT: q.questionPT || "", options: q.options, correctAnswerIndex: q.correctAnswerIndex, explanation: q.explanation || "" }));
   if (kind === "reading") { if (typeof data.readingText !== "string" || data.readingText.trim().length < 80) return null; out.readingText = data.readingText.trim(); }
   if (kind === "listening") { if (typeof data.listeningScript !== "string" || data.listeningScript.trim().length < 60) return null; out.listeningScript = data.listeningScript.trim(); }
   return out;

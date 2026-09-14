@@ -27,6 +27,7 @@ const { getAuth } = require("firebase-admin/auth");
 const { randomUUID } = require("crypto");
 const { resolveLesson, scoreFinalQuiz, publicLesson, LESSON_XP } = require("./lib/fred-core");
 const { signScoped } = require("./lib/journey-sign");
+const { deepShuffleQuestions } = require("./lib/shuffle");
 
 // Mesmo teto diário de XP do award-activity: a aula entra na conta.
 const DAILY_XP_LIMIT = 800;
@@ -112,8 +113,18 @@ const handleGet = async (db, uid, entry, headers) => {
   if (snap.exists) {
     const d = snap.data();
     if (d.status === "ready" && d.content) {
+      // Aulas gravadas ANTES do embaralhamento têm a resposta certa
+      // quase sempre na "letra A". Conserta uma única vez, aqui, e
+      // regrava — o checkpoint é corrigido no servidor com o gabarito
+      // do doc, então a ordem PRECISA ficar persistida (não dá para
+      // embaralhar só na tela).
+      let content = d.content;
+      if (!d.shuffled) {
+        content = deepShuffleQuestions(content);
+        await ref.set({ content, shuffled: true, updatedAt: now }, { merge: true }).catch((e) => console.error("fred-explains: falha ao regravar embaralhado", entry.id, e));
+      }
       const prog = (await progRef.get().catch(() => null))?.data()?.lessons?.[entry.id] || null;
-      return reply(headers, 200, { status: "ready", id: entry.id, lesson: publicLesson(d.content), model: d.model || null, progress: prog });
+      return reply(headers, 200, { status: "ready", id: entry.id, lesson: publicLesson(content), model: d.model || null, progress: prog });
     }
     if (d.status === "generating") {
       // Geração travada? Dispara de novo.
