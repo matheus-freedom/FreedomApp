@@ -1,0 +1,106 @@
+{
+  "title": "Verbo to be: o canivete suíço do inglês",
+  "hook": "Você chega numa festa, alguém pergunta \"Where are you from?\" e o cérebro trava. Não é falta de vocabulário: é que quase toda frase de apresentação em inglês passa pelo **verbo to be** — e ele se comporta diferente do nosso ser e estar. Vem comigo que em dez minutos isso vira automático.",
+  "sections": [
+    {
+      "heading": "Um verbo, dois empregos",
+      "mood": "perfil",
+      "body": "Em português a gente tem dois verbos para isso: **ser** (o que você é) e **estar** (como você está agora). O inglês juntou os dois num só: **to be**.\n\nEntão \"I am a teacher\" e \"I am tired\" usam exatamente a mesma palavra. Para o brasileiro isso parece pobre, mas na prática é uma preocupação a menos: você nunca vai errar entre ser e estar em inglês, porque a escolha não existe.",
+      "examples": [
+        { "en": "I am a student.", "pt": "Eu sou estudante.", "note": "\"ser\" — identidade, profissão" },
+        { "en": "I am at home.", "pt": "Eu estou em casa.", "note": "\"estar\" — lugar, estado" },
+        { "en": "She is happy today.", "pt": "Ela está feliz hoje.", "note": "" }
+      ],
+      "ptAnalogy": "Pensa no to be como um adaptador universal de tomada: você viaja para qualquer país e ele encaixa. Ser ou estar, permanente ou passageiro — é o mesmo verbo cumprindo os dois papéis.",
+      "tip": "",
+      "quiz": [
+        {
+          "question": "Qual frase usa o to be no sentido de \"estar\"?",
+          "options": ["I am Brazilian.", "I am in São Paulo.", "I am a nurse.", "I am tall."],
+          "correctIndex": 1,
+          "explanation": "\"In São Paulo\" é lugar, algo passageiro — em português seria \"estou\". As outras três são características: nacionalidade, profissão e altura, o nosso \"sou\"."
+        }
+      ]
+    },
+    {
+      "heading": "As três caras do to be: am, is, are",
+      "mood": "surpreso",
+      "body": "Aqui está o detalhe que confunde: **to be** é o nome do verbo, mas ele quase nunca aparece assim numa frase. No presente ele se transforma em três formas, e cada uma casa com um grupo de pronomes.\n\n**am** só anda com **I**. **is** vai com **he, she, it**. **are** fica com todo o resto: **you, we, they**. Repara que \"you\" usa are mesmo quando é uma pessoa só — em inglês, o você e o vocês têm a mesma forma.",
+      "examples": [
+        { "en": "I am ready.", "pt": "Estou pronto.", "note": "I → am, sempre" },
+        { "en": "He is my brother.", "pt": "Ele é meu irmão.", "note": "he/she/it → is" },
+        { "en": "You are late!", "pt": "Você está atrasado!", "note": "you → are, mesmo no singular" }
+      ],
+      "ptAnalogy": "É parecido com a nossa conjugação: eu sou, ele é, nós somos. A diferença é que em português são seis formas e em inglês só três — dá para decorar num café.",
+      "tip": "Na fala, quase ninguém diz \"I am\": vira **I'm**. \"He is\" vira **he's**, \"you are\" vira **you're**. Aprenda as duas versões juntas.",
+      "quiz": [
+        {
+          "question": "Complete: \"My parents ____ doctors.\"",
+          "options": ["am", "is", "are", "be"],
+          "correctIndex": 2,
+          "explanation": "\"My parents\" é plural, o mesmo que \"they\" — e they pede **are**. \"Be\" sozinho nunca aparece numa frase afirmativa simples no presente."
+        }
+      ]
+    },
+    {
+      "heading": "Negativa e pergunta: sem auxiliar, sem drama",
+      "mood": "feliz",
+      "body": "Boa notícia: o to be é o único verbo do inglês básico que **não precisa de auxiliar** para negar ou perguntar. Para negar, coloca **not** depois dele. Para perguntar, inverte a ordem: o verbo vai para a frente.\n\nCompara com \"do you like\" ou \"does she work\" — esses precisam do do/does. O to be resolve sozinho.",
+      "examples": [
+        { "en": "I am not hungry.", "pt": "Não estou com fome.", "note": "not depois do verbo" },
+        { "en": "Are you from Belo Horizonte?", "pt": "Você é de Belo Horizonte?", "note": "verbo antes do sujeito = pergunta" },
+        { "en": "Is she a teacher? — No, she isn't.", "pt": "Ela é professora? — Não, não é.", "note": "resposta curta repete o to be" }
+      ],
+      "ptAnalogy": "",
+      "tip": "Resposta curta em inglês nunca é só \"yes\" ou \"no\": é **Yes, I am** / **No, I'm not**. Soa mais natural e mais educado.",
+      "quiz": [
+        {
+          "question": "Qual é a pergunta correta?",
+          "options": ["Do you are tired?", "You are tired?", "Are you tired?", "Are tired you?"],
+          "correctIndex": 2,
+          "explanation": "O to be inverte com o sujeito: **Are you**. \"Do you are\" é o erro clássico do brasileiro que aprendeu o do/does e tenta usar em tudo — com o to be ele sobra."
+        }
+      ]
+    },
+    {
+      "heading": "Idade, fome, frio: onde o português te engana",
+      "mood": "triste",
+      "body": "Aqui mora a pegadinha número um. Em português a gente **tem** 20 anos, **tem** fome, **tem** frio. Em inglês, tudo isso é **to be**: você **é** 20 anos, você **está** com fome.\n\nO cérebro traduz \"eu tenho 25 anos\" para \"I have 25 years\" — e o nativo entende, mas soa como quem colecionou 25 anos numa gaveta. O correto é **I am 25 (years old)**.",
+      "examples": [
+        { "en": "I am 25 years old.", "pt": "Eu tenho 25 anos.", "note": "não é \"I have 25 years\"" },
+        { "en": "We are hungry.", "pt": "Estamos com fome.", "note": "não é \"we have hunger\"" },
+        { "en": "He is cold.", "pt": "Ele está com frio.", "note": "" }
+      ],
+      "ptAnalogy": "Regra mental: se em português é \"ter\" + sensação ou idade (ter fome, ter sede, ter medo, ter X anos), em inglês troca por **to be** + adjetivo. Ter só continua ter quando é posse de verdade: I have a car.",
+      "tip": "",
+      "quiz": [
+        {
+          "question": "Escolha a frase correta:",
+          "options": ["I have 30 years old.", "I am 30 years old.", "I have 30 years.", "I am have 30 years."],
+          "correctIndex": 1,
+          "explanation": "Idade em inglês é **to be**: I am 30. \"Years old\" pode ficar ou sair, mas o \"have\" não entra nunca."
+        }
+      ]
+    }
+  ],
+  "mistakes": [
+    { "wrong": "I have 20 years.", "right": "I am 20 years old.", "why": "Idade usa to be, não have. Tradução literal do \"tenho\"." },
+    { "wrong": "Do you are a student?", "right": "Are you a student?", "why": "O to be não usa do/does: ele mesmo vai para a frente na pergunta." },
+    { "wrong": "She have hungry.", "right": "She is hungry.", "why": "Fome, sede, frio e medo são estados — to be + adjetivo." },
+    { "wrong": "I no am tired.", "right": "I am not tired.", "why": "O not vem DEPOIS do verbo, e é not, não no." }
+  ],
+  "summary": [
+    "To be faz o papel de ser E estar: você nunca precisa escolher.",
+    "No presente ele tem três formas: am (I), is (he/she/it), are (you/we/they).",
+    "Negativa é to be + not; pergunta é to be antes do sujeito. Sem do/does.",
+    "Idade, fome, sede, frio e medo usam to be, não have.",
+    "Na fala, use as contrações: I'm, he's, you're, isn't, aren't."
+  ],
+  "finalQuiz": [
+    { "question": "Complete: \"We ____ from Brazil.\"", "options": ["am", "is", "are", "be"], "correctIndex": 2, "explanation": "We pede are." },
+    { "question": "Qual frase está correta?", "options": ["He are my friend.", "He is my friend.", "He am my friend.", "He be my friend."], "correctIndex": 1, "explanation": "He → is." },
+    { "question": "Transforme em negativa: \"They are at work.\"", "options": ["They no are at work.", "They don't are at work.", "They are not at work.", "They not are at work."], "correctIndex": 2, "explanation": "Not vem depois do to be: are not (ou aren't)." },
+    { "question": "Como perguntar \"Ela está cansada?\"", "options": ["Is she tired?", "Does she tired?", "She is tired?", "Is tired she?"], "correctIndex": 0, "explanation": "Inverte: Is she...? Sem does." },
+    { "question": "\"Eu tenho 18 anos\" em inglês é:", "options": ["I have 18 years.", "I am 18 years old.", "I have 18 years old.", "I am have 18."], "correctIndex": 1, "explanation": "Idade é to be." }
+  ]
+}
