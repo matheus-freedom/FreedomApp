@@ -1,4 +1,5 @@
 const { GoogleGenAI, Modality } = require("@google/genai");
+const { buildTts, accentOfVoice } = require("./lib/tts-speakers");
 
 const ALLOWED_ORIGINS = [
   "https://freedom.app.br",
@@ -62,16 +63,17 @@ exports.handler = async (event) => {
 
     if (action === "generateAudio") {
       const { text, voiceName } = payload;
+      // Diálogo de 2 personagens ("Nome: fala") → uma voz por
+      // personagem, com o gênero deduzido do nome e o sotaque
+      // acompanhando a voz que o aluno escolheu. Palavra solta,
+      // narração ou texto corrido → a voz única de sempre.
+      const tts = buildTts(text, { accent: accentOfVoice(voiceName), fallbackVoice: voiceName });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text }] }],
+        contents: tts.contents,
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName },
-            },
-          },
+          speechConfig: tts.speechConfig,
         },
       });
       const audioPart = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);

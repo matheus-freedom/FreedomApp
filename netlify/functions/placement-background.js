@@ -14,6 +14,7 @@
 // ============================================================
 
 const { shuffleQuestion } = require("./lib/shuffle");
+const { buildTts } = require("./lib/tts-speakers");
 const { GoogleGenAI, Modality } = require("@google/genai");
 const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -141,14 +142,15 @@ const pcmToWav = (pcmBuffer, sampleRate = 24000, channels = 1, bitsPerSample = 1
 
 // ── Gera UM áudio TTS e sobe pro Storage; devolve a URL pública ─
 const generateAndUploadAudio = async (ai, bucket, script, jobId, level) => {
+  // Diálogos ganham uma voz por personagem (gênero pelo nome);
+  // monólogos seguem com a voz única — ver lib/tts-speakers.js.
+  const tts = buildTts(script, { accent: "American", fallbackVoice: "Kore" });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
-    contents: [{ parts: [{ text: script }] }],
+    contents: tts.contents,
     config: {
       responseModalities: [Modality.AUDIO],
-      speechConfig: {
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
-      },
+      speechConfig: tts.speechConfig,
     },
   });
   const audioPart = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);

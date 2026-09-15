@@ -27,7 +27,11 @@ const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
 const { verifyBankId } = require("./lib/journey-sign");
+const { AUDIO_VERSION, buildTts } = require("./lib/tts-speakers");
 
+// Voz usada quando o roteiro NÃO é um diálogo de 2 personagens
+// (narração, anúncio, podcast). Diálogos ganham uma voz por
+// personagem, com o gênero deduzido do nome — ver lib/tts-speakers.js.
 const VOICE = "Kore";
 // Quantas vezes tentar antes de desistir de um roteiro problemático.
 const MAX_FAILS = 3;
@@ -101,7 +105,12 @@ exports.handler = async (event) => {
     const data = snap.data();
     const script = data?.content?.listeningScript;
     if (!script) return { statusCode: 400, body: "sem roteiro" };
-    if (data?.content?.audioUrl) return { statusCode: 200, body: "já existe" };
+    // "Já existe" só vale se o áudio for da versão atual. Áudio de
+    // versão anterior (voz única para diálogos) é regenerado — é
+    // assim que os exercícios antigos do banco são corrigidos.
+    if (data?.content?.audioUrl && (data?.audioVersion || 1) >= AUDIO_VERSION) {
+      return { statusCode: 200, body: "já existe" };
+    }
 
     // Trava contra duas gerações simultâneas + desistência após
     // MAX_FAILS. Sem o contador, um roteiro que o TTS não consegue
@@ -112,27 +121,37 @@ exports.handler = async (event) => {
     const claimed = await db.runTransaction(async (tx) => {
       const s = await tx.get(ref);
       const d = s.data() || {};
-      if (d.content?.audioUrl) return false;
-      if ((d.audioFailCount || 0) >= MAX_FAILS) return false;
+      const upToDate = d.content?.audioUrl && (d.audioVersion || 1) >= AUDIO_VERSION;
+      if (upToDate) return false;
+      // Contador de falhas vale por versão: o áudio v1 pode ter
+      // desistido por um problema que o código novo não tem mais.
+      const fails = (d.audioVersion || 1) >= AUDIO_VERSION ? (d.audioFailCount || 0) : 0;
+      if (fails >= MAX_FAILS) return false;
       if (d.audioLockAt && Date.now() - d.audioLockAt < LOCK_MS) return false;
-      tx.update(ref, { audioLockAt: Date.now() });
+      tx.update(ref, { audioLockAt: Date.now(), audioFailCount: fails });
       return true;
     });
     if (!claimed) return { statusCode: 200, body: "em andamento, pronto ou desistido" };
 
+    // Diálogo de 2 personagens → uma voz por personagem, gênero
+    // deduzido do nome; qualquer outro formato → voz única (VOICE).
+    const tts = buildTts(script, { accent: "American", fallbackVoice: VOICE });
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: script }] }],
+      contents: tts.contents,
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE } } },
+        speechConfig: tts.speechConfig,
       },
     });
     const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
     if (!part?.inlineData?.data) throw new Error("TTS não retornou áudio.");
 
-    const filePath = `journey_audio/${bankId}.wav`;
+    // O arquivo novo vai num caminho VERSIONADO. Gravar por cima do
+    // caminho antigo não daria certo: o Storage serve com cache
+    // público e navegadores continuariam tocando o áudio velho.
+    const filePath = `journey_audio/v${AUDIO_VERSION}/${bankId}.wav`;
     const file = bucket.file(filePath);
     await file.save(pcmToWav(Buffer.from(part.inlineData.data, "base64")), {
       metadata: { contentType: "audio/wav" },
@@ -140,8 +159,14 @@ exports.handler = async (event) => {
     });
     const audioUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-    await ref.update({ "content.audioUrl": audioUrl, audioLockAt: null, audioFailCount: 0, audioReadyAt: Date.now() });
-    console.log("journey-audio pronto:", bankId);
+    await ref.update({ "content.audioUrl": audioUrl, audioVersion: AUDIO_VERSION, audioLockAt: null, audioFailCount: 0, audioReadyAt: Date.now() });
+
+    // Remove o arquivo antigo (voz errada) do Storage — pedido do
+    // Matheus. Best-effort: se a exclusão falhar, o arquivo fica
+    // órfão mas ninguém mais aponta para ele.
+    await bucket.file(`journey_audio/${bankId}.wav`).delete().catch(() => {});
+
+    console.log("journey-audio pronto:", bankId, tts.multi ? `(2 vozes: ${tts.speakers.map(s => `${s.speaker}=${s.voiceName}`).join(", ")})` : "(voz única)");
     return { statusCode: 200, body: audioUrl };
   } catch (error) {
     console.error("journey-audio:", error);

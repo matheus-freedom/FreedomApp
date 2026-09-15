@@ -32,6 +32,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { resolvePosition, canAccess, buildSeasonNodes, LEVELS } = require("./lib/journey-core");
 const { signBankId } = require("./lib/journey-sign");
+const { AUDIO_VERSION } = require("./lib/tts-speakers");
 const { shuffleQuestion } = require("./lib/shuffle");
 
 const MODEL = "gemini-3.5-flash";
@@ -176,7 +177,7 @@ ${varietyBlock(journeyId)}`;
     const words = { A1: "70 a 100", A2: "100 a 140", B1: "140 a 190", B2: "190 a 250", C1: "250 a 320" }[level];
     return {
       schema: LISTENING_SCHEMA, system: sys,
-      contents: `Escreva o ROTEIRO de um áudio em inglês (será lido por um narrador de voz sintética, então use só texto corrido ou falas no formato "Nome: fala", sem rubricas entre parênteses) de ${words} palavras, nível ${level}, sobre o tema "${vocab}", usando várias vezes a estrutura "${grammar}". Formatos possíveis: conversa entre duas pessoas, mensagem de voz, anúncio, mini-podcast. Depois crie ${QUESTIONS_PER_QUIZ} questões de compreensão auditiva de múltipla escolha (detalhes específicos, ideia geral, inferência e 2 sobre a gramática "${grammar}").`,
+      contents: `Escreva o ROTEIRO de um áudio em inglês (será lido por vozes sintéticas, então use só texto corrido ou falas no formato "Nome: fala" no começo da linha, sem rubricas entre parênteses) de ${words} palavras, nível ${level}, sobre o tema "${vocab}", usando várias vezes a estrutura "${grammar}". Formatos possíveis: conversa entre duas pessoas, mensagem de voz, anúncio, mini-podcast. Se for conversa, use EXATAMENTE 2 personagens com primeiros nomes ingleses comuns e de gênero inequívoco (ex.: Tom, David, Sarah, Emma) — cada personagem ganhará uma voz sintética do gênero do nome. Depois crie ${QUESTIONS_PER_QUIZ} questões de compreensão auditiva de múltipla escolha (detalhes específicos, ideia geral, inferência e 2 sobre a gramática "${grammar}").`,
     };
   }
   // writing
@@ -349,9 +350,20 @@ exports.handler = async (event) => {
     const snap = await ref.get();
     if (snap.exists && snap.data()?.content) {
       const cachedContent = snap.data().content;
-      // Listening antigo que ficou sem áudio (a geração falhou na
-      // primeira vez): tenta de novo em segundo plano.
-      if (kind === "listening" && cachedContent.listeningScript && !cachedContent.audioUrl) await triggerAudio(bankId);
+      // Listening sem áudio (a geração falhou na primeira vez) OU
+      // com áudio de versão antiga (voz única feminina em diálogos):
+      // dispara a (re)geração em segundo plano.
+      if (kind === "listening" && cachedContent.listeningScript) {
+        const audioVersion = snap.data().audioVersion || 1;
+        if (!cachedContent.audioUrl || audioVersion < AUDIO_VERSION) {
+          await triggerAudio(bankId);
+          // Enquanto o áudio novo não fica pronto, é melhor o aluno
+          // ouvir o TTS do navegador (já com vozes por personagem)
+          // do que o arquivo antigo com a voz errada — então a URL
+          // velha não é entregue.
+          if (cachedContent.audioUrl && audioVersion < AUDIO_VERSION) delete cachedContent.audioUrl;
+        }
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ bankId, cached: true, content: cachedContent }) };
     }
 
