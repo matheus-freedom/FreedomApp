@@ -60,7 +60,11 @@ export const periodRange = (period: PeriodKey, now: number = Date.now()): Range 
 };
 
 const inRange = (ts: number, from: number, to: number) => ts >= from && ts < to;
-const pct = (h: AHistory) => (h.total > 0 ? Math.round((h.score / h.total) * 100) : 0);
+// Nota em %, sempre entre 0 e 100. O teto existe porque o histórico
+// real tem registros de teste com nota absurda (ex.: 999999 de 10, dos
+// testes antifraude do XP) — um único deles levava a "nota média" do
+// painel para 8841%.
+const pct = (h: AHistory) => (h.total > 0 ? Math.max(0, Math.min(100, Math.round((h.score / h.total) * 100))) : 0);
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 const delta = (cur: number, prev: number): number | null => (prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null);
 
@@ -387,6 +391,22 @@ export const buildStudentDetail = (sessions: ASession[], history: AHistory[], no
 };
 
 // ── Utilidades de exibição ─────────────────────────────────────
+// O campo "age" do cadastro guarda, na prática, a DATA DE NASCIMENTO
+// ("1994-09-15") na maioria das contas e um número em algumas antigas.
+// Devolve "31 anos" nos dois casos, ou '' se não der para entender.
+export const ageLabel = (age: string | undefined | null, now: number = Date.now()): string => {
+  if (!age) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(age);
+  if (m) {
+    const today = new Date(now - SP_OFFSET_MS);
+    let years = today.getUTCFullYear() - Number(m[1]);
+    const beforeBirthday = today.getUTCMonth() + 1 < Number(m[2]) || (today.getUTCMonth() + 1 === Number(m[2]) && today.getUTCDate() < Number(m[3]));
+    if (beforeBirthday) years--;
+    return years >= 0 && years < 120 ? `${years} anos` : '';
+  }
+  return /^\d{1,3}$/.test(age.trim()) ? `${age.trim()} anos` : '';
+};
+
 export const fmtMinutes = (min: number): string => {
   if (min < 1) return '< 1 min';
   if (min < 60) return `${Math.round(min)} min`;
