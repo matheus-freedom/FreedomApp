@@ -28,6 +28,17 @@ export enum AccessType {
   CHALLENGE_ONLY = 'challenge_only'
 }
 
+// ── Liberação de acesso (substitui a antiga palavra-chave) ────
+// Situação da conta perante o administrador:
+//   new       → acabou de criar a conta; ainda não pediu acesso
+//   pending   → clicou em "Solicitar acesso"; aguardando o admin
+//   approved  → liberado
+//   rejected  → o admin recusou o pedido
+//   blocked   → o admin suspendeu uma conta que já usava o app
+// Contas criadas ANTES desta mudança não têm o campo: ausência do
+// campo é tratada como 'approved' (entram livremente, como pedido).
+export type AccessStatus = 'new' | 'pending' | 'approved' | 'rejected' | 'blocked';
+
 // ══════════════════════════════════════════════════════════════
 // NIVELAMENTO POR HABILIDADE — fundação de dados (Etapa 1)
 // ══════════════════════════════════════════════════════════════
@@ -306,6 +317,14 @@ export interface UserSession {
   notifications?: AdminNotification[];
   accessType?: AccessType;
   isAdmin?: boolean;
+  // ── Liberação de acesso (ver AccessStatus acima) ──────────
+  accessStatus?: AccessStatus;
+  accessRequestedAt?: number;
+  accessDecidedAt?: number;
+  accessDecidedBy?: string;
+  blockReason?: string;
+  // Data de criação da conta (só existe nas contas novas).
+  createdAt?: number;
 }
 
 export interface DirectMessage {
@@ -339,7 +358,7 @@ export interface UserChallenge {
 }
 
 export interface AppState {
-  status: 'login' | 'keyword_check' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'gapfill' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history' | 'journey' | 'fred_explains' | 'fred_lesson';
+  status: 'login' | 'access_gate' | 'guide_selection' | 'selection' | 'loading' | 'quiz' | 'writing' | 'gapfill' | 'results' | 'error' | 'plan_setup' | 'dashboard' | 'placement_test' | 'placement_hub' | 'placement_result' | 'level_up' | 'my_activities' | 'profile' | 'admin_panel' | 'challenges' | 'chat' | 'ranking_history' | 'journey' | 'fred_explains' | 'fred_lesson';
   user: UserSession | null;
   level: Level | null;
   theme: Theme | null;
@@ -348,6 +367,9 @@ export interface AppState {
   currentQuestionIndex: 0;
   score: number;
   errorMessage?: string;
+  // O que a tela de erro oferece além de "Voltar ao Início":
+  // recarregar a página ou tentar registrar o resultado de novo.
+  errorAction?: 'reload' | 'retry_finish';
   studyPlan: StudyPlan | null;
   activityHistory: ActivityRecord[];
   activeTaskId?: string;
@@ -375,6 +397,11 @@ export interface AppState {
   fredLesson?: import('./fredExplains').CatalogEntry | null;
   // Nível pré-filtrado ao abrir o catálogo (ex.: vindo da Journey).
   fredInitialLevel?: Level | null;
+  // ── Retomada de exercício ─────────────────────────────────
+  // Preenchido quando o exercício na tela veio de um rascunho salvo
+  // (recarga da aba, queda por inatividade): diz às telas de
+  // exercício de qual questão/nota/texto recomeçar.
+  resumeProgress?: { index?: number; score?: number; text?: string } | null;
 }
 
 export interface StudyPlanInput {

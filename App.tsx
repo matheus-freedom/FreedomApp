@@ -5,7 +5,9 @@ import QuizScreen from './components/QuizScreen';
 import WritingScreen from './components/WritingScreen';
 import ResultsScreen from './components/ResultsScreen';
 import LoginScreen from './components/LoginScreen';
-import KeywordScreen from './components/KeywordScreen';
+import AccessGateScreen from './components/AccessGateScreen';
+import AccessRequestsBanner from './components/AccessRequestsBanner';
+import AdminMessageModal from './components/AdminMessageModal';
 import StudyPlanSetup from './components/StudyPlanSetup';
 import DashboardScreen from './components/DashboardScreen';
 import GuideSelectionScreen from './components/GuideSelectionScreen';
@@ -33,6 +35,9 @@ import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle, Zap, Coins } from 'lucide-react';
 import { ToastHost, showToast } from './components/Toast';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyUsage, getDailyAllowance } from './dailyLimit';
+import { listenForActivity, msSinceLastActivity, pingActivity } from './services/activity';
+import { saveDraft, loadDraft, updateDraftProgress, clearDraft, DraftScreen } from './services/activityDraft';
+import { tracker } from './services/tracker';
 
 // Quantas versões diferentes de cada tópico o banco acumula antes de
 // passar a reaproveitar em vez de gerar. Mais versões = menos repetição
@@ -41,42 +46,46 @@ import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyUsage, getDailyAllowance } from 
 const ACTIVITY_VARIATIONS = 3;
 const INACTIVITY_LIMIT = 15 * 60 * 1000;
 
-// ── PALAVRA-CHAVE: validade em dias ───────────────────────────
-// O aluno valida a palavra-chave uma vez e não precisa digitar de
-// novo até passarem KEYWORD_VALIDITY_DAYS dias. A data fica gravada
-// no localStorage do navegador (não no Firestore).
-const KEYWORD_VALIDITY_DAYS = 30;
+// ── LIBERAÇÃO DE ACESSO ───────────────────────────────────────
+// A antiga tela "Acesso Restrito" (palavra-chave) saiu. Agora:
+//   • conta ANTIGA (sem o campo accessStatus) → entra livremente;
+//   • conta NOVA → vê "Solicitar acesso" e espera o admin aprovar;
+//   • conta BLOQUEADA/recusada → fica na tela de aviso.
+const isAdminUser = (user: UserSession) => user.username.toLowerCase() === 'admin' || user.isAdmin === true;
+const isApproved = (user: UserSession) => isAdminUser(user) || (user.accessStatus ?? 'approved') === 'approved';
 
-// Verifica se o usuário PRECISA ver a tela de palavra-chave.
-// Retorna true se precisa mostrar, false se pode pular.
-const needsKeywordCheck = (userId: string): boolean => {
-  const lastCheck = localStorage.getItem(`keyword_validated_${userId}`);
-  if (!lastCheck) return true;                 // nunca validou → mostra
-  const lastDate = parseInt(lastCheck, 10);
-  if (isNaN(lastDate)) return true;            // dado corrompido → mostra por segurança
-  const daysSince = (Date.now() - lastDate) / (1000 * 60 * 60 * 24);
-  return daysSince >= KEYWORD_VALIDITY_DAYS;   // passou da validade → mostra de novo
+// Tipo de acesso (completo x só desafios). Vale o que o admin gravou
+// no documento; para contas antigas, que escolheram isso pela
+// palavra-chave, continua valendo o que ficou salvo no navegador.
+const withAccessType = (user: UserSession): UserSession => {
+  if (user.accessType) return user;
+  const stored = localStorage.getItem(`keyword_access_${user.userId}`);
+  return { ...user, accessType: stored === AccessType.CHALLENGE_ONLY ? AccessType.CHALLENGE_ONLY : AccessType.FULL };
 };
 
-// Recupera o accessType salvo na última validação (para quem pula a tela).
-// Se não houver nada salvo, retorna FULL como padrão seguro.
-const getStoredAccessType = (userId: string): AccessType => {
-  const stored = localStorage.getItem(`keyword_access_${userId}`);
-  if (stored === AccessType.CHALLENGE_ONLY) return AccessType.CHALLENGE_ONLY;
-  return AccessType.FULL;
-};
-
-// Decide o status pós-login de um usuário comum (não-admin),
-// levando em conta se a palavra-chave ainda é necessária.
 const resolvePostLoginStatus = (user: UserSession): AppState['status'] => {
-  if (user.username === 'admin' || user.isAdmin) {
-    return user.guide ? 'selection' : 'guide_selection';
-  }
-  if (needsKeywordCheck(user.userId)) {
-    return 'keyword_check';
-  }
-  // Já validado dentro da validade → segue o destino normal pós-validação
+  if (!isApproved(user)) return 'access_gate';
   return user.guide ? 'selection' : 'guide_selection';
+};
+
+// ── RETOMADA DE EXERCÍCIO ─────────────────────────────────────
+// Monta o pedaço de estado para onde o aluno vai ao entrar no app.
+// Se o destino é a tela inicial e existe um rascunho válido (aba
+// recarregada, queda por inatividade...), reabre o exercício no
+// ponto em que parou, em vez de jogar o progresso fora.
+const landingState = (user: UserSession): Partial<AppState> => {
+  const status = resolvePostLoginStatus(user);
+  if (status === 'access_gate') return { status };
+  tracker.start(user);
+  if (status !== 'selection') return { status };
+  const draft = loadDraft(user.userId);
+  if (!draft) return { status };
+  tracker.event('ex_resume');
+  return {
+    status: draft.screen, level: draft.level, theme: draft.theme, subTopic: draft.subTopic,
+    content: draft.content, journeyContext: draft.journeyContext ?? null,
+    score: draft.progress.score || 0, resumeProgress: draft.progress,
+  };
 };
 
 const TIER_THRESHOLDS = [
@@ -106,7 +115,9 @@ const App: React.FC = () => {
   const [showExtraModal, setShowExtraModal] = useState(false);
   const [buyingExtra, setBuyingExtra] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Resultado que não conseguiu ser registrado (queda de internet no
+  // fim do exercício): fica guardado para o botão "Tentar de novo".
+  const pendingFinishRef = useRef<{ score: number; total: number } | null>(null);
   // Muda a cada exercício de trilha concluído: é o sinal para a
   // JourneyScreen reler o progresso no servidor ao voltar do exercício.
   const [journeyReload, setJourneyReload] = useState(0);
@@ -122,93 +133,120 @@ const App: React.FC = () => {
   const isStartingRef = useRef(false);
 
   const handleLogout = useCallback(async () => {
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     // Libera a trava de início: o logout não recarrega a página, então
     // uma trava esquecida aqui deixaria o botão "Iniciar Prática"
     // permanentemente morto para o próximo login na mesma aba.
     isStartingRef.current = false;
+    pendingFinishRef.current = null;
     localStorage.removeItem('freedom_postgres_session');
+    // Grava o acesso ANTES de sair: depois do signOut o Firestore já
+    // não aceita escrita deste aluno. (O rascunho do exercício NÃO é
+    // apagado aqui, de propósito — é ele que permite a retomada.)
+    await tracker.stop();
     await api.logout();
-    setState(p => ({ ...p, user: null, status: 'login', studyPlan: null, activityHistory: [] }));
+    setState(p => ({ ...p, user: null, status: 'login', studyPlan: null, activityHistory: [], content: null, resumeProgress: null, journeyContext: null }));
   }, []);
 
-  const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-    if (state.user) {
-      inactivityTimerRef.current = setTimeout(() => {
-        showToast("Sessão expirada por inatividade. Faça login de novo.", 'info', 7000);
-        handleLogout();
-      }, INACTIVITY_LIMIT);
-    }
-  }, [state.user, handleLogout]);
-
+  // ── Restauração do login ──────────────────────────────────────
+  // Antes, QUALQUER falha ao ler o perfil (uma oscilação de internet)
+  // jogava o aluno na tela de login mesmo estando autenticado. Agora
+  // são 3 tentativas com espera; se mesmo assim falhar, aparece uma
+  // tela de erro com "Tentar de novo". Tela de login, só quando o
+  // perfil realmente não existe.
   useEffect(() => {
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
     const unsubscribe = api.subscribeToAuthChanges(async (firebaseUser) => {
-      if (firebaseUser) {
+      if (!firebaseUser) { setState(prev => ({ ...prev, status: 'login', user: null })); return; }
+      const waits = [1500, 3000];
+      for (let attempt = 0; ; attempt++) {
         try {
-          const userProfile = await api.getUserProfile(firebaseUser.uid);
-          if (userProfile) {
-            const [plan, history, challenges] = await Promise.all([
-              api.getPlan(userProfile.userId),
-              api.getHistory(userProfile.userId),
-              api.getChallenges()
-            ]);
-            const invite = challenges.find(c => c.status === 'active' && (c.pendingInvites || []).includes(userProfile.userId));
-            if (invite) setPendingChallenge(invite);
-
-            // Se vai pular a palavra-chave, recupera o accessType salvo
-            // para não deixar a permissão indefinida.
-            const willSkipKeyword = !(userProfile.username === 'admin' || userProfile.isAdmin) && !needsKeywordCheck(userProfile.userId);
-            const recoveredUser = willSkipKeyword
-              ? { ...userProfile, accessType: getStoredAccessType(userProfile.userId) }
-              : userProfile;
-
-            setState(prev => ({
-              ...prev, user: recoveredUser, studyPlan: plan, activityHistory: history,
-              status: resolvePostLoginStatus(userProfile)
-            }));
-          } else { setState(prev => ({ ...prev, status: 'login' })); }
-        } catch (e) { setState(prev => ({ ...prev, status: 'login' })); }
-      } else {
-        const savedSession = localStorage.getItem('freedom_postgres_session');
-        if (savedSession) {
-           const storedUser = JSON.parse(savedSession);
-           if (storedUser.username === 'admin') {
-             const admin = await api.login('admin', 'f1');
-             if (admin) {
-                const [plan, history] = await Promise.all([api.getPlan(admin.userId), api.getHistory(admin.userId)]);
-                setState(prev => ({ ...prev, user: admin, studyPlan: plan, activityHistory: history, status: 'selection' }));
-                return;
-             }
-           }
+          const profile = await api.getUserProfile(firebaseUser.uid);
+          if (!profile) { setState(prev => ({ ...prev, status: 'login' })); return; }
+          const user = withAccessType(profile);
+          // Conta ainda não liberada: nem carrega plano/histórico.
+          if (!isApproved(user)) { setState(prev => ({ ...prev, user, status: 'access_gate' })); return; }
+          const [plan, history, challenges] = await Promise.all([
+            api.getPlan(user.userId), api.getHistory(user.userId), api.getChallenges(),
+          ]);
+          const invite = challenges.find(c => c.status === 'active' && (c.pendingInvites || []).includes(user.userId));
+          if (invite) setPendingChallenge(invite);
+          setState(prev => ({ ...prev, user, studyPlan: plan, activityHistory: history, ...landingState(user) }));
+          return;
+        } catch (e) {
+          if (attempt >= waits.length) {
+            setState(prev => ({ ...prev, status: 'error', errorMessage: 'Não consegui carregar seu perfil — parece ser instabilidade na conexão. Seu progresso está salvo.', errorAction: 'reload' }));
+            return;
+          }
+          await sleep(waits[attempt]);
         }
-        setState(prev => ({ ...prev, status: 'login' }));
       }
     });
     return () => unsubscribe();
   }, []);
 
+  // ── Logout por inatividade ────────────────────────────────────
+  // Mantém os 15 min, mas medindo AUSÊNCIA REAL: qualquer toque,
+  // rolagem, digitação ou áudio tocando renova o prazo (ver
+  // services/activity.ts). A checagem roda a cada 30s. O efeito
+  // depende só de "tem alguém logado?" (!!state.user) — se dependesse
+  // do objeto user, cada ganho de XP religaria tudo à toa.
+  const isLoggedIn = !!state.user;
   useEffect(() => {
-    if (state.user) {
-      window.addEventListener('mousemove', resetInactivityTimer);
-      window.addEventListener('mousedown', resetInactivityTimer);
-      window.addEventListener('keydown', resetInactivityTimer);
-      window.addEventListener('touchstart', resetInactivityTimer);
-      resetInactivityTimer();
-    }
-    return () => {
-      window.removeEventListener('mousemove', resetInactivityTimer);
-      window.removeEventListener('mousedown', resetInactivityTimer);
-      window.removeEventListener('keydown', resetInactivityTimer);
-      window.removeEventListener('touchstart', resetInactivityTimer);
-    };
-  }, [state.user, resetInactivityTimer]);
+    if (!isLoggedIn) return;
+    const stopListening = listenForActivity();
+    const timer = setInterval(() => {
+      if (msSinceLastActivity() >= INACTIVITY_LIMIT) {
+        showToast('Sessão encerrada por inatividade. Se você estava num exercício, ele foi salvo: é só entrar de novo para continuar.', 'info', 9000);
+        handleLogout();
+      }
+    }, 30_000);
+    return () => { stopListening(); clearInterval(timer); };
+  }, [isLoggedIn, handleLogout]);
+
+  // Trocar de tela é sinal de vida e também o que alimenta o
+  // relatório de "abas mais acessadas" do painel admin.
+  useEffect(() => {
+    pingActivity();
+    if (state.user && state.status !== 'login' && state.status !== 'access_gate') tracker.screen(state.status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
+  // ── Bloqueio em tempo real ────────────────────────────────────
+  // Escuta o próprio documento: se o admin bloquear o aluno enquanto
+  // ele está usando o app, a tela de aviso entra na hora.
+  const watchedUserId = state.user && !isAdminUser(state.user) && state.status !== 'access_gate' ? state.user.userId : null;
+  useEffect(() => {
+    if (!watchedUserId) return;
+    return api.subscribeToUser(watchedUserId, (fresh) => {
+      if (!fresh) return;
+      if (!isApproved(fresh)) {
+        void tracker.stop();
+        setState(p => p.user ? ({ ...p, user: { ...p.user, accessStatus: fresh.accessStatus, blockReason: fresh.blockReason }, status: 'access_gate', content: null }) : p);
+        return;
+      }
+      // Recado novo do admin chega em tempo real. Só mexe no estado se
+      // a lista mudou de verdade, para não redesenhar a tela à toa.
+      setState(p => {
+        if (!p.user) return p;
+        const sig = (l?: { id: string; read: boolean }[]) => (l || []).map(n => `${n.id}${n.read ? 1 : 0}`).join(',');
+        return sig(p.user.notifications) === sig(fresh.notifications) ? p : { ...p, user: { ...p.user, notifications: fresh.notifications } };
+      });
+    });
+  }, [watchedUserId]);
+
+  // Recados não lidos dos últimos 14 dias. O corte de data existe
+  // porque os "parabéns" do ranking vêm sendo gravados há meses sem
+  // nunca aparecerem — sem o corte, o aluno abriria o app e levaria
+  // uma fila de avisos velhos de uma vez.
+  const unreadMessages = (state.user?.notifications || [])
+    .filter(n => !n.read && Date.now() - n.date < 14 * 24 * 60 * 60 * 1000)
+    .sort((a, b) => a.date - b.date);
 
   const handleHome = useCallback(() => {
     if (state.user) {
       // Libera a trava ao voltar para a tela inicial
       isStartingRef.current = false;
-      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null, fredLesson: null }));
+      setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null, fredLesson: null, resumeProgress: null, errorAction: undefined }));
     }
   }, [state.user]);
 
@@ -235,13 +273,19 @@ const App: React.FC = () => {
   // que a Journey existe para criar.
   const handleExitActivity = useCallback(() => {
     isStartingRef.current = false;
+    if (state.user) {
+      // Saiu pelo botão Início no MEIO do exercício: o rascunho perde
+      // o sentido (ele escolheu sair) e conta como abandono no painel.
+      if (state.status === 'quiz' || state.status === 'gapfill' || state.status === 'writing') tracker.event('ex_abandon');
+      clearDraft(state.user.userId);
+    }
     if (state.journeyContext) {
       setJourneyReload(n => n + 1);
-      setState(prev => ({ ...prev, status: 'journey', content: null, journeyContext: null, newTierReached: null }));
+      setState(prev => ({ ...prev, status: 'journey', content: null, journeyContext: null, newTierReached: null, resumeProgress: null }));
     } else {
       handleHome();
     }
-  }, [state.journeyContext, handleHome]);
+  }, [state.journeyContext, state.user, state.status, handleHome]);
 
   // Devolve TRUE quando o exercício realmente começou a ser preparado e
   // FALSE quando o pedido foi ignorado (trava, limite diário, sem aluno).
@@ -261,12 +305,13 @@ const App: React.FC = () => {
     const dailyCount = getDailyUsage(state.user.gamification);
     if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
       // Em vez do popup do navegador: oferece o pacote extra de exercícios.
+      tracker.event('limit_hit');
       setShowExtraModal(true);
       isStartingRef.current = false;
       return false;
     }
 
-    setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined, journeyContext: null, loadingMessage: undefined }));
+    setState(prev => ({ ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined, journeyContext: null, loadingMessage: undefined, resumeProgress: null }));
     try {
       // Só reaproveita do banco quando o tópico já tem ACTIVITY_VARIATIONS
       // versões diferentes. Até lá, gera uma nova a cada vez, para o
@@ -306,13 +351,20 @@ const App: React.FC = () => {
       // iniciar outra atividade pelo guia Fred/Frida sem voltar ao início.
       isStartingRef.current = false;
 
+      // Rascunho para retomada + contagem no painel admin.
+      const screen: DraftScreen = theme === Theme.Writing ? 'writing' : 'quiz';
+      saveDraft(state.user.userId, { screen, level, theme, subTopic, content, journeyContext: null });
+      tracker.event('ex_start');
+      tracker.event(`ex_start_${theme}`);
+
       if (theme === Theme.Writing) setState(prev => ({ ...prev, user: applyCount(prev), status: 'writing', content, score: 0 }));
       else setState(prev => ({ ...prev, user: applyCount(prev), status: 'quiz', content, score: 0, currentQuestionIndex: 0 }));
       return true;
     } catch (error) {
       // Em caso de erro, libera a trava para o usuário poder tentar de novo
       isStartingRef.current = false;
-      setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : "Erro ao carregar atividade." }));
+      tracker.event('ex_generation_error');
+      setState(prev => ({ ...prev, status: 'error', errorAction: undefined, errorMessage: error instanceof Error ? error.message : "Erro ao carregar atividade." }));
       return false;
     }
   };
@@ -332,6 +384,7 @@ const App: React.FC = () => {
     const dailyCount = getDailyUsage(state.user.gamification);
     if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
       // Em vez do popup do navegador: oferece o pacote extra de exercícios.
+      tracker.event('limit_hit');
       setShowExtraModal(true);
       isStartingRef.current = false;
       return false;
@@ -346,7 +399,7 @@ const App: React.FC = () => {
     setState(prev => ({
       ...prev, status: 'loading', level, theme, subTopic, errorMessage: undefined,
       journeyContext: { journeyId, season, node: node.index, kind },
-      loadingMessage: 'Preparando seu exercício...',
+      loadingMessage: 'Preparando seu exercício...', resumeProgress: null,
     }));
 
     try {
@@ -366,6 +419,10 @@ const App: React.FC = () => {
       const nextStatus: AppState['status'] =
         kind === 'writing' ? (content.gapItems?.length ? 'gapfill' : 'writing') : 'quiz';
 
+      saveDraft(state.user.userId, { screen: nextStatus as DraftScreen, level, theme, subTopic, content, journeyContext: { journeyId, season, node: node.index, kind } });
+      tracker.event('ex_start');
+      tracker.event('ex_start_journey');
+
       setState(prev => ({
         ...prev, user: applyCount(prev), status: nextStatus, content,
         score: 0, currentQuestionIndex: 0, loadingMessage: undefined,
@@ -373,8 +430,9 @@ const App: React.FC = () => {
       return true;
     } catch (error) {
       isStartingRef.current = false;
+      tracker.event('ex_generation_error');
       setState(prev => ({
-        ...prev, status: 'error', loadingMessage: undefined,
+        ...prev, status: 'error', errorAction: undefined, loadingMessage: undefined,
         errorMessage: error instanceof Error ? error.message : 'Não consegui preparar este exercício. Tente novamente.',
       }));
       return false;
@@ -383,6 +441,7 @@ const App: React.FC = () => {
 
   const handleFinish = async (finalScore: number, total: number) => {
     if (!state.user) return;
+    pendingFinishRef.current = { score: finalScore, total };
     setState(prev => ({ ...prev, status: 'loading' }));
     try {
       // O servidor calcula o XP, aplica "só na 1ª vez" e o teto diário,
@@ -401,6 +460,12 @@ const App: React.FC = () => {
         // progresso do Step (melhor nota e estrelas).
         journey: state.journeyContext || undefined,
       });
+      // Registrado com sucesso: o rascunho cumpriu o papel dele.
+      pendingFinishRef.current = null;
+      clearDraft(state.user.userId);
+      tracker.event('ex_finish');
+      if (isRepeat) tracker.event('ex_repeat');
+
       let nextTarget: NextJourneyTarget | null = null;
       if (state.journeyContext) {
         setJourneyReload(n => n + 1);
@@ -447,7 +512,7 @@ const App: React.FC = () => {
       setState(prev => ({
         ...prev, status: leveledUp ? 'level_up' : 'results', score: finalScore, activityHistory: updatedHistory,
         user: updatedUser, lastXpGained: xpGained, lastFrGained: frGained, newTierReached: leveledUp ? newTier : null,
-        lastWasRepeat: isRepeat
+        lastWasRepeat: isRepeat, resumeProgress: null
       }));
 
       // A contagem já foi somada quando o exercício abriu, então NÃO se
@@ -456,8 +521,10 @@ const App: React.FC = () => {
       // um exercício ainda disponível.
       if (!state.user.gamification.isPro && state.user.gamification.dailyActivitiesCount >= getDailyAllowance(state.user.gamification)) setShowDailyLimitModal(true);
     } catch (error) {
-      // Falha de rede/servidor: mostra erro em vez de travar no "Loading".
-      setState(prev => ({ ...prev, status: 'error', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
+      // Falha de rede/servidor: mostra erro em vez de travar no "Loading",
+      // e a tela de erro oferece "Tentar registrar de novo" (a nota
+      // ficou guardada em pendingFinishRef; o exercício, no rascunho).
+      setState(prev => ({ ...prev, status: 'error', errorAction: 'retry_finish', errorMessage: error instanceof Error ? error.message : 'Não consegui registrar sua atividade. Tente novamente.' }));
     }
   };
 
@@ -494,6 +561,7 @@ const App: React.FC = () => {
       setState(p => p.user ? ({ ...p, user: { ...p.user, gamification: user.gamification } }) : p);
       setShowExtraModal(false);
       setShowDailyLimitModal(false);
+      tracker.event('extra_bought');
       showToast('Pacote comprado! Você ganhou +8 exercícios para hoje. 🎉', 'success');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Não consegui concluir a compra. Tente novamente.', 'error', 7000);
@@ -560,6 +628,19 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      {state.status === 'selection' && state.user && unreadMessages.length > 0 && (
+        <AdminMessageModal
+          key={unreadMessages[0].id}
+          notification={unreadMessages[0]}
+          remaining={unreadMessages.length - 1}
+          onRead={async (id) => {
+            const userId = state.user!.userId;
+            // Some da tela na hora; a gravação segue em segundo plano.
+            setState(p => p.user ? ({ ...p, user: { ...p.user, notifications: (p.user.notifications || []).map(n => n.id === id ? { ...n, read: true } : n) } }) : p);
+            try { await api.markNotificationRead(userId, id); } catch { /* reaparece no próximo login; sem drama */ }
+          }}
+        />
+      )}
       {state.status === 'level_up' && state.newTierReached && (
         <div className="fixed inset-0 z-[300] bg-[#222222]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in">
             <div className="relative mb-8"><PartyPopper className="w-24 h-24 text-yellow-400 animate-bounce" /><Sparkles className="absolute -top-4 -right-4 w-12 h-12 text-[#f7931e] animate-pulse" /></div>
@@ -591,34 +672,40 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[150] bg-[#222222]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"><Loader2 className="w-20 h-20 text-[#f7931e] animate-spin mb-6" /><h3 className="text-2xl font-black text-[#f7931e] mb-2 uppercase tracking-tighter">Loading...</h3><p className="text-gray-400 max-w-xs text-sm font-medium">Please wait a moment.</p></div>
       )}
       {state.status === 'error' && (
-        <div className="max-w-md mx-auto mt-20 p-8 bg-[#333333] border-2 border-red-500/30 rounded-3xl text-center animate-pop"><AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" /><p className="text-gray-400 mb-6">{state.errorMessage}</p><button onClick={handleHome} className="w-full py-4 bg-[#f7931e] text-[#222222] font-black rounded-2xl">Voltar ao Início</button></div>
+        <div className="max-w-md mx-auto mt-20 p-8 bg-[#333333] border-2 border-red-500/30 rounded-3xl text-center animate-pop"><AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" /><p className="text-gray-400 mb-6">{state.errorMessage}</p>
+          {state.errorAction === 'retry_finish' && pendingFinishRef.current && (
+            <button onClick={() => { const p = pendingFinishRef.current; if (p) handleFinish(p.score, p.total); }} className="w-full py-4 mb-3 bg-[#f7931e] text-[#222222] font-black rounded-2xl">Tentar registrar de novo</button>
+          )}
+          {state.errorAction === 'reload'
+            ? <button onClick={() => window.location.reload()} className="w-full py-4 bg-[#f7931e] text-[#222222] font-black rounded-2xl">Tentar de novo</button>
+            : <button onClick={handleHome} className={`w-full py-4 font-black rounded-2xl ${state.errorAction === 'retry_finish' ? 'bg-[#444444] text-white' : 'bg-[#f7931e] text-[#222222]'}`}>Voltar ao Início</button>}
+        </div>
       )}
       <main className="container mx-auto px-4">
-        {state.status === 'login' && <LoginScreen onLogin={async (user) => {
+        {state.status === 'login' && <LoginScreen onLogin={async (rawUser) => {
+          const user = withAccessType(rawUser);
+          // Conta nova/pendente/bloqueada: vai direto para a porta de entrada.
+          if (!isApproved(user)) { setState(p => ({ ...p, user, status: 'access_gate' })); return; }
           setState(p => ({ ...p, status: 'loading' }));
           const [plan, history] = await Promise.all([api.getPlan(user.userId), api.getHistory(user.userId)]);
-          localStorage.setItem('freedom_postgres_session', JSON.stringify(user));
-
-          // Se vai pular a palavra-chave, recupera o accessType salvo.
-          const willSkipKeyword = !(user.username === 'admin' || user.isAdmin) && !needsKeywordCheck(user.userId);
-          const recoveredUser = willSkipKeyword
-            ? { ...user, accessType: getStoredAccessType(user.userId) }
-            : user;
-
-          setState(p => ({ ...p, user: recoveredUser, studyPlan: plan, activityHistory: history, status: resolvePostLoginStatus(user) }));
+          setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, ...landingState(user) }));
         }} />}
-        {state.status === 'keyword_check' && (
-          <KeywordScreen onSuccess={(accessType) => {
-            if (state.user) {
-              // Carimba a data da validação e o tipo de acesso para os próximos 30 dias.
-              localStorage.setItem(`keyword_validated_${state.user.userId}`, Date.now().toString());
-              localStorage.setItem(`keyword_access_${state.user.userId}`, accessType);
-              const updatedUser = { ...state.user, accessType };
-              setState(p => ({ ...p, user: updatedUser, status: updatedUser.guide ? 'selection' : 'guide_selection' }));
-            }
-          }} onLogout={handleLogout} />
+        {state.status === 'access_gate' && state.user && (
+          <AccessGateScreen
+            user={state.user}
+            onLogout={handleLogout}
+            onApproved={async (fresh) => {
+              const user = withAccessType(fresh);
+              showToast('Seu acesso foi liberado. Bem-vindo(a) ao FreedomApp! 🎉', 'success', 6000);
+              const [plan, history] = await Promise.all([api.getPlan(user.userId), api.getHistory(user.userId)]);
+              setState(p => ({ ...p, user, studyPlan: plan, activityHistory: history, ...landingState(user) }));
+            }}
+          />
         )}
-        {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, status: 'selection' })); } }} />}
+        {state.status === 'guide_selection' && <GuideSelectionScreen onHome={handleHome} userName={state.user?.userName || ""} onSelect={async (g) => { if (state.user) { await api.updateGuide(state.user.userId, g); const updated = { ...state.user, guide: g }; setState(p => ({ ...p, user: updated, ...landingState(updated) })); } }} />}
+        {state.status === 'selection' && state.user && isAdminUser(state.user) && (
+          <AccessRequestsBanner onOpenPanel={() => setState(p => ({ ...p, status: 'admin_panel' }))} />
+        )}
         {state.status === 'selection' && state.user && (
           <SelectionScreen
             user={state.user}
@@ -734,14 +821,21 @@ const App: React.FC = () => {
         {/* Enquanto a Frida está desativada, passamos 'Fred' fixo em vez de
             state.user.guide: assim até quem escolheu Frida no passado vê o
             Fred. Quando a Frida for lançada, basta voltar para state.user.guide. */}
-        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={'Fred'} userName={state.user?.userName} journeyLabel={journeyLabel} />}
-        {state.status === 'gapfill' && state.content && state.user && <GapFillScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={handleFinish} onHome={handleExitActivity} guide={'Fred'} userName={state.user.userName} />}
-        {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleExitActivity} />}
+        {state.status === 'quiz' && state.content && <QuizScreen content={state.content} onFinish={handleFinish} onHome={handleExitActivity} level={state.level!} theme={state.theme!} topic={state.subTopic!} guide={'Fred'} userName={state.user?.userName} journeyLabel={journeyLabel} initialIndex={state.resumeProgress?.index} initialScore={state.resumeProgress?.score} onProgress={(index, score) => state.user && updateDraftProgress(state.user.userId, { index, score })} />}
+        {state.status === 'gapfill' && state.content && state.user && <GapFillScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={handleFinish} onHome={handleExitActivity} guide={'Fred'} userName={state.user.userName} initialIndex={state.resumeProgress?.index} initialScore={state.resumeProgress?.score} onProgress={(index, score) => updateDraftProgress(state.user!.userId, { index, score })} />}
+        {state.status === 'writing' && state.content && <WritingScreen content={state.content} level={state.level!} theme={state.theme!} topic={state.subTopic!} onFinish={(s) => handleFinish(s, 100)} onHome={handleExitActivity} initialText={state.resumeProgress?.text} onTextChange={(text) => state.user && updateDraftProgress(state.user.userId, { text })} />}
         {state.status === 'results' && (
           <ResultsScreen
             score={state.score}
             totalQuestions={state.theme === Theme.Writing && !state.content?.gapItems?.length ? 100 : (state.content?.gapItems?.length || state.content?.questions.length || 10)}
-            onRetry={() => setState(p => ({ ...p, status: p.content?.gapItems?.length ? 'gapfill' : (state.theme === Theme.Writing ? 'writing' : 'quiz') }))}
+            onRetry={() => {
+              const screen: DraftScreen = state.content?.gapItems?.length ? 'gapfill' : (state.theme === Theme.Writing ? 'writing' : 'quiz');
+              if (state.user && state.content && state.level && state.theme && state.subTopic) {
+                saveDraft(state.user.userId, { screen, level: state.level, theme: state.theme, subTopic: state.subTopic, content: state.content, journeyContext: state.journeyContext ?? null });
+              }
+              tracker.event('ex_start'); tracker.event('ex_retry');
+              setState(p => ({ ...p, status: screen, resumeProgress: null }));
+            }}
             onHome={handleExitActivity}
             xpGained={state.lastXpGained}
             frGained={state.lastFrGained}
@@ -758,7 +852,7 @@ const App: React.FC = () => {
         )}
       </main>
       <a href="https://wa.me/message/JZDOD5MBRXEAO1" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 left-6 z-50 flex items-center gap-2 text-gray-500 hover:text-[#f7931e] transition-all bg-[#1a1a1a]/50 p-2.5 rounded-xl backdrop-blur-sm group border border-white/5 hover:border-[#f7931e]/30 shadow-2xl" title="Reportar Erro"><AlertTriangle className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline-block animate-fade-in pr-1">Reportar Erro</span></a>
-      {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'keyword_check' && (
+      {state.user && state.user.guide && state.status !== 'login' && state.status !== 'loading' && state.status !== 'access_gate' && (
         <div className="fixed bottom-0 right-0 z-[200] pointer-events-none">
           <div className="pointer-events-auto">
              {/* guide fixo em 'Fred' enquanto a Frida não é lançada (ver comentário acima) */}
