@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { GeneratedContent, GapItem, Level, Theme, GuideCharacter } from '../types';
 import GuideReaction, { ReactionEvent } from './GuideReaction';
 import { Home, Check, X, ArrowRight, Lightbulb, Languages, Sparkles, PenLine } from 'lucide-react';
@@ -41,14 +41,23 @@ interface GapFillScreenProps {
   onHome: () => void;
   guide?: GuideCharacter;
   userName?: string;
+  // Retomada (ver QuizScreen): de onde recomeçar + aviso de progresso.
+  initialIndex?: number;
+  initialScore?: number;
+  onProgress?: (index: number, score: number) => void;
 }
 
-const GapFillScreen: React.FC<GapFillScreenProps> = ({ content, level, topic, onFinish, onHome, guide, userName }) => {
+const GapFillScreen: React.FC<GapFillScreenProps> = ({ content, level, topic, onFinish, onHome, guide, userName, initialIndex = 0, initialScore = 0, onProgress }) => {
   const items = useMemo(() => content.gapItems || [], [content.gapItems]);
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => Math.max(0, Math.min(initialIndex, (content.gapItems?.length || 1) - 1)));
   const [typed, setTyped] = useState('');
   const [checked, setChecked] = useState(false);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(initialScore);
+  // Só na troca de lacuna (ver o mesmo comentário no QuizScreen).
+  useEffect(() => {
+    onProgress?.(idx, score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx]);
   const [showHint, setShowHint] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [reaction, setReaction] = useState<ReactionEvent>(null);

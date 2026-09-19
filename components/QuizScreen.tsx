@@ -1,5 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+// Áudio tocando é sinal de vida: sem isto, ouvir um listening longo
+// sem tocar na tela contava como inatividade e derrubava a sessão.
+import { pingActivity } from '../services/activity';
 import { GeneratedContent, QuizQuestion, VoiceGender, VoiceAccent, Level, Theme, GuideCharacter } from '../types';
 import { generateAudioFromText, translateWordToPortuguese } from '../services/geminiService';
 import GuideReaction, { ReactionEvent } from './GuideReaction';
@@ -19,6 +22,12 @@ interface QuizScreenProps {
   userName?: string;
   // Rótulo do contexto da trilha, ex.: "Season 1 · Step 3".
   journeyLabel?: string;
+  // ── Retomada ────────────────────────────────────────────────
+  // Questão e acertos de onde recomeçar (exercício recuperado de um
+  // rascunho) e o aviso de progresso que mantém o rascunho em dia.
+  initialIndex?: number;
+  initialScore?: number;
+  onProgress?: (index: number, score: number) => void;
 }
 
 // Singleton AudioContext para evitar overhead de criação
@@ -214,13 +223,14 @@ export const InteractiveText: React.FC<{ text: string; voiceGender?: VoiceGender
   );
 };
 
-const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, theme, level, topic, guide, userName, journeyLabel }) => {
-  const [currentIdx, setCurrentIdx] = useState(0);
+const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, theme, level, topic, guide, userName, journeyLabel, initialIndex = 0, initialScore = 0, onProgress }) => {
+  // Math.min protege contra rascunho apontando para além da última questão.
+  const [currentIdx, setCurrentIdx] = useState(() => Math.max(0, Math.min(initialIndex, content.questions.length - 1)));
   const [reaction, setReaction] = useState<ReactionEvent>(null);
   const streaks = useRef({ correct: 0, wrong: 0, seq: 0 });
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(initialScore);
   const [showTranscript, setShowTranscript] = useState(false);
   const [showQuestionTranslation, setShowQuestionTranslation] = useState(false);
   const [localAudioData, setLocalAudioData] = useState<string | null>(null);
@@ -247,6 +257,15 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
 
   useEffect(() => {
     setShowQuestionTranslation(false);
+  }, [currentIdx]);
+
+  // Avisa o App a cada TROCA de questão, para o rascunho guardar a
+  // posição. Só na troca (e não a cada acerto) de propósito: se o
+  // rascunho guardasse o ponto da questão atual e o aluno voltasse
+  // nela, responder de novo contaria o mesmo acerto duas vezes.
+  useEffect(() => {
+    onProgress?.(currentIdx, score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx]);
 
   useEffect(() => {
@@ -284,7 +303,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
         // e o aluno ficaria olhando um botão de "Pause" que não toca.
         audio.onerror = () => resolve(false);
         audio.onloadedmetadata = () => { setDuration(audio.duration); resolve(true); };
-        audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
+        audio.ontimeupdate = () => { setCurrentTime(audio.currentTime); pingActivity(); };
         audio.onended = () => { setIsPlaying(false); setCurrentTime(0); };
         audioRef.current = audio;
         // Rede lenta não é falha: passados 12s seguimos para o TTS.
@@ -317,7 +336,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ content, onFinish, onHome, them
       const audio = new Audio(url);
       
       audio.onloadedmetadata = () => setDuration(audio.duration);
-      audio.ontimeupdate = () => setCurrentTime(audio.currentTime);
+      audio.ontimeupdate = () => { setCurrentTime(audio.currentTime); pingActivity(); };
       audio.onended = () => {
         setIsPlaying(false);
         setCurrentTime(0);

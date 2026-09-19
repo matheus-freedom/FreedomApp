@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GeneratedContent, Level, WritingFeedback, Theme } from '../types';
 import { evaluateWritingExercise, generateWritingExample } from '../services/geminiService';
 import { InteractiveText } from './QuizScreen';
@@ -13,10 +13,17 @@ interface WritingScreenProps {
   topic: string;
   onHome: () => void;
   onFinish: (score: number) => void;
+  // Retomada: texto já digitado (rascunho) + aviso a cada mudança.
+  initialText?: string;
+  onTextChange?: (text: string) => void;
 }
 
-const WritingScreen: React.FC<WritingScreenProps> = ({ content, level, theme, topic, onHome, onFinish }) => {
-  const [userText, setUserText] = useState('');
+const WritingScreen: React.FC<WritingScreenProps> = ({ content, level, theme, topic, onHome, onFinish, initialText = '', onTextChange }) => {
+  const [userText, setUserText] = useState(initialText);
+  useEffect(() => {
+    onTextChange?.(userText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userText]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<WritingFeedback | null>(null);
   const [example, setExample] = useState<string | null>(null);

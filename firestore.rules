@@ -37,15 +37,86 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // É o administrador? Conferido NO BANCO (documento de quem está
+    // pedindo), nunca em algo que o navegador afirme. Custa 1 leitura
+    // por verificação — irrelevante no volume do app.
+    function ehAdmin() {
+      return logado() && ehDocDeAdmin(get(/databases/$(database)/documents/users/$(request.auth.uid)).data);
+    }
+    // Mesmo critério do app e das functions: isAdmin ligado OU o
+    // username reservado "admin".
+    function ehDocDeAdmin(d) {
+      return d.get('isAdmin', false) == true || d.get('username', '').lower() == 'admin';
+    }
+
     // ── users ────────────────────────────────────────────────
     // Leitura aberta porque a tela de login procura o e-mail pelo
     // @username ANTES de o aluno estar autenticado. (Fechar isso de
     // vez exige a coleção `usernames` do passo 2 da auditoria.)
-    // Escrita continua como estava — apertá-la é o Passo 2B, que
-    // depende de mover perfil/streak/chat para o servidor.
+    //
+    // ESCRITA — o que mudou com a liberação de acesso:
+    // Antes, qualquer aluno logado podia gravar QUALQUER campo do
+    // próprio documento. Com isso, a aprovação do admin seria
+    // decorativa: bastaria o aluno abrir o DevTools e escrever
+    // accessStatus: 'approved' (ou isAdmin: true!) em si mesmo.
+    // Agora os campos de CONTROLE só mudam pelas mãos do admin (ou do
+    // servidor, que ignora estas regras):
+    //     isAdmin · accessStatus · accessDecidedAt · accessDecidedBy · blockReason
+    // Todo o resto (perfil, streak, contadores, seguir...) segue como
+    // estava — apertar isso é o Passo 2B.
+    function camposDeControle() {
+      return ['isAdmin', 'accessStatus', 'accessDecidedAt', 'accessDecidedBy', 'blockReason'];
+    }
+    function naoMexeEmControle() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposDeControle());
+    }
+    // A ÚNICA mudança de accessStatus que o próprio aluno pode fazer:
+    // clicar em "Solicitar acesso" (new/rejected → pending), mexendo
+    // só nos dois campos do pedido.
+    function pedidoDeAcesso(userId) {
+      return request.auth.uid == userId
+        && resource.data.get('accessStatus', 'approved') in ['new', 'rejected']
+        && request.resource.data.accessStatus == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['accessStatus', 'accessRequestedAt']);
+    }
+    // Ninguém se rebatiza de "admin" (o app trata esse username como
+    // administrador).
+    function naoViraAdminPeloNome() {
+      return request.resource.data.get('username', '').lower() != 'admin'
+        || resource.data.get('username', '').lower() == 'admin';
+    }
     match /users/{userId} {
       allow read: if true;
-      allow write: if logado();
+      // Conta nova: só a própria pessoa cria, sem isAdmin, e nascendo
+      // SEM acesso ('new') — é o que obriga a passar pela aprovação.
+      allow create: if logado() && request.auth.uid == userId
+        && request.resource.data.get('isAdmin', false) == false
+        && request.resource.data.get('username', '').lower() != 'admin'
+        && request.resource.data.get('accessStatus', '') == 'new';
+      allow update: if ehAdmin()
+        || (logado() && naoViraAdminPeloNome() && (naoMexeEmControle() || pedidoDeAcesso(userId)));
+      allow delete: if ehAdmin();
+    }
+
+    // ── Rastreamento de uso (dashboards do admin) ─────────────
+    // Cada acesso do aluno é um documento. O aluno grava SÓ os
+    // próprios acessos (o userId do documento tem que ser o dele) e
+    // não lê nada; quem lê é o admin. Nenhum aluno enxerga o uso de
+    // outro.
+    match /sessions/{sessionId} {
+      allow create: if logado() && request.resource.data.userId == request.auth.uid;
+      // No update confere também o dono ATUAL do documento — senão um
+      // aluno poderia "tomar" o acesso de outro trocando o userId.
+      allow update: if logado() && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if ehAdmin();
+    }
+
+    // Registro das decisões de acesso (aprovou/bloqueou quem, quando).
+    // Escrito só pelo servidor (function admin-access).
+    match /access_log/{entry} {
+      allow read: if ehAdmin();
+      allow write: if false;
     }
 
     // ── Conteúdo e progresso da Journey to Fluency ────────────
@@ -64,7 +135,7 @@ service cloud.firestore {
     // de conferir a nota e a posição. Sem isto, "concluí a trilha"
     // seria só uma linha digitada no console do navegador.
     match /journey_progress/{userId} {
-      allow read: if logado() && request.auth.uid == userId;
+      allow read: if (logado() && request.auth.uid == userId) || ehAdmin();
       allow write: if false;
     }
 
@@ -87,7 +158,7 @@ service cloud.firestore {
     // lê o próprio; quem grava é a function fred-explains depois de
     // corrigir o checkpoint no servidor.
     match /fred_progress/{userId} {
-      allow read: if logado() && request.auth.uid == userId;
+      allow read: if (logado() && request.auth.uid == userId) || ehAdmin();
       allow write: if false;
     }
 
