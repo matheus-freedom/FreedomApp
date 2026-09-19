@@ -83,6 +83,7 @@ check('mapa de calor soma os acessos', ov.heatmap.flat().reduce((a, b) => a + b,
 check('aparelho: celular', ov.devices[0].device === 'mobile' && ov.devices[0].count === 2);
 check('sem sessões → trackingSince nulo', A.buildOverview([], history, 5, r7).trackingSince === null);
 check('sem sessões → exercícios continuam contando', A.buildOverview([], history, 5, r7).exercises.value === 2);
+check('nota absurda de teste (999999 de 10) não estoura a média', A.buildOverview([], [hist('ana', 0, 999999), hist('ana', 0, 5)], 5, r7).avgScore === 75);
 check('sem dados nenhum não quebra', A.buildOverview([], [], 0, r7).completionRate === null);
 
 console.log('\n── Alunos ──');
@@ -124,6 +125,8 @@ check('evolução em ordem cronológica', det.scoreTrend[0].pct === 50 && det.sc
 check('abandonos somados', det.abandoned === 3 && det.started === 6);
 
 console.log('\n── Exibição ──');
+check('idade a partir da data de nascimento', A.ageLabel('1994-09-15', NOW) === '32 anos' && A.ageLabel('1994-09-17', NOW) === '31 anos');
+check('idade numérica antiga e valor estranho', A.ageLabel('15', NOW) === '15 anos' && A.ageLabel('abc', NOW) === '' && A.ageLabel(undefined, NOW) === '');
 check('minutos', A.fmtMinutes(0.4) === '< 1 min' && A.fmtMinutes(45) === '45 min' && A.fmtMinutes(125) === '2h 5min');
 check('"há 3 dias"', A.fmtAgo(NOW - 3 * DAY, NOW) === 'há 3 dias');
 check('"ontem"', A.fmtAgo(NOW - DAY, NOW) === 'ontem');
