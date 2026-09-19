@@ -1,4 +1,4 @@
-import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
+import { Level, Theme, GeneratedContent, ActivityRecord, StudyPlan, UserSession, AccessStatus, AccessType, GuideCharacter, UserGamification, UserChallenge, DirectMessage, AdminNotification, RankingSnapshot, RankingEntry, WeeklyBadge, PlacementSkill, PlacementBankEntry, SkillPlacementResult, PlacementResults, PLACEMENT_VARIATIONS_PER_SKILL } from '../types';
 import { JourneyContext, JourneyId, JourneyKind, JourneyProgressDoc } from '../journeys';
 import { FredLesson, FredProgressDoc, LessonProgress, LessonDocStatus } from '../fredExplains';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, todayKey } from '../dailyLimit';
@@ -25,6 +25,19 @@ const JOURNEY_URL = import.meta.env.DEV
 const FRED_URL = import.meta.env.DEV
   ? 'http://localhost:8888/.netlify/functions/fred-explains'
   : '/.netlify/functions/fred-explains';
+
+// Endpoint das decisões do administrador (aprovar, bloquear, senha,
+// saldo). Tudo conferido no servidor — ver netlify/functions/admin-access.js.
+const ADMIN_URL = import.meta.env.DEV
+  ? 'http://localhost:8888/.netlify/functions/admin-access'
+  : '/.netlify/functions/admin-access';
+
+// Registro de uma decisão de acesso (coleção access_log).
+export interface AccessLogEntry {
+  userId: string; fullName: string; username: string; email: string;
+  decision: 'approve' | 'reject' | 'block' | 'unblock'; status: AccessStatus;
+  reason?: string; by: string; byName?: string; at: number;
+}
 
 // ── Helpers de período ────────────────────────────────────────
 
@@ -179,7 +192,17 @@ export const api = {
         }
 
         data.gamification.lastLoginDate = today;
-        await setDoc(userRef, clean(data));
+        // Grava SÓ os dois campos do streak (updateDoc), e não o
+        // documento inteiro: regravar tudo podia desfazer, por
+        // milissegundos de diferença, uma aprovação/bloqueio que o
+        // admin tivesse acabado de fazer. E dentro de try/catch: uma
+        // falha ao salvar o streak não pode impedir o aluno de entrar.
+        try {
+          await updateDoc(userRef, {
+            'gamification.streak': data.gamification.streak,
+            'gamification.lastLoginDate': today,
+          });
+        } catch (e) { console.warn('Não consegui salvar o streak de login:', e); }
       }
 
       return data;
@@ -196,27 +219,10 @@ export const api = {
   },
 
   login: async (identifier: string, password?: string): Promise<UserSession | null> => {
-    const today = new Date().toISOString().split('T')[0];
-    if (identifier.toLowerCase() === 'admin' && password === 'f1') {
-      const adminRef = doc(db, 'users', 'admin-root-id');
-      const adminSnap = await getDoc(adminRef);
-      let adminData: UserSession;
-      if (!adminSnap.exists()) {
-        adminData = {
-          userId: 'admin-root-id', username: 'admin', userName: 'Admin', fullName: 'Freedom Administrator',
-          age: '99', gender: 'Root', email: 'admin@freedom.app', guide: 'Fred',
-          gamification: { ...INITIAL_GAMIFICATION, isPro: true, lastLoginDate: today }, notifications: []
-        };
-      } else {
-        adminData = adminSnap.data() as UserSession;
-        adminData.gamification = ensureNewFields(adminData.gamification);
-        adminData.username = 'admin';
-      }
-      adminData.gamification.isPro = true;
-      adminData.gamification.lastLoginDate = today;
-      await setDoc(adminRef, clean(adminData));
-      return adminData;
-    }
+    // (O atalho antigo de testes "admin" + senha fixa foi REMOVIDO:
+    // ele abria o painel com a lista de alunos para qualquer pessoa
+    // que conhecesse a senha de 2 caracteres. O admin agora é sempre
+    // uma conta real do Firebase com isAdmin no documento.)
     try {
       let loginEmail = identifier;
       if (!identifier.includes('@') || identifier.startsWith('@')) {
@@ -229,7 +235,15 @@ export const api = {
       }
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password!);
       return await api.getUserProfile(userCredential.user.uid);
-    } catch (e) { return null; }
+    } catch (e: any) {
+      // Conta desativada pelo admin (bloqueio): o Firebase recusa o
+      // login com este código. Mensagem própria, em vez de "senha
+      // incorreta", para o aluno saber com quem falar.
+      if (e?.code === 'auth/user-disabled') {
+        throw new Error('Seu acesso à plataforma está suspenso. Fale com a secretaria da Freedom.');
+      }
+      return null;
+    }
   },
 
   isUsernameTaken: async (username: string): Promise<boolean> => {
@@ -261,7 +275,11 @@ export const api = {
         userId: uid, username: finalUsername, userName: firstName, fullName: userData.fullName,
         age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: finalPhotoUrl,
         guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
-        notifications: []
+        notifications: [],
+        // Conta nova nasce SEM acesso: o aluno vê o botão "Solicitar
+        // acesso" e só entra depois que o admin aprovar.
+        accessStatus: 'new',
+        createdAt: Date.now(),
       };
       await setDoc(doc(db, 'users', uid), clean(newUser));
       return newUser;
@@ -299,39 +317,111 @@ export const api = {
     return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
   },
 
-  admin_updateUserGamification: async (userId: string, xpDelta: number, frDelta: number): Promise<void> => {
-    const userRef = doc(db, 'users', userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      user.gamification = ensureNewFields(user.gamification);
-      user.gamification.xp += xpDelta;
-      user.gamification.frBalance += frDelta;
-      await setDoc(userRef, clean(user));
-    }
+  // ══════════════════════════════════════════════════════════════
+  // LIBERAÇÃO DE ACESSO
+  // ══════════════════════════════════════════════════════════════
+
+  // Aluno novo clica em "Solicitar acesso": new/rejected → pending.
+  // É a ÚNICA mudança de accessStatus que as regras do Firestore
+  // deixam o próprio aluno fazer; todo o resto é do admin.
+  requestAccess: async (userId: string): Promise<void> => {
+    await updateDoc(doc(db, 'users', userId), { accessStatus: 'pending', accessRequestedAt: Date.now() });
   },
 
+  // Escuta o PRÓPRIO documento em tempo real. Serve para a tela de
+  // espera liberar sozinha quando o admin aprova, e para tirar do
+  // app na hora um aluno que acabou de ser bloqueado.
+  subscribeToUser: (userId: string, onChange: (user: UserSession | null) => void): (() => void) => {
+    return onSnapshot(doc(db, 'users', userId), (snap) => {
+      if (!snap.exists()) { onChange(null); return; }
+      const data = snap.data() as UserSession;
+      data.gamification = ensureNewFields(data.gamification);
+      onChange(data);
+    }, (err) => console.warn('Erro ao acompanhar o perfil:', err));
+  },
+
+  // Admin: pedidos aguardando, em tempo real (é o que acende o aviso
+  // na tela inicial assim que um aluno clica em "Solicitar acesso").
+  subscribePendingAccess: (onChange: (users: UserSession[]) => void): (() => void) => {
+    const q = query(collection(db, 'users'), where('accessStatus', '==', 'pending'));
+    return onSnapshot(q, (snap) => {
+      onChange(snap.docs.map(d => d.data() as UserSession).sort((a, b) => (a.accessRequestedAt || 0) - (b.accessRequestedAt || 0)));
+    }, (err) => { console.warn('Erro ao acompanhar pedidos de acesso:', err); onChange([]); });
+  },
+
+  // Chamada genérica à function admin-access.
+  _adminCall: async (payload: Record<string, unknown>): Promise<any> => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error('Sua sessão expirou. Faça login novamente.');
+    const res = await fetch(ADMIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || `Erro ${res.status}`);
+    }
+    return res.json();
+  },
+
+  admin_decideAccess: async (userId: string, decision: 'approve' | 'reject' | 'block' | 'unblock', opts: { accessType?: AccessType; reason?: string } = {}): Promise<{ accessStatus: AccessStatus; authSynced: boolean }> =>
+    api._adminCall({ action: 'decide', userId, decision, ...opts }),
+
+  admin_setPro: async (userId: string, isPro: boolean): Promise<void> => { await api._adminCall({ action: 'setPro', userId, isPro }); },
+
+  admin_setAccessType: async (userId: string, accessType: AccessType): Promise<void> => { await api._adminCall({ action: 'setAccessType', userId, accessType }); },
+
+  admin_getAccessLog: async (): Promise<AccessLogEntry[]> => {
+    try {
+      const snap = await getDocs(collection(db, 'access_log'));
+      return snap.docs.map(d => d.data() as AccessLogEntry).sort((a, b) => b.at - a.at).slice(0, 100);
+    } catch (e) { console.warn('Erro ao ler o registro de acessos:', e); return []; }
+  },
+
+  // ── Dados de uso para os dashboards ───────────────────────────
+  // Filtro por UM campo só (startedAt / date): usa o índice automático
+  // do Firestore, sem precisar criar índice composto no console.
+  admin_getSessionsSince: async (since: number): Promise<any[]> => {
+    const snap = await getDocs(query(collection(db, 'sessions'), where('startedAt', '>=', since)));
+    return snap.docs.map(d => d.data());
+  },
+
+  admin_getHistorySince: async (since: number): Promise<any[]> => {
+    const snap = await getDocs(query(collection(db, 'history'), where('date', '>=', since)));
+    return snap.docs.map(d => d.data());
+  },
+
+  admin_getUserSessions: async (userId: string): Promise<any[]> => {
+    const snap = await getDocs(query(collection(db, 'sessions'), where('userId', '==', userId)));
+    return snap.docs.map(d => d.data()).sort((a: any, b: any) => b.startedAt - a.startedAt);
+  },
+
+  // XP/FR$ agora são ajustados no servidor, em transação e sem deixar
+  // o saldo negativo (antes era ler-modificar-gravar no navegador).
+  admin_updateUserGamification: async (userId: string, xpDelta: number, frDelta: number): Promise<void> => {
+    await api._adminCall({ action: 'adjust', userId, xpDelta, frDelta });
+  },
+
+  // Mensagem do admin para o aluno. Grava SÓ o campo notifications
+  // (updateDoc) em vez de regravar o documento inteiro — regravar
+  // tudo podia apagar XP ganho naquele mesmo segundo.
   admin_sendNotification: async (userId: string, message: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      if (!user.notifications) user.notifications = [];
-      user.notifications.unshift({ id: crypto.randomUUID(), message, date: Date.now(), read: false, sender: 'Admin Freedom' });
-      await setDoc(userRef, clean(user));
-    }
+    if (!snap.exists()) throw new Error('Aluno não encontrado.');
+    const current = ((snap.data() as UserSession).notifications || []).slice(0, 49);
+    const next = [{ id: crypto.randomUUID(), message, date: Date.now(), read: false, sender: 'Admin Freedom' }, ...current];
+    await updateDoc(userRef, { notifications: clean(next) });
   },
 
   markNotificationRead: async (userId: string, notificationId: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const user = snap.data() as UserSession;
-      if (user.notifications) {
-        const nIdx = user.notifications.findIndex(n => n.id === notificationId);
-        if (nIdx !== -1) { user.notifications[nIdx].read = true; await setDoc(userRef, clean(user)); }
-      }
-    }
+    if (!snap.exists()) return;
+    const list = (snap.data() as UserSession).notifications || [];
+    if (!list.some(n => n.id === notificationId && !n.read)) return;
+    await updateDoc(userRef, { notifications: clean(list.map(n => n.id === notificationId ? { ...n, read: true } : n)) });
   },
 
   saveUser: async (user: UserSession) => { await setDoc(doc(db, 'users', user.userId), clean(user)); },
@@ -444,7 +534,9 @@ export const api = {
     const users = await api.admin_getAllUsers();
     
     return users
-      .filter(u => u.username.toLowerCase() !== 'admin')
+      // Fora do ranking: o admin e quem não está liberado (pedido
+      // pendente, recusado ou bloqueado).
+      .filter(u => u.username.toLowerCase() !== 'admin' && (u.accessStatus ?? 'approved') === 'approved')
       .map(u => {
         let periodXp = 0;
         let periodActivities = 0;
@@ -792,7 +884,12 @@ export const api = {
     }
   },
 
-  admin_resetUserPassword: async (email: string, newPassword: string): Promise<boolean> => { return true; },
+  // Define de verdade uma senha provisória (Admin SDK, no servidor).
+  // A versão antiga devolvia "true" sem fazer nada.
+  admin_resetUserPassword: async (userId: string, newPassword: string): Promise<boolean> => {
+    await api._adminCall({ action: 'setPassword', userId, password: newPassword });
+    return true;
+  },
 
   // ══════════════════════════════════════════════════════════════
   // JOURNEY TO FLUENCY
