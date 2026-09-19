@@ -174,6 +174,10 @@ export const ACCESS_LABEL: Record<string, string> = {
 
 export const Avatar: React.FC<{ photo?: string; name: string; size?: string; big?: boolean }> = ({ photo, name, size = 'w-10 h-10', big }) => (
   <div className={`${size} ${big ? 'rounded-[1.75rem] text-4xl' : 'rounded-full text-sm'} bg-[#222222] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden text-[#f7931e] font-black`}>
-    {photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : (name || '?').charAt(0).toUpperCase()}
+    {/* Foto quebrada (link antigo do Storage) some e deixa a inicial à mostra. */}
+    <span className="relative w-full h-full flex items-center justify-center">
+      {(name || '?').charAt(0).toUpperCase()}
+      {photo && <img src={photo} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+    </span>
   </div>
 );

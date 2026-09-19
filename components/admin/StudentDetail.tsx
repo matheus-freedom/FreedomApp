@@ -7,7 +7,7 @@ import {
 import { UserSession, ActivityRecord, Level, Theme, AccessType } from '../../types';
 import { api } from '../../services/api';
 import { showToast } from '../Toast';
-import { StudentRow, STATUS_META, buildStudentDetail, fmtAgo, fmtMinutes, spParts, ASession } from '../../services/analytics';
+import { StudentRow, STATUS_META, buildStudentDetail, ageLabel, fmtAgo, fmtMinutes, spParts, ASession } from '../../services/analytics';
 import { Section, Pill, Avatar, BarList, ChartTip, Empty, C, axisProps, ACCESS_LABEL } from './ui';
 
 // ════════════════════════════════════════════════════════════════
@@ -32,8 +32,12 @@ const StudentDetail: React.FC<Props> = ({ user, row, onBack, onChanged }) => {
   const [modal, setModal] = useState<null | 'message' | 'password' | 'balance' | 'block'>(null);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState('');
-  const [xpDelta, setXpDelta] = useState(0);
-  const [frDelta, setFrDelta] = useState(0);
+  // Guardados como TEXTO de propósito: com estado numérico, digitar o
+  // "-" de "-50" virava 0 na hora e era impossível tirar XP pelo teclado.
+  const [xpText, setXpText] = useState('');
+  const [frText, setFrText] = useState('');
+  const xpDelta = parseInt(xpText, 10) || 0;
+  const frDelta = parseFloat(frText.replace(',', '.')) || 0;
   const [filterLevel, setFilterLevel] = useState<Level | 'All'>('All');
   const [filterTheme, setFilterTheme] = useState<Theme | 'All'>('All');
 
@@ -56,14 +60,15 @@ const StudentDetail: React.FC<Props> = ({ user, row, onBack, onChanged }) => {
 
   const access = user.accessStatus ?? 'approved';
   const isBlocked = access === 'blocked';
-  const avgAll = history.length ? Math.round(history.reduce((a, h) => a + (h.total ? (h.score / h.total) * 100 : 0), 0) / history.length) : null;
+  const pctOf = (score: number, total: number) => (total > 0 ? Math.max(0, Math.min(100, Math.round((score / total) * 100))) : 0);
+  const avgAll = history.length ? Math.round(history.reduce((a, h) => a + pctOf(h.score, h.total), 0) / history.length) : null;
   const placement = Object.entries((user.gamification.placementResults || {}) as Record<string, any>);
 
   // Roda uma ação do admin com trava de clique duplo, aviso e recarga.
   const run = async (fn: () => Promise<unknown>, okMsg: string) => {
     if (busy) return;
     setBusy(true);
-    try { await fn(); showToast(okMsg, 'success'); setModal(null); setText(''); setXpDelta(0); setFrDelta(0); onChanged(); }
+    try { await fn(); showToast(okMsg, 'success'); setModal(null); setText(''); setXpText(''); setFrText(''); onChanged(); }
     catch (e) { showToast(e instanceof Error ? e.message : 'Não consegui concluir a operação.', 'error', 7000); }
     setBusy(false);
   };
@@ -95,7 +100,7 @@ const StudentDetail: React.FC<Props> = ({ user, row, onBack, onChanged }) => {
             <p className="text-[11px] text-gray-500 font-medium mt-2">
               Último acesso: <span className="text-gray-300 font-bold">{fmtAgo(row?.lastSeen ?? null)}</span>
               {user.createdAt && <> · conta criada em <span className="text-gray-300 font-bold">{new Date(user.createdAt).toLocaleDateString('pt-BR')}</span></>}
-              {user.age && <> · {user.age} anos</>}
+              {ageLabel(user.age) && <> · {ageLabel(user.age)}</>}
               {detail.bestHour !== null && <> · costuma entrar às <span className="text-gray-300 font-bold">{detail.bestHour}h</span></>}
             </p>
             {isBlocked && user.blockReason && <p className="text-[11px] text-red-300 mt-2">Motivo do bloqueio: {user.blockReason}</p>}
@@ -237,7 +242,7 @@ const StudentDetail: React.FC<Props> = ({ user, row, onBack, onChanged }) => {
               {filteredHistory.length === 0 ? <Empty text="Nenhuma atividade com estes filtros." /> : (
                 <div className="max-h-[420px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                   {filteredHistory.slice(0, 150).map(rec => {
-                    const pc = Math.round((rec.score / (rec.total || 1)) * 100);
+                    const pc = pctOf(rec.score, rec.total);
                     return (
                       <div key={rec.id} className="flex items-center gap-3 bg-[#222222] border border-white/5 rounded-2xl px-4 py-3">
                         <div className="w-9 h-9 rounded-xl bg-[#333333] flex items-center justify-center shrink-0 text-[#f7931e]">{rec.theme === Theme.Writing ? <PenTool className="w-4 h-4" /> : <Activity className="w-4 h-4" />}</div>
@@ -281,9 +286,9 @@ const StudentDetail: React.FC<Props> = ({ user, row, onBack, onChanged }) => {
             {modal === 'balance' && (
               <div className="space-y-3">
                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">XP
-                  <input type="number" value={xpDelta} onChange={e => setXpDelta(parseInt(e.target.value) || 0)} className="mt-1.5 w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-3.5 px-4 focus:border-orange-500 outline-none text-sm" /></label>
+                  <input type="text" inputMode="numeric" placeholder="Ex: 50 ou -50" value={xpText} onChange={e => setXpText(e.target.value.replace(/[^\d-]/g, ''))} className="mt-1.5 w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-3.5 px-4 focus:border-orange-500 outline-none text-sm" /></label>
                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">FR$ (Freedom Reais)
-                  <input type="number" step="0.01" value={frDelta} onChange={e => setFrDelta(parseFloat(e.target.value) || 0)} className="mt-1.5 w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-3.5 px-4 focus:border-orange-500 outline-none text-sm" /></label>
+                  <input type="text" inputMode="decimal" placeholder="Ex: 10 ou -2,50" value={frText} onChange={e => setFrText(e.target.value.replace(/[^\d.,-]/g, ''))} className="mt-1.5 w-full bg-[#222222] border border-[#333333] text-white rounded-2xl py-3.5 px-4 focus:border-orange-500 outline-none text-sm" /></label>
               </div>
             )}
 

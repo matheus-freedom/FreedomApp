@@ -3,7 +3,7 @@ import { BellRing, Ban, XCircle, UserPlus, ScrollText, Check, X, ShieldCheck, Lo
 import { UserSession } from '../../types';
 import { api, AccessLogEntry } from '../../services/api';
 import { showToast } from '../Toast';
-import { fmtAgo } from '../../services/analytics';
+import { fmtAgo, ageLabel } from '../../services/analytics';
 import { Section, Avatar, Empty, Pill } from './ui';
 
 // ════════════════════════════════════════════════════════════════
@@ -75,7 +75,7 @@ const AccessTab: React.FC<Props> = ({ users, onChanged, onSelect }) => {
       <Section title={`Aguardando sua aprovação (${pending.length})`} icon={<BellRing className="w-4 h-4 text-[#f7931e]" />} hint="Atualiza sozinho: o pedido aparece aqui no momento em que o aluno clica em Solicitar acesso.">
         {pending.length === 0 ? <Empty text="Nenhum pedido aguardando." /> : (
           <div className="space-y-2">{pending.map(u => (
-            <Row key={u.userId} u={u} meta={`pediu ${fmtAgo(u.accessRequestedAt || null)}${u.age ? ` · ${u.age} anos` : ''}`}>
+            <Row key={u.userId} u={u} meta={`pediu ${fmtAgo(u.accessRequestedAt || null)}${ageLabel(u.age) ? ` · ${ageLabel(u.age)}` : ''}`}>
               <Btn u={u} d="approve" label="Aprovar" tone="good" /><Btn u={u} d="reject" label="Recusar" tone="bad" />
             </Row>
           ))}</div>
