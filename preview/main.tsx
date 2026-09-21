@@ -15,7 +15,7 @@ const Preview = () => {
       <div className="h-[76px] bg-[#1a1a1a] border-b border-[#f7931e]/30 sticky top-0 z-50" />
       <main className="container mx-auto px-4">
         {params.get('results') ? <ResultsScreen score={5} totalQuestions={10} onRetry={() => {}} onHome={() => {}} xpGained={50} frGained={0.5} reviewTopic="Verbo to be (presente)" onReviewWithFred={() => {}} /> : entry
-          ? <FredLessonScreen user={user} entry={entry} onBack={() => setEntry(null)} onOpenLesson={setEntry} onUserUpdate={() => {}} onPractice={() => {}} />
+          ? <FredLessonScreen user={user} entry={entry} onBack={() => setEntry(null)} onOpenLesson={setEntry} onUserUpdate={() => {}} onPractice={() => {}} journeyOrigin={params.get('journey') ? { journeyId: 'freedom', season: 0, nodeIndex: 0, nextKind: 'grammar', stepLabel: 'Season 1 · Step 1', nextLabel: 'Gramática' } : null} onStartJourneyExercise={async () => { alert('iria para o exercício'); return false; }} />
           : <FredExplainsScreen user={user} onHome={() => {}} onOpenLesson={setEntry} />}
       </main>
     </div>

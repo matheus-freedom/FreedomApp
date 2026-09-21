@@ -26,7 +26,7 @@ import JourneyScreen from './components/JourneyScreen';
 import GapFillScreen from './components/GapFillScreen';
 import FredExplainsScreen from './components/FredExplainsScreen';
 import FredLessonScreen from './components/FredLessonScreen';
-import { CatalogEntry, findCatalogEntry, matchCatalogEntry } from './fredExplains';
+import { CatalogEntry, FredOrigin, findCatalogEntry, matchCatalogEntry } from './fredExplains';
 import { deepShuffleQuestions } from './shuffleOptions';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
 import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, NextJourneyTarget, buildSeasonNodes, getNextJourneyTarget, seasonsSkippedByPlacement } from './journeys';
@@ -253,18 +253,27 @@ const App: React.FC = () => {
   // ── Fred explica ──────────────────────────────────────────────
   // Abre o catálogo (opcionalmente já filtrado num nível) ou uma aula.
   const openFredCatalog = useCallback((level?: Level | null) => {
-    setState(p => ({ ...p, status: 'fred_explains', fredLesson: null, fredInitialLevel: level ?? null }));
+    setState(p => ({ ...p, status: 'fred_explains', fredLesson: null, fredInitialLevel: level ?? null, fredOrigin: null }));
   }, []);
-  const openFredLesson = useCallback((entry: CatalogEntry) => {
-    setState(p => ({ ...p, status: 'fred_lesson', fredLesson: entry }));
+  // origin: de onde o aluno veio. Só a Journey preenche; abrir pelo
+  // catálogo (ou "próximo tema") limpa, para a aula não continuar
+  // oferecendo o exercício de um Step que não tem mais a ver com ela.
+  const openFredLesson = useCallback((entry: CatalogEntry, origin: FredOrigin | null = null) => {
+    setState(p => ({ ...p, status: 'fred_lesson', fredLesson: entry, fredOrigin: origin }));
   }, []);
   // Vindo da Journey: o Step tem (nível, tópico) — se o tópico existir
   // no catálogo, abre a aula direto; se for um Review (3 tópicos
   // juntos), cai no catálogo filtrado no nível.
-  const openFredForTopic = useCallback((level: Level, topic: string) => {
+  const openFredForTopic = useCallback((level: Level, topic: string, origin?: FredOrigin) => {
     const entry = findCatalogEntry(level, topic);
-    if (entry) openFredLesson(entry); else openFredCatalog(level);
+    if (entry) openFredLesson(entry, origin ?? null); else openFredCatalog(level);
   }, [openFredLesson, openFredCatalog]);
+  // Volta ao MAPA da trilha (com o progresso recarregado), não ao catálogo.
+  const backToJourney = useCallback(() => {
+    isStartingRef.current = false;
+    setJourneyReload(n => n + 1);
+    setState(p => ({ ...p, status: 'journey', fredLesson: null, fredOrigin: null }));
+  }, []);
 
   // ── Sair de um exercício ──────────────────────────────────────
   // Se o exercício veio da trilha, o destino natural é o MAPA da
@@ -812,10 +821,20 @@ const App: React.FC = () => {
           <FredLessonScreen
             user={state.user}
             entry={state.fredLesson}
-            onBack={() => openFredCatalog(state.fredLesson?.level ?? null)}
-            onOpenLesson={openFredLesson}
+            onBack={state.fredOrigin ? backToJourney : () => openFredCatalog(state.fredLesson?.level ?? null)}
+            onOpenLesson={(e) => openFredLesson(e, null)}
             onUserUpdate={handleUserUpdate}
             onPractice={(level, theme, topic) => { handleStart(level, theme, topic); }}
+            journeyOrigin={state.fredOrigin ?? null}
+            // Reconstrói o nó do Step a partir da origem e reaproveita o
+            // handleStartJourney inteiro (trava de clique, cota, banco).
+            onStartJourneyExercise={async () => {
+              const o = state.fredOrigin;
+              if (!o) return false;
+              const node = buildSeasonNodes(o.journeyId, o.season)[o.nodeIndex];
+              if (!node) return false;
+              return handleStartJourney(o.journeyId, o.season, node, o.nextKind);
+            }}
           />
         )}
         {/* Enquanto a Frida está desativada, passamos 'Fred' fixo em vez de

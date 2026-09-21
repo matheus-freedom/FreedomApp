@@ -97,6 +97,8 @@ const good = {
   check('Descarta questão com opções duplicadas', core.normalizeQuiz({ ...quiz(1), options: ['x', 'x', 'y', 'z'] }) === null);
   check('Descarta índice fora da faixa', core.normalizeQuiz({ ...quiz(1), correctIndex: 4 }) === null);
   check('Mood inválido vira "perfil"', core.normalizeLesson({ ...good, sections: [{ ...section(1), mood: 'bravo' }, section(2), section(3)] }).sections[0].mood === 'perfil');
+  check('Troca <br><br> por quebra de parágrafo e remove HTML solto',
+    (() => { const n = core.normalizeLesson({ ...good, sections: [{ ...section(1), body: 'Pense no <b>should</b> como o nosso "deveria". Serve para isso.<br><br>A estrutura é super simples: você coloca a pessoa.' }, section(2), section(3)] }); return n.sections[0].body === 'Pense no should como o nosso "deveria". Serve para isso.\n\nA estrutura é super simples: você coloca a pessoa.'; })());
   check('Conserta "\\n" literal no corpo', core.normalizeLesson({ ...good, sections: [{ ...section(1), body: 'Primeiro parágrafo com texto suficiente aqui.\\n\\nSegundo parágrafo também com texto.' }, section(2), section(3)] }).sections[0].body.includes('\n\n'));
   check('Seção sem quiz só limita a 1 quiz', core.normalizeLesson({ ...good, sections: [{ ...section(1), quiz: [quiz(1), quiz(2)] }, section(2), section(3)] }).sections[0].quiz.length === 1);
   check('Rejeita hook curto', core.normalizeLesson({ ...good, hook: 'oi' }) === null);

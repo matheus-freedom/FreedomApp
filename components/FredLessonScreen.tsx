@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronRight, CheckCircle2, XCircle, Lightbulb, AlertTriangle, Sparkles, ThumbsUp, ThumbsDown, Loader2, RefreshCw, Trophy, Dumbbell, Languages, Quote, ListChecks } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CheckCircle2, XCircle, Lightbulb, AlertTriangle, Sparkles, ThumbsUp, ThumbsDown, Loader2, RefreshCw, Trophy, Dumbbell, Languages, Quote, ListChecks, Play, Map as MapIcon } from 'lucide-react';
 import { Level, Theme, UserSession } from '../types';
-import { CatalogEntry, FRED_CATALOG, FredLesson, LessonProgress, LessonQuiz, LESSON_PASS_PCT, LESSON_XP, parseBold, splitParagraphs, scoreLocally } from '../fredExplains';
+import { CatalogEntry, FRED_CATALOG, FredLesson, FredOrigin, LessonProgress, LessonQuiz, LESSON_PASS_PCT, LESSON_XP, parseBold, splitParagraphs, scoreLocally } from '../fredExplains';
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import FredAvatar, { FredExpression } from './FredAvatar';
@@ -31,6 +31,13 @@ interface FredLessonScreenProps {
   onUserUpdate: (u: UserSession) => void;
   // "Praticar este tema": abre um exercício normal de gramática.
   onPractice: (level: Level, theme: Theme, topic: string) => void;
+  // Quando a aula foi aberta de um Step da Journey: a tela troca o
+  // "voltar" por "voltar à trilha" e, no fim, oferece o exercício
+  // seguinte daquele Step em vez de "próximo tema".
+  journeyOrigin?: FredOrigin | null;
+  // Inicia o exercício da trilha. Devolve false se foi recusado (cota
+  // do dia estourada abre o modal de compra) — aí o botão destrava.
+  onStartJourneyExercise?: () => Promise<boolean>;
 }
 
 type DocState = 'loading' | 'generating' | 'ready' | 'failed' | 'error';
@@ -108,7 +115,7 @@ const QuizCard: React.FC<{
   );
 };
 
-const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack, onOpenLesson, onUserUpdate, onPractice }) => {
+const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack, onOpenLesson, onUserUpdate, onPractice, journeyOrigin = null, onStartJourneyExercise }) => {
   const [docState, setDocState] = useState<DocState>('loading');
   const [lesson, setLesson] = useState<FredLesson | null>(null);
   const [progress, setProgress] = useState<LessonProgress | null>(null);
@@ -126,6 +133,15 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
   const firstName = (user.userName || '').split(' ')[0] || 'você';
   const alreadyDone = !!progress?.completedAt;
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Trava do botão "fazer o exercício da trilha" (evita clique duplo e
+  // mostra o spinner enquanto o exercício é preparado).
+  const [startingJourney, setStartingJourney] = useState(false);
+  const goToJourneyExercise = async () => {
+    if (!onStartJourneyExercise || startingJourney) return;
+    setStartingJourney(true);
+    const ok = await onStartJourneyExercise();
+    if (!ok) setStartingJourney(false);
+  };
 
   // ── Carrega (ou acompanha a geração) ──────────────────────────
   useEffect(() => {
@@ -254,9 +270,11 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
   // ── Cabeçalho comum ───────────────────────────────────────────
   const header = (
     <div className="flex items-center gap-3">
-      <button onClick={onBack} className="p-3 rounded-2xl bg-[#2a2a2a] border border-white/5 text-gray-400 hover:text-white transition-all"><ArrowLeft className="w-5 h-5" /></button>
+      <button onClick={onBack} title={journeyOrigin ? 'Voltar à trilha' : 'Todos os temas'} className="p-3 rounded-2xl bg-[#2a2a2a] border border-white/5 text-gray-400 hover:text-white transition-all flex items-center gap-2">
+        <ArrowLeft className="w-5 h-5" />{journeyOrigin && <MapIcon className="w-4 h-4 text-[#f7931e]" />}
+      </button>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f7931e]">Fred explica · {entry.level}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f7931e]">Fred explica · {entry.level}{journeyOrigin ? ` · ${journeyOrigin.stepLabel}` : ''}</p>
         <p className="text-white font-black truncate">{entry.topic}</p>
       </div>
       {docState === 'ready' && (
@@ -496,14 +514,48 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
                   {!finalResult.passed && (
                     <button onClick={() => { setFinalAnswers({}); setFinalResult(null); }} className="py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4" /> Refazer checkpoint</button>
                   )}
-                  <button onClick={() => onPractice(entry.level, Theme.Grammar, entry.topic)} className="py-4 bg-[#333333] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-white/10 hover:border-[#f7931e]/50"><Dumbbell className="w-4 h-4 text-[#f7931e]" /> Praticar este tema</button>
-                  {nextEntry && finalResult.passed && (
-                    <button onClick={() => onOpenLesson(nextEntry)} className="py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 md:col-span-2">Próximo tema: {nextEntry.topic} <ChevronRight className="w-4 h-4" /></button>
+                  {journeyOrigin ? (
+                    // Veio da trilha: o caminho natural é o exercício do Step
+                    // (não a prática livre, que gastaria cota fora da trilha).
+                    <>
+                      <button disabled={startingJourney} onClick={goToJourneyExercise}
+                        className="py-5 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 md:col-span-2 hover:scale-[1.02] transition-transform shadow-xl shadow-[#f7931e]/20 disabled:opacity-60 disabled:scale-100">
+                        {startingJourney ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                        {startingJourney ? 'Preparando o exercício...' : `Fazer o exercício de ${journeyOrigin.nextLabel} · ${journeyOrigin.stepLabel}`}
+                      </button>
+                      <button onClick={onBack} className="py-4 bg-[#333333] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-white/10 hover:border-[#f7931e]/50 md:col-span-2"><MapIcon className="w-4 h-4 text-[#f7931e]" /> Voltar ao mapa da trilha</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => onPractice(entry.level, Theme.Grammar, entry.topic)} className="py-4 bg-[#333333] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-white/10 hover:border-[#f7931e]/50"><Dumbbell className="w-4 h-4 text-[#f7931e]" /> Praticar este tema</button>
+                      {nextEntry && finalResult.passed && (
+                        <button onClick={() => onOpenLesson(nextEntry)} className="py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 md:col-span-2">Próximo tema: {nextEntry.topic} <ChevronRight className="w-4 h-4" /></button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             )}
           </section>
+
+          {/* Veio da trilha e não passou pelo checkpoint agora (ex.: já
+              tinha concluído o tema e só releu): mesmo assim o exercício
+              do Step fica a um clique. */}
+          {journeyOrigin && !finalResult && (
+            <div className="rounded-[2rem] border-2 border-[#f7931e]/40 bg-[#f7931e]/5 p-5 md:p-6 flex flex-col md:flex-row items-center gap-4">
+              <FredAvatar expression="motivado" className="w-16 h-20 shrink-0" />
+              <div className="flex-1 text-center md:text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f7931e]">{journeyOrigin.stepLabel}</p>
+                <p className="text-white font-black">Entendeu a teoria? Então bora praticar na trilha.</p>
+                <p className="text-xs text-gray-400 font-bold mt-0.5">O checkpoint acima é opcional — vale +{LESSON_XP} XP na primeira vez.</p>
+              </div>
+              <button disabled={startingJourney} onClick={goToJourneyExercise}
+                className="shrink-0 px-6 py-4 bg-[#f7931e] text-[#222222] rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-60 disabled:scale-100">
+                {startingJourney ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                {startingJourney ? 'Preparando...' : `Exercício de ${journeyOrigin.nextLabel}`}
+              </button>
+            </div>
+          )}
 
           {/* Feedback sobre a aula */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-[#2a2a2a] border border-white/5 rounded-[1.5rem] p-4 md:p-5">
@@ -515,7 +567,7 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
           </div>
 
           <div className="flex justify-center">
-            <button onClick={onBack} className="px-8 py-4 bg-[#2a2a2a] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:text-white transition-all border border-white/5"><ArrowLeft className="w-4 h-4" /> Todos os temas</button>
+            <button onClick={onBack} className="px-8 py-4 bg-[#2a2a2a] text-gray-400 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:text-white transition-all border border-white/5"><ArrowLeft className="w-4 h-4" /> {journeyOrigin ? 'Voltar à trilha' : 'Todos os temas'}</button>
           </div>
         </div>
       )}

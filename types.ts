@@ -397,6 +397,10 @@ export interface AppState {
   fredLesson?: import('./fredExplains').CatalogEntry | null;
   // Nível pré-filtrado ao abrir o catálogo (ex.: vindo da Journey).
   fredInitialLevel?: Level | null;
+  // De onde o aluno veio ao abrir a aula. Quando veio de um Step da
+  // Journey, a aula termina oferecendo o exercício seguinte daquele
+  // Step (e o botão "voltar" leva ao mapa, não ao catálogo).
+  fredOrigin?: import('./fredExplains').FredOrigin | null;
   // ── Retomada de exercício ─────────────────────────────────
   // Preenchido quando o exercício na tela veio de um rascunho salvo
   // (recarga da aba, queda por inatividade): diz às telas de

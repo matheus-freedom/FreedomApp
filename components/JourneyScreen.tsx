@@ -33,7 +33,7 @@ interface JourneyScreenProps {
   // Abre o exercício. Devolve false se o app recusou (limite diário etc).
   onStartExercise: (journeyId: JourneyId, season: number, node: JourneyNode, kind: JourneyKind) => Promise<boolean> | void;
   // Abre a aula do "Fred explica" sobre o tópico gramatical do Step.
-  onExplain?: (level: Level, topic: string) => void;
+  onExplain?: (level: Level, topic: string, origin: import('../fredExplains').FredOrigin) => void;
   // Recarrega o progresso quando o aluno volta de um exercício.
   reloadToken?: number;
 }
@@ -443,7 +443,16 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
                     gramática deste Step. Não gasta cota nem trava nada —
                     é só um atalho para quem quer entender antes de fazer. */}
                 {onExplain && !isReview && (
-                  <button onClick={() => onExplain(season.level, openNode.grammarTopic)}
+                  <button onClick={() => {
+                    // O exercício que a aula vai oferecer no fim: o primeiro
+                    // do Step ainda não feito (normalmente a gramática).
+                    const nextKind = openNode.kinds.find(k => !nodeProg?.exercises?.[k]) || openNode.kinds[0];
+                    onExplain(season.level, openNode.grammarTopic, {
+                      journeyId: journey.id, season: seasonIdx, nodeIndex: openNode.index, nextKind,
+                      stepLabel: `${season.title} · Step ${openNode.stepNumber}`,
+                      nextLabel: KIND_META[nextKind].label,
+                    });
+                  }}
                     className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-sky-400/25 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-400/60 transition-all text-left mb-1">
                     <FredAvatar expression="professor" className="w-10 h-12 shrink-0" />
                     <div className="flex-1 min-w-0">

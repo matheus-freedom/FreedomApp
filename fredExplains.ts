@@ -157,6 +157,19 @@ export interface FredProgressDoc {
   updatedAt?: number;
 }
 
+// Origem da aula quando aberta a partir de um Step da Journey. Guarda o
+// suficiente para o App reconstruir o nó e iniciar o exercício certo.
+export interface FredOrigin {
+  journeyId: import('./journeys').JourneyId;
+  season: number;
+  nodeIndex: number;
+  // Próximo exercício do Step ainda não feito (normalmente 'grammar').
+  nextKind: import('./journeys').JourneyKind;
+  // Rótulos prontos para a tela: "Season 1 · Step 1" e "Gramática".
+  stepLabel: string;
+  nextLabel: string;
+}
+
 // Estado do documento fred_lessons/{id}, como o front o enxerga.
 export type LessonDocStatus = 'generating' | 'ready' | 'error' | 'failed';
 

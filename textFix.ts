@@ -19,7 +19,15 @@ export const fixEscapedText = (s: string): string =>
     .replace(/\\r\\n/g, '\n')
     .replace(/\\n/g, '\n')
     .replace(/\\r/g, '\n')
-    .replace(/\\t/g, ' ');
+    .replace(/\\t/g, ' ')
+    // A IA às vezes escreve HTML no meio do texto ("<br><br>" no lugar
+    // da quebra de parágrafo — um aluno viu isso numa aula do Fred).
+    // Como o app NUNCA renderiza HTML vindo da IA (por segurança), a
+    // tag apareceria como texto. Trocamos <br> por quebra de linha e
+    // removemos <b>, <i>, <p> e afins, preservando o conteúdo.
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?(b|strong|i|em|u|p|span|div)(\s[^>]*)?>/gi, '')
+    .replace(/&nbsp;/g, ' ');
 
 // Percorre um objeto inteiro (arrays e sub-objetos inclusos) e
 // aplica o conserto em TODAS as strings — questões, opções,

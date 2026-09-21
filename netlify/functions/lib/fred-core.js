@@ -101,7 +101,7 @@ COMO O FRED ENSINA
 FORMATO DE TEXTO
 - Dentro de "body" use parágrafos curtos separados por linha em branco. Pode destacar termos com **negrito** (só isto de markdown; nada de títulos #, listas com -, tabelas ou código).
 - Frases em inglês dentro do corpo podem ir entre aspas.
-- Sem markdown nos demais campos.`;
+- Sem markdown nos demais campos. NUNCA use HTML em campo nenhum (nada de <br>, <b>, <p>): quebra de parágrafo é linha em branco.`;
 
 // Profundidade por nível — a mesma "Present Continuous" no A1 é uma
 // apresentação; no B1 é contraste com Simple Present, usos avançados
@@ -203,7 +203,15 @@ const MOODS = ["perfil", "feliz", "surpreso", "triste", "motivado"];
 // "\n" literal (barra + n) dentro das strings — mesmo problema já
 // visto na Journey. Conserta antes de validar.
 const fixEscapedText = (v) => {
-  if (typeof v === "string") return v.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\t/g, " ");
+  if (typeof v === "string") {
+    return v
+      .replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n").replace(/\\t/g, " ")
+      // HTML solto ("<br><br>" no lugar da quebra de parágrafo): o app
+      // não renderiza HTML da IA, então a tag apareceria como texto.
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/?(b|strong|i|em|u|p|span|div)(\s[^>]*)?>/gi, "")
+      .replace(/&nbsp;/g, " ");
+  }
   if (Array.isArray(v)) return v.map(fixEscapedText);
   if (v && typeof v === "object") { const o = {}; for (const k of Object.keys(v)) o[k] = fixEscapedText(v[k]); return o; }
   return v;
