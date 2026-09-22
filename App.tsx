@@ -28,6 +28,8 @@ import FredExplainsScreen from './components/FredExplainsScreen';
 import FredLessonScreen from './components/FredLessonScreen';
 import { CatalogEntry, FredOrigin, findCatalogEntry, matchCatalogEntry } from './fredExplains';
 import { deepShuffleQuestions } from './shuffleOptions';
+import { loadFredDraft, leaveFredDraft } from './services/fredDraft';
+import { FRED_CATALOG } from './fredExplains';
 import { AppState, Level, Theme, VoiceGender, VoiceAccent, StudyPlan, ActivityRecord, UserSession, GeneratedContent, UserTier, UserChallenge, AccessType } from './types';
 import { JourneyId, JourneyKind, JourneyNode, KIND_META, SEASONS, NextJourneyTarget, buildSeasonNodes, getNextJourneyTarget, seasonsSkippedByPlacement } from './journeys';
 import { generateQuizContent } from './services/geminiService';
@@ -44,7 +46,14 @@ import { tracker } from './services/tracker';
 // de texto e de personagem para o aluno; o custo é gerar algumas vezes
 // a mais no começo da vida de cada tópico.
 const ACTIVITY_VARIATIONS = 3;
-const INACTIVITY_LIMIT = 15 * 60 * 1000;
+// 60 minutos sem NENHUM sinal de vida (toque, rolagem, tecla, áudio,
+// resposta de quiz) — ver services/activity.ts. Eram 15; alunos
+// continuavam sendo derrubados no meio de uma aula do Fred (ler uma
+// seção longa e pensar não gera evento), e o custo de ficar logado
+// mais tempo é zero. Se um dia houver preocupação com computador
+// compartilhado, o caminho é uma opção "não manter conectado" no
+// login, não encurtar isto de novo.
+const INACTIVITY_LIMIT = 60 * 60 * 1000;
 
 // ── LIBERAÇÃO DE ACESSO ───────────────────────────────────────
 // A antiga tela "Acesso Restrito" (palavra-chave) saiu. Agora:
@@ -79,7 +88,19 @@ const landingState = (user: UserSession): Partial<AppState> => {
   tracker.start(user);
   if (status !== 'selection') return { status };
   const draft = loadDraft(user.userId);
-  if (!draft) return { status };
+  if (!draft) {
+    // Sem exercício pendente: havia uma AULA do Fred em andamento?
+    // Reabre a aula (a tela restaura seção e respostas pelo rascunho
+    // dela) e, se veio da Journey, mantém a origem para o botão
+    // "fazer o exercício do Step" continuar funcionando.
+    const fred = loadFredDraft(user.userId);
+    const entry = fred ? FRED_CATALOG.find(c => c.id === fred.lessonId) : undefined;
+    if (fred && fred.active && entry) {
+      tracker.event('ex_resume');
+      return { status: 'fred_lesson', fredLesson: entry, fredOrigin: fred.origin ?? null };
+    }
+    return { status };
+  }
   tracker.event('ex_resume');
   return {
     status: draft.screen, level: draft.level, theme: draft.theme, subTopic: draft.subTopic,
@@ -185,7 +206,7 @@ const App: React.FC = () => {
   }, []);
 
   // ── Logout por inatividade ────────────────────────────────────
-  // Mantém os 15 min, mas medindo AUSÊNCIA REAL: qualquer toque,
+  // 60 min (INACTIVITY_LIMIT) medindo AUSÊNCIA REAL: qualquer toque,
   // rolagem, digitação ou áudio tocando renova o prazo (ver
   // services/activity.ts). A checagem roda a cada 30s. O efeito
   // depende só de "tem alguém logado?" (!!state.user) — se dependesse
@@ -196,7 +217,7 @@ const App: React.FC = () => {
     const stopListening = listenForActivity();
     const timer = setInterval(() => {
       if (msSinceLastActivity() >= INACTIVITY_LIMIT) {
-        showToast('Sessão encerrada por inatividade. Se você estava num exercício, ele foi salvo: é só entrar de novo para continuar.', 'info', 9000);
+        showToast('Sessão encerrada por 1 hora sem atividade. Se você estava num exercício ou numa aula do Fred, o progresso foi salvo: é só entrar de novo para continuar.', 'info', 9000);
         handleLogout();
       }
     }, 30_000);
@@ -244,6 +265,7 @@ const App: React.FC = () => {
 
   const handleHome = useCallback(() => {
     if (state.user) {
+      leaveFredDraft(state.user.userId);
       // Libera a trava ao voltar para a tela inicial
       isStartingRef.current = false;
       setState(prev => ({ ...prev, status: 'selection', content: null, level: null, theme: null, subTopic: null, newTierReached: null, journeyContext: null, fredLesson: null, resumeProgress: null, errorAction: undefined }));
@@ -253,7 +275,7 @@ const App: React.FC = () => {
   // ── Fred explica ──────────────────────────────────────────────
   // Abre o catálogo (opcionalmente já filtrado num nível) ou uma aula.
   const openFredCatalog = useCallback((level?: Level | null) => {
-    setState(p => ({ ...p, status: 'fred_explains', fredLesson: null, fredInitialLevel: level ?? null, fredOrigin: null }));
+    setState(p => { if (p.user) leaveFredDraft(p.user.userId); return { ...p, status: 'fred_explains', fredLesson: null, fredInitialLevel: level ?? null, fredOrigin: null }; });
   }, []);
   // origin: de onde o aluno veio. Só a Journey preenche; abrir pelo
   // catálogo (ou "próximo tema") limpa, para a aula não continuar
@@ -272,7 +294,7 @@ const App: React.FC = () => {
   const backToJourney = useCallback(() => {
     isStartingRef.current = false;
     setJourneyReload(n => n + 1);
-    setState(p => ({ ...p, status: 'journey', fredLesson: null, fredOrigin: null }));
+    setState(p => { if (p.user) leaveFredDraft(p.user.userId); return { ...p, status: 'journey', fredLesson: null, fredOrigin: null }; });
   }, []);
 
   // ── Sair de um exercício ──────────────────────────────────────
@@ -831,6 +853,9 @@ const App: React.FC = () => {
             onStartJourneyExercise={async () => {
               const o = state.fredOrigin;
               if (!o) return false;
+              // O aluno foi para o exercício: o rascunho da aula fica
+              // guardado, mas o app não deve reabrir a aula no login.
+              if (state.user) leaveFredDraft(state.user.userId);
               const node = buildSeasonNodes(o.journeyId, o.season)[o.nodeIndex];
               if (!node) return false;
               return handleStartJourney(o.journeyId, o.season, node, o.nextKind);
