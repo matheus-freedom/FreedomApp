@@ -5,6 +5,8 @@ import { CatalogEntry, FRED_CATALOG, FredLesson, FredOrigin, LessonProgress, Les
 import { api } from '../services/api';
 import { showToast } from './Toast';
 import FredAvatar, { FredExpression } from './FredAvatar';
+import { saveFredDraft, loadFredDraft, clearFredDraft } from '../services/fredDraft';
+import { pingActivity } from '../services/activity';
 
 // ══════════════════════════════════════════════════════════════
 // FRED EXPLICA — a aula
@@ -149,6 +151,14 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
     let alive = true;
     setDocState('loading'); setLesson(null); setProgress(null); setRevealed(1);
     setSectionAnswers({}); setFinalAnswers({}); setFinalResult(null); setVote(null); setWaitSeconds(0);
+    // Retomada: se este aluno já tinha começado ESTA aula (aba
+    // recarregou, sessão caiu...), volta para onde parou.
+    const draft = loadFredDraft(user.userId);
+    if (draft && draft.lessonId === entry.id) {
+      setRevealed(draft.revealed);
+      setSectionAnswers(draft.sectionAnswers);
+      setFinalAnswers(draft.finalAnswers);
+    }
 
     (async () => {
       try {
@@ -193,6 +203,17 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
     return () => clearInterval(t);
   }, [docState]);
 
+  // Salva o progresso da leitura a cada mudança (seção aberta, resposta
+  // de mini-quiz ou do checkpoint). Barato: só um JSON pequeno no
+  // localStorage. Também conta como "sinal de vida" para o timer de
+  // inatividade — responder um quiz é o oposto de estar ausente.
+  useEffect(() => {
+    if (docState !== 'ready' || !lesson || finalResult) return;
+    pingActivity();
+    saveFredDraft(user.userId, { lessonId: entry.id, revealed, sectionAnswers, finalAnswers, origin: journeyOrigin, active: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docState, revealed, sectionAnswers, finalAnswers]);
+
   // Quem já concluiu vê tudo aberto (modo revisão).
   useEffect(() => {
     if (docState === 'ready' && lesson && alreadyDone) setRevealed(lesson.sections.length + 1);
@@ -229,6 +250,8 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
       const answers = lesson.finalQuiz.map((_, i) => finalAnswers[i] ?? -1);
       const r = await api.completeFredLesson(entry.id, answers);
       setFinalResult({ score: r.score, total: r.total, pct: r.pct, passed: r.passed, xpGained: r.xpGained, alreadyCompleted: r.alreadyCompleted });
+      // Checkpoint entregue: o rascunho cumpriu o papel dele.
+      clearFredDraft(user.userId);
       setProgress(r.progress);
       if (r.xpGained > 0 && r.totalXp !== null) {
         const today = new Date().toISOString().split('T')[0];
@@ -574,7 +597,7 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
 
       {!allSectionsRevealed && (
         <div className="flex items-center gap-2 justify-center text-[10px] font-black uppercase tracking-widest text-gray-600">
-          <AlertTriangle className="w-3 h-3" /> Leia no seu ritmo — o progresso das seções não é salvo, mas o tema fica marcado como "em andamento".
+          <AlertTriangle className="w-3 h-3" /> Leia no seu ritmo — seu progresso nesta aula fica salvo neste aparelho, e o tema aparece como "em andamento" no catálogo.
         </div>
       )}
     </div>
