@@ -134,6 +134,28 @@ console.log('\n── Embaralhamento das alternativas (bug da "letra A") ──'
   check('Questão sem índice válido passa intacta', sh.shuffleQuestion({ options: ['a', 'b'], correctAnswerIndex: 7 }).correctAnswerIndex === 7 && sh.shuffleQuestion({ sentence: 'gap ____' }).sentence === 'gap ____');
 }
 
+console.log('\n── Rascunho da aula (retomada) ──');
+{
+  // localStorage falso para o módulo do navegador rodar em Node.
+  const store = new Map();
+  globalThis.localStorage = { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  execSync('npx esbuild services/fredDraft.ts --bundle --format=cjs --platform=node --outfile=/tmp/fred-draft.cjs --log-level=error');
+  const d = require('/tmp/fred-draft.cjs');
+  d.saveFredDraft('u1', { lessonId: 'A1_will', revealed: 3, sectionAnswers: { 0: 1, 1: 2 }, finalAnswers: {}, origin: null, active: true });
+  const r = d.loadFredDraft('u1');
+  check('Salva e recupera seção e respostas', r && r.lessonId === 'A1_will' && r.revealed === 3 && r.sectionAnswers[1] === 2 && r.active === true);
+  check('Isolado por aluno', d.loadFredDraft('u2') === null);
+  d.leaveFredDraft('u1');
+  check('Saída voluntária mantém o progresso mas desliga a retomada', d.loadFredDraft('u1').revealed === 3 && d.loadFredDraft('u1').active === false);
+  store.set('freedom_fred_draft_u1', JSON.stringify({ ...JSON.parse(store.get('freedom_fred_draft_u1')), savedAt: Date.now() - 8 * 24 * 3600 * 1000 }));
+  check('Rascunho com mais de 7 dias é descartado', d.loadFredDraft('u1') === null);
+  store.set('freedom_fred_draft_u1', '{corrompido');
+  check('JSON corrompido não quebra', d.loadFredDraft('u1') === null);
+  d.saveFredDraft('u1', { lessonId: 'A1_will', revealed: 1, sectionAnswers: {}, finalAnswers: {}, origin: null, active: true });
+  d.clearFredDraft('u1');
+  check('clear apaga', d.loadFredDraft('u1') === null);
+}
+
 console.log('\n── Correção do checkpoint (servidor) ──');
 {
   const lesson = core.normalizeLesson(good);
