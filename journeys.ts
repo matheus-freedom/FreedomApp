@@ -211,6 +211,18 @@ export const seasonsSkippedByPlacement = (placementResults: Record<string, { lev
 export const placementSkillsMissing = (placementResults: Record<string, { level?: Level } | undefined> | undefined): number =>
   PLACEMENT_SKILL_KEYS.filter(k => !(placementResults || {})[k]?.level).length;
 
+// ── LIBERAÇÃO TOTAL DA TRILHA (decisão do Matheus, 22/09/2026) ─
+// A trava de progressão (Season anterior aprovada, ou nivelamento)
+// começou a dar problema na escola, então TODAS as Seasons e Steps
+// ficam abertos para todos os alunos. A lógica antiga continua no
+// código e testada: para voltar ao modo com travas, basta trocar
+// esta chave para false — no servidor há a chave irmã em
+// netlify/functions/lib/journey-core.js (mudar as DUAS juntas).
+// O que continua valendo mesmo liberado: média >= 60% para o Step
+// contar como aprovado na barra de progresso, estrelas, melhor nota
+// e o marcador de "próximo exercício recomendado".
+export const FREE_NAVIGATION = true;
+
 export interface NodeStatus {
   node: JourneyNode;
   key: string;
@@ -233,15 +245,17 @@ export const nodeStats = (node: JourneyNode, prog: JourneyNodeProgress | undefin
 
 // Estado de cada nó de uma Season, respeitando a ordem: um nó só
 // abre quando o anterior foi aprovado (>= 60%).
-export const seasonStatus = (journeyId: JourneyId, seasonIndex: number, doc: JourneyProgressDoc | null, unlockedByPlacement: boolean, previousSeasonPassed: boolean): { nodes: NodeStatus[]; pct: number; passed: boolean; unlocked: boolean } => {
+export const seasonStatus = (journeyId: JourneyId, seasonIndex: number, doc: JourneyProgressDoc | null, unlockedByPlacement: boolean, previousSeasonPassed: boolean, freeNav: boolean = FREE_NAVIGATION): { nodes: NodeStatus[]; pct: number; passed: boolean; unlocked: boolean } => {
   const nodes = buildSeasonNodes(journeyId, seasonIndex);
   const progNodes = doc?.journeys?.[journeyId]?.nodes || {};
-  const unlocked = seasonIndex === 0 || unlockedByPlacement || previousSeasonPassed;
+  // Com FREE_NAVIGATION tudo é liberado; senão vale a regra antiga.
+  const unlocked = freeNav || seasonIndex === 0 || unlockedByPlacement || previousSeasonPassed;
   // Season liberada pelo nivelamento é ZONA LIVRE: o aluno já provou
   // que domina esse nível, então pode abrir qualquer Step para
   // revisar, na ordem que quiser. Sem isto a tela prometia "revise
   // quando quiser" e entregava tudo cadeado menos o primeiro Step.
-  const freeRoam = unlockedByPlacement;
+  // Com FREE_NAVIGATION, a trilha inteira é zona livre.
+  const freeRoam = freeNav || unlockedByPlacement;
   let prevPassed = true;
   let currentMarked = false;
   const out: NodeStatus[] = nodes.map(node => {
@@ -250,7 +264,11 @@ export const seasonStatus = (journeyId: JourneyId, seasonIndex: number, doc: Jou
     let state: NodeStatus['state'];
     if (!unlocked || (!prevPassed && !freeRoam)) state = 'locked';
     else if (s.passed) state = 'done';
-    else if (!currentMarked && !freeRoam) { state = 'current'; currentMarked = true; }
+    // Mesmo com tudo liberado, o primeiro Step ainda não aprovado é
+    // marcado como "atual": nada tranca, mas o aluno continua vendo
+    // por onde é recomendado continuar (e o botão "Continuar" do
+    // mapa segue funcionando).
+    else if (!currentMarked && (freeNav || !freeRoam)) { state = 'current'; currentMarked = true; }
     else state = 'available';
     prevPassed = prevPassed && s.passed;
     return { node, key, state, pct: s.pct, doneKinds: s.doneKinds, passed: s.passed, freeRoam };
@@ -259,11 +277,11 @@ export const seasonStatus = (journeyId: JourneyId, seasonIndex: number, doc: Jou
   return { nodes: out, pct: Math.round((passedCount / nodes.length) * 100), passed: passedCount === nodes.length, unlocked };
 };
 
-export const journeyOverview = (journeyId: JourneyId, doc: JourneyProgressDoc | null, skipped: number) => {
+export const journeyOverview = (journeyId: JourneyId, doc: JourneyProgressDoc | null, skipped: number, freeNav: boolean = FREE_NAVIGATION) => {
   const seasons: ReturnType<typeof seasonStatus>[] = [];
   let prevPassed = true;
   SEASONS.forEach((_, i) => {
-    const st = seasonStatus(journeyId, i, doc, i < skipped, prevPassed);
+    const st = seasonStatus(journeyId, i, doc, i < skipped, prevPassed, freeNav);
     seasons.push(st);
     prevPassed = st.passed || i < skipped;
   });
@@ -319,6 +337,7 @@ export const getNextJourneyTarget = (
   nodeIndex: number,
   doc: JourneyProgressDoc | null,
   skipped: number,
+  freeNav: boolean = FREE_NAVIGATION,
 ): NextJourneyTarget | null => {
   const nodes = buildSeasonNodes(journeyId, seasonIndex);
   const node = nodes[nodeIndex];
@@ -335,10 +354,11 @@ export const getNextJourneyTarget = (
     };
   }
 
-  // 2) Step completo mas reprovado. Em Season liberada pelo nivelamento
-  //    (zona livre) nada tranca, então segue adiante mesmo assim; nas
-  //    demais, o próximo Step está trancado — refazer é o único caminho.
-  const freeRoam = seasonIndex < skipped;
+  // 2) Step completo mas reprovado. Em zona livre (FREE_NAVIGATION,
+  //    ou Season liberada pelo nivelamento) nada tranca, então segue
+  //    adiante mesmo assim; no modo antigo, o próximo Step está
+  //    trancado — refazer é o único caminho.
+  const freeRoam = freeNav || seasonIndex < skipped;
   if (!stats.passed && !freeRoam) {
     const ex = progNodes[nodeKeyOf(seasonIndex, nodeIndex)]?.exercises || {};
     const worst = [...node.kinds].sort((a, b) => (ex[a]?.bestPct ?? 0) - (ex[b]?.bestPct ?? 0))[0];
@@ -359,11 +379,12 @@ export const getNextJourneyTarget = (
     return { type: 'step', season: seasonIndex, nodeIndex: nextNode.index, kind, label };
   }
 
-  // 4) Era o último nó da Season. A Season seguinte só abre se ESTA
-  //    Season inteira foi aprovada (ou se o nivelamento já a liberou).
-  const seasonDone = seasonStatus(journeyId, seasonIndex, doc, freeRoam, true).passed;
+  // 4) Era o último nó da Season. Com FREE_NAVIGATION a Season
+  //    seguinte está sempre aberta; no modo antigo ela só abre se
+  //    ESTA Season inteira foi aprovada (ou o nivelamento liberou).
+  const seasonDone = seasonStatus(journeyId, seasonIndex, doc, freeRoam, true, freeNav).passed;
   const nextSeason = seasonIndex + 1;
-  if (nextSeason < SEASONS.length && (seasonDone || nextSeason < skipped)) {
+  if (nextSeason < SEASONS.length && (freeNav || seasonDone || nextSeason < skipped)) {
     const first = buildSeasonNodes(journeyId, nextSeason)[0];
     const firstStats = nodeStats(first, progNodes[nodeKeyOf(nextSeason, 0)]);
     const kind = first.kinds.find(k => !firstStats.doneKinds.includes(k)) || first.kinds[0];

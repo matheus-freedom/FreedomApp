@@ -114,7 +114,7 @@ check('Sem contexto = prática livre', aw.parseJourney(undefined) === null && aw
 check('award-activity usa a mesma conferência', !!aw.parseJourney({ journeyId: 'freedom', season: 0, node: 0, kind: 'writing' }) &&
   aw.parseJourney({ journeyId: 'freedom', season: 0, node: 3, kind: 'writing' }) === null);
 
-console.log('\n── Trava de acesso (anti-fraude e anti-gasto de IA) ──');
+console.log('\n── Trava de acesso (regra antiga, com travas — preservada para reversão) ──');
 const KINDS5 = core.KINDS;
 const progWith = (entries) => ({ journeys: { freedom: { nodes: Object.fromEntries(entries) } } });
 const doneNode = (season, node, kinds, pct) => [
@@ -124,28 +124,39 @@ const doneNode = (season, node, kinds, pct) => [
 const P = (season, node, kind = 'grammar') => core.resolvePosition({ journeyId: 'freedom', season, node, kind });
 const allSkills = (lvl) => ({ placementResults: { grammar: { level: lvl }, reading: { level: lvl }, listening: { level: lvl }, writing: { level: lvl } } });
 
-check('Aluno novo pode fazer o primeiro Step', core.canAccess(P(0, 0), null, {}).allowed === true);
-check('Aluno novo NÃO pode saltar para o Step 10', core.canAccess(P(0, 10), null, {}).allowed === false);
-check('Motivo do bloqueio dentro da Season é STEP_LOCKED', core.canAccess(P(0, 10), null, {}).reason === 'STEP_LOCKED');
-check('Aluno novo NÃO pode abrir a Season 5', core.canAccess(P(4, 0), null, {}).allowed === false);
-check('Motivo do bloqueio de Season é SEASON_LOCKED', core.canAccess(P(4, 0), null, {}).reason === 'SEASON_LOCKED');
+check('Aluno novo pode fazer o primeiro Step', core.canAccess(P(0, 0), null, {}, false).allowed === true);
+check('Aluno novo NÃO pode saltar para o Step 10', core.canAccess(P(0, 10), null, {}, false).allowed === false);
+check('Motivo do bloqueio dentro da Season é STEP_LOCKED', core.canAccess(P(0, 10), null, {}, false).reason === 'STEP_LOCKED');
+check('Aluno novo NÃO pode abrir a Season 5', core.canAccess(P(4, 0), null, {}, false).allowed === false);
+check('Motivo do bloqueio de Season é SEASON_LOCKED', core.canAccess(P(4, 0), null, {}, false).reason === 'SEASON_LOCKED');
 check('Concluir o Step 1 libera o Step 2',
-  core.canAccess(P(0, 1), progWith([doneNode(0, 0, KINDS5, 80)]), {}).allowed === true);
+  core.canAccess(P(0, 1), progWith([doneNode(0, 0, KINDS5, 80)]), {}, false).allowed === true);
 check('Step 1 com média baixa NÃO libera o Step 2',
-  core.canAccess(P(0, 1), progWith([doneNode(0, 0, KINDS5, 40)]), {}).allowed === false);
+  core.canAccess(P(0, 1), progWith([doneNode(0, 0, KINDS5, 40)]), {}, false).allowed === false);
 check('Step 1 incompleto NÃO libera o Step 2',
-  core.canAccess(P(0, 1), progWith([doneNode(0, 0, ['grammar', 'reading'], 100)]), {}).allowed === false);
+  core.canAccess(P(0, 1), progWith([doneNode(0, 0, ['grammar', 'reading'], 100)]), {}, false).allowed === false);
 check('Revisar um Step já concluído continua liberado',
-  core.canAccess(P(0, 0), progWith([doneNode(0, 0, KINDS5, 80)]), {}).allowed === true);
+  core.canAccess(P(0, 0), progWith([doneNode(0, 0, KINDS5, 80)]), {}, false).allowed === true);
 check('Nivelamento completo em B1 abre a Season 3 direto',
-  core.canAccess(P(2, 0), null, allSkills('B1')).allowed === true);
-check('Nivelamento em B1 NÃO abre a Season 4', core.canAccess(P(3, 0), null, allSkills('B1')).allowed === false);
+  core.canAccess(P(2, 0), null, allSkills('B1'), false).allowed === true);
+check('Nivelamento em B1 NÃO abre a Season 4', core.canAccess(P(3, 0), null, allSkills('B1'), false).allowed === false);
 check('Em Season pulada o aluno circula livre (Step 10 aberto)',
-  core.canAccess(P(1, 10), null, allSkills('B1')).allowed === true);
+  core.canAccess(P(1, 10), null, allSkills('B1'), false).allowed === true);
 check('Nivelamento incompleto não abre nada',
-  core.canAccess(P(2, 0), null, { placementResults: { reading: { level: 'C1' } } }).allowed === false);
+  core.canAccess(P(2, 0), null, { placementResults: { reading: { level: 'C1' } } }, false).allowed === false);
 check('Servidor e front concordam sobre quantas Seasons pular',
   core.seasonsSkipped(allSkills('B2')) === 3 && core.seasonsSkipped({}) === 0);
+
+console.log('\n── LIBERAÇÃO TOTAL no servidor (FREE_NAVIGATION — modo em produção) ──');
+check('A chave FREE_NAVIGATION do servidor está LIGADA', core.FREE_NAVIGATION === true);
+check('Aluno novo pode abrir QUALQUER Step (Step 10 da Season 1)', core.canAccess(P(0, 10), null, {}).allowed === true);
+check('Aluno novo pode abrir a Season 5 direto', core.canAccess(P(4, 0), null, {}).allowed === true);
+check('Step 1 com média baixa não tranca mais o Step 2',
+  core.canAccess(P(0, 1), progWith([doneNode(0, 0, KINDS5, 40)]), {}).allowed === true);
+check('Sem nivelamento também está tudo aberto',
+  core.canAccess(P(3, 5), null, { placementResults: { reading: { level: 'C1' } } }).allowed === true);
+check('A resposta ainda informa o skipped do nivelamento (usado no front)',
+  core.canAccess(P(0, 0), null, allSkills('B1')).skipped === 2);
 
 console.log('\n── Assinatura interna das chamadas de áudio ──');
 process.env.FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY || 'chave-de-teste';

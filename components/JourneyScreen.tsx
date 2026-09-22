@@ -3,7 +3,7 @@ import { UserSession, Level } from '../types';
 import {
   JOURNEYS, JourneyDef, JourneyId, JourneyKind, JourneyNode, JourneyProgressDoc,
   KIND_META, SEASONS, STEP_PASS_PCT, getJourney, journeyOverview, nodeKeyOf,
-  seasonsSkippedByPlacement, placementSkillsMissing, JOURNEY_KINDS,
+  seasonsSkippedByPlacement, placementSkillsMissing, JOURNEY_KINDS, FREE_NAVIGATION,
 } from '../journeys';
 import { api } from '../services/api';
 import {
@@ -259,21 +259,35 @@ const JourneyScreen: React.FC<JourneyScreenProps> = ({ user, onHome, onStartExer
           </div>
         </div>
 
-        {skipped > 0 && (
+        {/* Com FREE_NAVIGATION os avisos de desbloqueio por nivelamento
+            perdem o sentido (nada está trancado) — entra um aviso único
+            explicando a liberdade e recomendando a ordem. */}
+        {FREE_NAVIGATION ? (
           <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
-            <Zap className="w-4 h-4 text-[#f7931e] shrink-0 mt-0.5" />
+            <Compass className="w-4 h-4 text-[#f7931e] shrink-0 mt-0.5" />
             <p className="text-xs text-gray-400 leading-relaxed">
-              Seu nivelamento liberou <span className="text-white font-black">{skipped} Season{skipped > 1 ? 's' : ''}</span>. Elas ficam abertas para revisar na ordem que você quiser — e valem XP normalmente.
+              <span className="text-white font-black">Todas as Seasons e Steps estão abertos</span> — você pode estudar qualquer conteúdo, na ordem que quiser. Nossa recomendação: siga a trilha na ordem, começando pelo Step marcado como próximo. Cada Step continua pedindo média de {STEP_PASS_PCT}% para contar como concluído.
             </p>
           </div>
-        )}
-        {skipped === 0 && missingSkills > 0 && (
-          <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
-            <Compass className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Quer começar de um nível mais alto? Faça o <span className="text-white font-black">nivelamento das 4 habilidades</span> (faltam {missingSkills}) — a trilha então já abre nas Seasons que você domina. Enquanto isso, você começa pela Season 1.
-            </p>
-          </div>
+        ) : (
+          <>
+            {skipped > 0 && (
+              <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
+                <Zap className="w-4 h-4 text-[#f7931e] shrink-0 mt-0.5" />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Seu nivelamento liberou <span className="text-white font-black">{skipped} Season{skipped > 1 ? 's' : ''}</span>. Elas ficam abertas para revisar na ordem que você quiser — e valem XP normalmente.
+                </p>
+              </div>
+            )}
+            {skipped === 0 && missingSkills > 0 && (
+              <div className="relative mt-6 flex items-start gap-3 bg-[#222222]/80 border border-white/5 rounded-2xl p-4">
+                <Compass className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Quer começar de um nível mais alto? Faça o <span className="text-white font-black">nivelamento das 4 habilidades</span> (faltam {missingSkills}) — a trilha então já abre nas Seasons que você domina. Enquanto isso, você começa pela Season 1.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

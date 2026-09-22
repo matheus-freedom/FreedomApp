@@ -109,8 +109,19 @@ const nodeAverage = (nodeDef, nodeProgress) => {
 //   • o nó é o "atual" ou algum já aprovado (revisar é livre) —
 //     ou seja, não dá para saltar por cima de um Step não feito.
 // Devolve { allowed, reason } para a function traduzir em HTTP.
-const canAccess = (pos, progressDoc, gamification) => {
+//
+// ── LIBERAÇÃO TOTAL (decisão do Matheus, 22/09/2026) ──────────
+// A trava de progressão começou a dar problema na escola: TODAS as
+// Seasons e Steps ficam abertos. A regra antiga continua abaixo,
+// testada, para o dia em que se quiser reverter — basta trocar esta
+// chave para false, JUNTO com a chave irmã FREE_NAVIGATION do
+// journeys.ts (front). Uma sem a outra deixa a tela e o servidor
+// discordando sobre o que está aberto.
+const FREE_NAVIGATION = true;
+
+const canAccess = (pos, progressDoc, gamification, freeNav = FREE_NAVIGATION) => {
   const skipped = seasonsSkipped(gamification);
+  if (freeNav) return { allowed: true, skipped };
   const journeyProgress = ((progressDoc && progressDoc.journeys) || {})[pos.journeyId] || { nodes: {} };
   const nodesProgress = journeyProgress.nodes || {};
   const keyOf = (season, node) => `s${season}_n${node}`;
@@ -145,4 +156,5 @@ const canAccess = (pos, progressDoc, gamification) => {
 module.exports = {
   LEVELS, KINDS, JOURNEY_IDS, REVIEW_EVERY, STEP_PASS_PCT,
   buildSeasonNodes, resolvePosition, seasonsSkipped, nodeAverage, canAccess,
+  FREE_NAVIGATION,
 };

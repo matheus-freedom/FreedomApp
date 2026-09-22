@@ -63,8 +63,8 @@ check('Três de quatro habilidades ainda não basta',
 check('Nivelamento antigo (lastPlacementLevel) ainda vale', J.seasonsSkippedByPlacement({}, 'B2') === 3);
 check('Quantas habilidades faltam nivelar', J.placementSkillsMissing({ grammar: { level: 'B1' } }) === 3 && J.placementSkillsMissing(all('B1', 'B1', 'B1', 'B1')) === 0);
 
-console.log('\n── Progressão dentro da Season ──');
-let ov = J.journeyOverview('freedom', null, 0);
+console.log('\n── Progressão dentro da Season (regra antiga, com travas — preservada para reversão) ──');
+let ov = J.journeyOverview('freedom', null, 0, false);
 check('Aluno novo: primeiro nó é o atual', ov.seasons[0].nodes[0].state === 'current');
 check('Aluno novo: segundo nó está bloqueado', ov.seasons[0].nodes[1].state === 'locked');
 check('Aluno novo: próximo exercício é gramática do Step 1',
@@ -72,36 +72,36 @@ check('Aluno novo: próximo exercício é gramática do Step 1',
 check('Aluno novo: progresso geral 0%', ov.overall === 0);
 
 const KINDS = J.JOURNEY_KINDS;
-ov = J.journeyOverview('freedom', withNode('freedom', 0, 0, KINDS, 80), 0);
+ov = J.journeyOverview('freedom', withNode('freedom', 0, 0, KINDS, 80), 0, false);
 check('Step com média 80% é aprovado', ov.seasons[0].nodes[0].state === 'done');
 check('Aprovar o Step 1 libera o Step 2', ov.seasons[0].nodes[1].state === 'current');
 check('Próximo exercício passa a ser o Step 2', ov.next.node.index === 1 && ov.next.kind === 'grammar');
 
-ov = J.journeyOverview('freedom', withNode('freedom', 0, 0, KINDS, 50), 0);
+ov = J.journeyOverview('freedom', withNode('freedom', 0, 0, KINDS, 50), 0, false);
 check('Step com média 50% NÃO é aprovado', ov.seasons[0].nodes[0].state === 'current');
 check('Step reprovado mantém o próximo bloqueado', ov.seasons[0].nodes[1].state === 'locked');
 
 // Média 76% (4 notas de 90 e uma de 20): passa mesmo com um exercício ruim.
 const mixedPass = withNode('freedom', 0, 0, KINDS, 90);
 mixedPass.journeys.freedom.nodes['s0_n0'].exercises.listening = { bestPct: 20, attempts: 1, stars: 1, completedAt: 1 };
-ov = J.journeyOverview('freedom', mixedPass, 0);
+ov = J.journeyOverview('freedom', mixedPass, 0, false);
 check('Média do Step considera todas as notas', ov.seasons[0].nodes[0].pct === Math.round((90 * 4 + 20) / 5));
 check('Uma nota baixa não reprova se a média se sustenta', ov.seasons[0].nodes[0].passed === true);
 
 // Média 48%: reprovado, e o caminho mais curto é refazer o pior.
 const mixedFail = withNode('freedom', 0, 0, KINDS, 55);
 mixedFail.journeys.freedom.nodes['s0_n0'].exercises.listening = { bestPct: 20, attempts: 1, stars: 1, completedAt: 1 };
-ov = J.journeyOverview('freedom', mixedFail, 0);
+ov = J.journeyOverview('freedom', mixedFail, 0, false);
 check('Step reprovado continua sendo o atual', ov.seasons[0].nodes[0].state === 'current');
 check('Step reprovado aponta para o exercício de PIOR nota', ov.next.kind === 'listening', `(apontou ${ov.next?.kind})`);
 
 const partial = withNode('freedom', 0, 0, ['grammar', 'vocabulary'], 100);
-ov = J.journeyOverview('freedom', partial, 0);
+ov = J.journeyOverview('freedom', partial, 0, false);
 check('Step incompleto aponta para o próximo exercício não feito', ov.next.kind === 'reading');
 check('Exercícios não feitos contam 0 na média', ov.seasons[0].nodes[0].pct === 40);
 
-console.log('\n── Seasons puladas pelo nivelamento ──');
-ov = J.journeyOverview('freedom', null, 2);
+console.log('\n── Seasons puladas pelo nivelamento (regra antiga) ──');
+ov = J.journeyOverview('freedom', null, 2, false);
 check('Season 1 (pulada) fica desbloqueada para revisão', ov.seasons[0].unlocked === true);
 check('Season 3 abre direto quando o nivelamento pulou 2', ov.seasons[2].unlocked === true);
 check('Season 4 continua bloqueada', ov.seasons[3].unlocked === false);
@@ -118,7 +118,7 @@ check('90%+ = 3 estrelas', J.starsFor(90) === 3 && J.starsFor(100) === 3);
 check('75-89% = 2 estrelas', J.starsFor(75) === 2 && J.starsFor(89) === 2);
 check('abaixo de 75% = 1 estrela', J.starsFor(74) === 1 && J.starsFor(0) === 1);
 
-console.log('\n── Próximo passo após o exercício (tela de resultados) ──');
+console.log('\n── Próximo passo após o exercício (regra antiga) ──');
 // Progresso falso com TODOS os nós até "upTo" completos com a mesma nota.
 const withNodes = (journeyId, season, upTo, pct) => {
   const doc = { journeys: { [journeyId]: { startedAt: 1, nodes: {} } } };
@@ -130,33 +130,59 @@ const withNodes = (journeyId, season, upTo, pct) => {
   return doc;
 };
 
-let nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, ['grammar', 'vocabulary'], 100), 0);
+let nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, ['grammar', 'vocabulary'], 100), 0, false);
 check('Step incompleto → próximo exercício na ordem (reading)', nx && nx.type === 'exercise' && nx.kind === 'reading' && nx.nodeIndex === 0, `(deu ${JSON.stringify(nx)})`);
 
-nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 80), 0);
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 80), 0, false);
 check('Step aprovado → oferece o Step seguinte', nx && nx.type === 'step' && nx.nodeIndex === 1 && nx.kind === 'grammar', `(deu ${JSON.stringify(nx)})`);
 
-nx = J.getNextJourneyTarget('freedom', 0, 2, withNodes('freedom', 0, 2, 80), 0);
+nx = J.getNextJourneyTarget('freedom', 0, 2, withNodes('freedom', 0, 2, 80), 0, false);
 check('Depois do Step 3 a oferta é o Review', nx && nx.type === 'step' && nx.label.includes('Review'), `(deu ${JSON.stringify(nx)})`);
 
 const failDoc = withNode('freedom', 0, 0, KINDS, 55);
 failDoc.journeys.freedom.nodes['s0_n0'].exercises.listening = { bestPct: 20, attempts: 1, stars: 1, completedAt: 1 };
-nx = J.getNextJourneyTarget('freedom', 0, 0, failDoc, 0);
+nx = J.getNextJourneyTarget('freedom', 0, 0, failDoc, 0, false);
 check('Step reprovado → refazer o exercício de PIOR nota', nx && nx.type === 'redo' && nx.kind === 'listening' && nx.pct < 60, `(deu ${JSON.stringify(nx)})`);
 
-nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 50), 1);
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 50), 1, false);
 check('Reprovado em Season PULADA segue adiante (zona livre)', nx && nx.type === 'step' && nx.nodeIndex === 1, `(deu ${JSON.stringify(nx)})`);
 
 const lastIdx = J.buildSeasonNodes('freedom', 0).length - 1;
-nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNodes('freedom', 0, lastIdx, 80), 0);
+nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNodes('freedom', 0, lastIdx, 80), 0, false);
 check('Fechou a Season inteira → oferece a Season seguinte', nx && nx.type === 'season' && nx.season === 1 && nx.nodeIndex === 0, `(deu ${JSON.stringify(nx)})`);
 
 const lastS4 = J.buildSeasonNodes('freedom', 4).length - 1;
-nx = J.getNextJourneyTarget('freedom', 4, lastS4, withNodes('freedom', 4, lastS4, 80), 0);
+nx = J.getNextJourneyTarget('freedom', 4, lastS4, withNodes('freedom', 4, lastS4, 80), 0, false);
 check('Fechou a ÚLTIMA Season → fim da trilha', nx && nx.type === 'journey_end', `(deu ${JSON.stringify(nx)})`);
 
-nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNode('freedom', 0, lastIdx, KINDS, 80), 0);
+nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNode('freedom', 0, lastIdx, KINDS, 80), 0, false);
 check('Último nó ok mas Season com buracos → sem sugestão (o mapa orienta)', nx === null, `(deu ${JSON.stringify(nx)})`);
+
+console.log('\n── LIBERAÇÃO TOTAL (FREE_NAVIGATION — modo em produção) ──');
+check('A chave FREE_NAVIGATION está LIGADA', J.FREE_NAVIGATION === true);
+let ovf = J.journeyOverview('freedom', null, 0);
+check('Aluno novo: NENHUM nó bloqueado em nenhuma Season', ovf.seasons.every(s => s.nodes.every(n => n.state !== 'locked')));
+check('Todas as 5 Seasons desbloqueadas', ovf.seasons.every(s => s.unlocked === true));
+check('A trilha inteira é zona livre', ovf.seasons.every(s => s.nodes.every(n => n.freeRoam === true)));
+check('O primeiro Step segue marcado como recomendado', ovf.seasons[0].nodes[0].state === 'current');
+check('Botão Continuar ainda aponta para o Step 1 · gramática',
+  ovf.next && ovf.next.season === 0 && ovf.next.node.index === 0 && ovf.next.kind === 'grammar');
+check('Liberar não é aprovar: progresso geral continua 0%', ovf.overall === 0);
+
+ovf = J.journeyOverview('freedom', withNode('freedom', 0, 0, KINDS, 50), 0);
+check('Step reprovado (50%) NÃO tranca o Step seguinte', ovf.seasons[0].nodes[1].state !== 'locked');
+check('Aprovação continua exigindo 60% (Step de 50% não vira done)', ovf.seasons[0].nodes[0].passed === false);
+check('O recomendado continua sendo o Step reprovado', ovf.seasons[0].nodes[0].state === 'current');
+
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, KINDS, 50), 0);
+check('Resultados: reprovado segue ao próximo Step (nada trancado, sem tela de redo)',
+  nx && nx.type === 'step' && nx.nodeIndex === 1, `(deu ${JSON.stringify(nx)})`);
+nx = J.getNextJourneyTarget('freedom', 0, lastIdx, withNode('freedom', 0, lastIdx, KINDS, 80), 0);
+check('Último nó da Season oferece a próxima Season mesmo com buracos atrás',
+  nx && nx.type === 'season' && nx.season === 1, `(deu ${JSON.stringify(nx)})`);
+nx = J.getNextJourneyTarget('freedom', 0, 0, withNode('freedom', 0, 0, ['grammar', 'vocabulary'], 100), 0);
+check('Dentro do Step a ordem recomendada continua (próximo: reading)',
+  nx && nx.type === 'exercise' && nx.kind === 'reading');
 
 console.log('\n── Correção das lacunas (mesma regra do GapFillScreen) ──');
 const normalize = (s) => String(s || '').toLowerCase().replace(/[’‘`´]/g, "'").replace(/[.,!?;:]+$/g, '').replace(/\s+/g, ' ').trim();
