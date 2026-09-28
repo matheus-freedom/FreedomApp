@@ -177,6 +177,13 @@ service cloud.firestore {
     match /placement_jobs/{doc}     { allow read, write: if logado(); }
     match /placement_locks/{doc}    { allow read, write: if logado(); }
 
+    // ── Desafios: Duelo da Roleta ─────────────────────────────
+    // duels, duel_secrets, duel_players, duel_seen, duel_bank e
+    // duel_reports NÃO aparecem aqui de propósito: caem no "fechado"
+    // logo abaixo. O app só fala com elas pela function "duel" (Admin
+    // SDK), que é quem confere vez, tempo, gabarito, prêmio e aposta.
+    // Por isso o Duelo não exige publicar regra nova no console.
+
     // Qualquer coleção NÃO listada acima fica fechada ao navegador.
     // É de propósito: se amanhã o código passar a usar uma coleção
     // nova, ela nasce trancada e alguém precisa decidir a regra —

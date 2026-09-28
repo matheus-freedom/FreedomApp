@@ -1,0 +1,2102 @@
+[
+  {
+    "id": "ev-a1-01",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone asks: \"How are you?\" What's a natural reply?",
+    "options": [
+      "I'm fine, thanks. And you?",
+      "I have twenty years.",
+      "Yes, I am.",
+      "I'm good morning."
+    ],
+    "answer": 0,
+    "explain": "\"How are you?\" pede como você está: responda \"I'm fine/good, thanks\" e devolva a pergunta com \"And you?\"."
+  },
+  {
+    "id": "ev-a1-02",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "You meet Priya for the first time. What do you say?",
+    "options": [
+      "See you later.",
+      "Nice to meet you.",
+      "Take care.",
+      "Good night."
+    ],
+    "answer": 1,
+    "explain": "\"Nice to meet you\" é o \"prazer em conhecer\" do inglês, usado só no primeiro encontro."
+  },
+  {
+    "id": "ev-a1-03",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone says \"Thank you!\" What's a natural reply?",
+    "options": [
+      "Please.",
+      "Excuse me.",
+      "You're welcome.",
+      "Sorry."
+    ],
+    "answer": 2,
+    "explain": "Para responder a um agradecimento, use \"You're welcome\" (de nada). \"Please\" é \"por favor\" ao pedir algo."
+  },
+  {
+    "id": "ev-a1-04",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "You want to get past someone on a crowded bus. What do you say?",
+    "options": [
+      "Sorry me.",
+      "Excuse me.",
+      "Permission.",
+      "With license."
+    ],
+    "answer": 1,
+    "explain": "\"Com licença\" em inglês é \"Excuse me\". \"With license\" e \"Permission\" são traduções literais que não se usam."
+  },
+  {
+    "id": "ev-a1-05",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "It's 8 p.m. You arrive at a friend's house. You say:",
+    "options": [
+      "Good night!",
+      "Good afternoon!",
+      "Good morning!",
+      "Good evening!"
+    ],
+    "answer": 3,
+    "explain": "Ao chegar à noite, diga \"Good evening\". \"Good night\" é usado para se despedir ou antes de dormir."
+  },
+  {
+    "id": "ev-a1-06",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone asks: \"What's your name?\" You answer:",
+    "options": [
+      "I call Lucas.",
+      "My name's Lucas.",
+      "Me is Lucas.",
+      "I am call Lucas."
+    ],
+    "answer": 1,
+    "explain": "Em inglês não se diz \"eu me chamo\" literalmente: use \"My name's...\" ou \"I'm...\"."
+  },
+  {
+    "id": "ev-a1-07",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "How do you ask someone's age?",
+    "options": [
+      "How many years do you have?",
+      "What age you have?",
+      "How old are you?",
+      "How much years are you?"
+    ],
+    "answer": 2,
+    "explain": "Idade em inglês usa o verbo to be: \"How old are you?\" (e não \"ter anos\", como em português)."
+  },
+  {
+    "id": "ev-a1-08",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Your friend says \"See you tomorrow!\" You reply:",
+    "options": [
+      "Bye! See you!",
+      "Hello! Nice to see you!",
+      "Nice to meet you!",
+      "Welcome!"
+    ],
+    "answer": 0,
+    "explain": "Para responder a uma despedida, use outra despedida: \"Bye! See you!\"."
+  },
+  {
+    "id": "ev-a1-09",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone says \"I'm sorry I'm late.\" A kind reply is:",
+    "options": [
+      "You're welcome.",
+      "Excuse me.",
+      "Thank you.",
+      "No problem."
+    ],
+    "answer": 3,
+    "explain": "Para aceitar um pedido de desculpas, diga \"No problem\" ou \"That's OK\". \"You're welcome\" responde a um obrigado."
+  },
+  {
+    "id": "ev-a1-10",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "At a café, how do you order politely?",
+    "options": [
+      "I want that you give me a coffee.",
+      "Give me coffee.",
+      "Can I have a coffee, please?",
+      "Me coffee, please."
+    ],
+    "answer": 2,
+    "explain": "\"Can I have..., please?\" é a forma educada de pedir. \"I want that you...\" é tradução literal e está errado."
+  },
+  {
+    "id": "ev-a1-11",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "You didn't hear what someone said. What do you say?",
+    "options": [
+      "How?",
+      "Sorry, can you say that again?",
+      "What you said?",
+      "Repeat you!"
+    ],
+    "answer": 1,
+    "explain": "\"Como?\" não vira \"How?\" em inglês. Diga \"Sorry, can you say that again?\" ou \"Sorry?\"."
+  },
+  {
+    "id": "ev-a1-12",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone asks \"Where are you from?\" You answer:",
+    "options": [
+      "I'm of Brazil.",
+      "I come of Brazil.",
+      "I from Brazil.",
+      "I'm from Brazil."
+    ],
+    "answer": 3,
+    "explain": "Origem usa a preposição \"from\" e o verbo to be: \"I'm from Brazil\"."
+  },
+  {
+    "id": "ev-a1-13",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "A shop assistant says \"Have a nice day!\" You reply:",
+    "options": [
+      "Me too!",
+      "You too!",
+      "Yes, I have.",
+      "No, thanks."
+    ],
+    "answer": 1,
+    "explain": "Para devolver um bom desejo, diga \"You too!\" (para você também). \"Me too\" significa \"eu também\"."
+  },
+  {
+    "id": "ev-a1-14",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "You want to know the price of a T-shirt. You ask:",
+    "options": [
+      "How much is this T-shirt?",
+      "How many is this T-shirt?",
+      "How much costs this T-shirt?",
+      "What price have this T-shirt?"
+    ],
+    "answer": 0,
+    "explain": "Para perguntar preço: \"How much is...?\" ou \"How much does it cost?\". \"How many\" é para quantidade contável."
+  },
+  {
+    "id": "ev-a1-15",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone offers you some juice. You don't want it. You say:",
+    "options": [
+      "No, please.",
+      "Not, thank you.",
+      "No, thanks.",
+      "Nothing, thanks."
+    ],
+    "answer": 2,
+    "explain": "Para recusar com educação, diga \"No, thanks\". \"No, please\" soa estranho e confuso em inglês."
+  },
+  {
+    "id": "ev-a1-16",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Your friend says \"Happy birthday!\" You say:",
+    "options": [
+      "Congratulations!",
+      "Thanks so much!",
+      "You too!",
+      "Same to you!"
+    ],
+    "answer": 1,
+    "explain": "Quem faz aniversário apenas agradece: \"Thanks so much!\". \"Congratulations\" é para conquistas, não aniversário."
+  },
+  {
+    "id": "ev-a1-17",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone asks \"What do you do?\" They want to know your...",
+    "options": [
+      "hobby",
+      "plans for today",
+      "address",
+      "job"
+    ],
+    "answer": 3,
+    "explain": "\"What do you do?\" pergunta a sua profissão. Para agora, seria \"What are you doing?\"."
+  },
+  {
+    "id": "ev-a1-18",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "You want to say you need food now. You say:",
+    "options": [
+      "I have hunger.",
+      "I am with hunger.",
+      "I'm hungry.",
+      "I have hungry."
+    ],
+    "answer": 2,
+    "explain": "Em inglês fome, sede e frio usam to be: \"I'm hungry\" (e não \"estou com fome\" literal)."
+  },
+  {
+    "id": "ev-a1-19",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Someone asks \"Do you speak English?\" You speak only a little. You say:",
+    "options": [
+      "Yes, a few.",
+      "Yes, little much.",
+      "Yes, some little.",
+      "Yes, a little."
+    ],
+    "answer": 3,
+    "explain": "\"A little\" = um pouco. \"A few\" é para coisas contáveis, como \"a few words\"."
+  },
+  {
+    "id": "ev-a1-20",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Your friend sneezes. What do you say?",
+    "options": [
+      "Health!",
+      "Bless you!",
+      "Good luck!",
+      "Cheers!"
+    ],
+    "answer": 1,
+    "explain": "Depois de um espirro, o costume em inglês é dizer \"Bless you!\" (equivale ao nosso \"Saúde!\")."
+  },
+  {
+    "id": "ev-a1-21",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "My meeting is ___ Monday at 10 a.m.",
+    "options": [
+      "in",
+      "on",
+      "at",
+      "to"
+    ],
+    "answer": 1,
+    "explain": "Com dias da semana usamos 'on': on Monday, on Friday."
+  },
+  {
+    "id": "ev-a1-22",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Which word means 'reunião de trabalho'?",
+    "options": [
+      "reunion",
+      "party",
+      "meeting",
+      "lesson"
+    ],
+    "answer": 2,
+    "explain": "'Reunion' é um reencontro (de ex-colegas, família); reunião de trabalho é 'meeting'."
+  },
+  {
+    "id": "ev-a1-23",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "The person in charge of your team is your ___.",
+    "options": [
+      "client",
+      "intern",
+      "visitor",
+      "boss"
+    ],
+    "answer": 3,
+    "explain": "Boss é o chefe, a pessoa que comanda a equipe."
+  },
+  {
+    "id": "ev-a1-24",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "How do you say 'escritório' in English?",
+    "options": [
+      "desk",
+      "office",
+      "store",
+      "factory"
+    ],
+    "answer": 1,
+    "explain": "Office é o escritório; desk é a mesa de trabalho."
+  },
+  {
+    "id": "ev-a1-25",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "Choose the best greeting for an email to a new client.",
+    "options": [
+      "Hey dude,",
+      "Dear Mr. Silva,",
+      "Yo Silva,",
+      "What's up, Silva?"
+    ],
+    "answer": 1,
+    "explain": "'Dear + Mr./Ms. + sobrenome' é a abertura formal padrão em e-mails profissionais."
+  },
+  {
+    "id": "ev-a1-26",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "In an email address, how do you read the symbol '@'?",
+    "options": [
+      "at",
+      "and",
+      "dot",
+      "hash"
+    ],
+    "answer": 0,
+    "explain": "O @ é lido 'at' em e-mails; o ponto é lido 'dot'."
+  },
+  {
+    "id": "ev-a1-27",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "On the phone: 'Hello, this is Carla ___ ABC Company.'",
+    "options": [
+      "on",
+      "to",
+      "from",
+      "by"
+    ],
+    "answer": 2,
+    "explain": "Ao se apresentar ao telefone: 'This is [nome] from [empresa]'."
+  },
+  {
+    "id": "ev-a1-28",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "I work ___ a big company in São Paulo.",
+    "options": [
+      "for",
+      "of",
+      "on",
+      "to"
+    ],
+    "answer": 0,
+    "explain": "'Work for' + empresa = trabalhar para uma empresa."
+  },
+  {
+    "id": "ev-a1-29",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "A 'job interview' is a meeting to ___.",
+    "options": [
+      "buy a product",
+      "pay a bill",
+      "fix a computer",
+      "get a new job"
+    ],
+    "answer": 3,
+    "explain": "Job interview é a entrevista de emprego."
+  },
+  {
+    "id": "ev-a1-30",
+    "cat": "everyday",
+    "level": "A1",
+    "q": "End of an email: 'Thank you. Best ___, Lucas'",
+    "options": [
+      "regards",
+      "hugs",
+      "kisses",
+      "wishes you"
+    ],
+    "answer": 0,
+    "explain": "'Best regards' é o fechamento educado e padrão de e-mails profissionais."
+  },
+  {
+    "id": "ev-a2-01",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "The waiter asks \"Are you ready to order?\" You need more time. You say:",
+    "options": [
+      "No, I am not prepared.",
+      "Not yet. Can we have a few more minutes?",
+      "Wait me, please.",
+      "I'm not ready for order."
+    ],
+    "answer": 1,
+    "explain": "\"Not yet\" = ainda não. Pedir \"a few more minutes\" é o jeito natural de ganhar tempo no restaurante."
+  },
+  {
+    "id": "ev-a2-02",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "You want to pay at a restaurant. You say:",
+    "options": [
+      "Can we have the count, please?",
+      "Bring the note, please.",
+      "Could we have the check, please?",
+      "Can we pay the account?"
+    ],
+    "answer": 2,
+    "explain": "A conta do restaurante é \"the check\" (EUA) ou \"the bill\" (UK). \"Account\" é conta bancária."
+  },
+  {
+    "id": "ev-a2-03",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"I'm going to take off my jacket.\" Take off means:",
+    "options": [
+      "put on",
+      "buy",
+      "wash",
+      "remove"
+    ],
+    "answer": 3,
+    "explain": "\"Take off\" (roupa) = tirar. O oposto é \"put on\" = vestir."
+  },
+  {
+    "id": "ev-a2-04",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Your friend Amara looks sad. What do you ask?",
+    "options": [
+      "What's wrong?",
+      "What's bad?",
+      "What do you have?",
+      "What happens you?"
+    ],
+    "answer": 0,
+    "explain": "\"What's wrong?\" é o \"O que houve?\". \"What do you have?\" é tradução literal de \"o que você tem?\" e não funciona."
+  },
+  {
+    "id": "ev-a2-05",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"Please turn off the lights.\" What should you do?",
+    "options": [
+      "Switch the lights on",
+      "Change the lights",
+      "Switch the lights off",
+      "Clean the lights"
+    ],
+    "answer": 2,
+    "explain": "\"Turn off\" = desligar. O contrário é \"turn on\" = ligar."
+  },
+  {
+    "id": "ev-a2-06",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "In a store, the assistant asks \"Can I help you?\" You say:",
+    "options": [
+      "I'm only seeing, thanks.",
+      "I'm just looking, thanks.",
+      "I'm just watching, thanks.",
+      "I'm only reading, thanks."
+    ],
+    "answer": 1,
+    "explain": "\"I'm just looking\" = só estou olhando. \"Watch\" é assistir algo em movimento, como TV ou jogo."
+  },
+  {
+    "id": "ev-a2-07",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Your friend says \"I passed my driving test!\" You say:",
+    "options": [
+      "Happy birthday!",
+      "Good luck!",
+      "Bless you!",
+      "Congratulations!"
+    ],
+    "answer": 3,
+    "explain": "\"Congratulations!\" celebra uma conquista. \"Good luck!\" se diz antes da prova, não depois."
+  },
+  {
+    "id": "ev-a2-08",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"I need to wake up early tomorrow.\" Wake up means:",
+    "options": [
+      "stop sleeping",
+      "go to bed",
+      "take a shower",
+      "get dressed"
+    ],
+    "answer": 0,
+    "explain": "\"Wake up\" = acordar. \"Get up\" é levantar da cama e \"go to bed\" é ir dormir."
+  },
+  {
+    "id": "ev-a2-09",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "You arrive at a hotel. You say to the receptionist:",
+    "options": [
+      "I'd like to check out, please.",
+      "I'd like to log in, please.",
+      "I'd like to check in, please.",
+      "I'd like to sign up, please."
+    ],
+    "answer": 2,
+    "explain": "\"Check in\" é fazer o registro na chegada ao hotel; \"check out\" é na saída."
+  },
+  {
+    "id": "ev-a2-10",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Rafael says \"Let's grab a coffee!\" Grab a coffee means:",
+    "options": [
+      "steal a coffee",
+      "get a quick coffee",
+      "hold a coffee",
+      "make a coffee"
+    ],
+    "answer": 1,
+    "explain": "\"Grab\" em contextos informais significa pegar/tomar algo rapidinho: \"grab a coffee\", \"grab lunch\"."
+  },
+  {
+    "id": "ev-a2-11",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"Pizza or pasta?\" Both are fine for you. You say:",
+    "options": [
+      "It's equal to me.",
+      "I don't care of it.",
+      "Both is good.",
+      "I don't mind."
+    ],
+    "answer": 3,
+    "explain": "\"I don't mind\" = tanto faz, sem ser grosseiro. \"It's equal\" é tradução literal que não se usa."
+  },
+  {
+    "id": "ev-a2-12",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "You want to introduce your friend Maya. You say:",
+    "options": [
+      "This is Maya.",
+      "Here is Maya of me.",
+      "She is called of Maya.",
+      "I present you Maya."
+    ],
+    "answer": 0,
+    "explain": "Para apresentar alguém, o natural é \"This is Maya\". \"I present you\" é tradução literal e soa estranho."
+  },
+  {
+    "id": "ev-a2-13",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Someone says \"Hurry up!\" They want you to:",
+    "options": [
+      "go upstairs",
+      "stop",
+      "go faster",
+      "relax"
+    ],
+    "answer": 2,
+    "explain": "\"Hurry up\" = anda logo, se apresse. \"Up\" aqui não tem nada a ver com subir."
+  },
+  {
+    "id": "ev-a2-14",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "You bump into someone by accident. You say:",
+    "options": [
+      "You're welcome!",
+      "Oops, sorry!",
+      "With permission!",
+      "Never mind me!"
+    ],
+    "answer": 1,
+    "explain": "Esbarrou em alguém? Peça desculpas com \"Sorry!\". \"Excuse me\" é para pedir passagem antes."
+  },
+  {
+    "id": "ev-a2-15",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"Can you pick me up at the airport?\" Pick me up means:",
+    "options": [
+      "call me",
+      "carry my bags",
+      "wait for me at home",
+      "come and get me by car"
+    ],
+    "answer": 3,
+    "explain": "\"Pick someone up\" = buscar alguém (de carro). O contrário é \"drop someone off\" = deixar alguém."
+  },
+  {
+    "id": "ev-a2-16",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "A friend invites you to the movies, but you're busy. You say:",
+    "options": [
+      "No, I don't want.",
+      "I can't, I have a compromise.",
+      "I'd love to, but I can't tonight.",
+      "Impossible, sorry you."
+    ],
+    "answer": 2,
+    "explain": "\"I'd love to, but...\" recusa com educação. \"Compromise\" é falso cognato: significa acordo, não compromisso."
+  },
+  {
+    "id": "ev-a2-17",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "How do you ask for the Wi-Fi password at a café?",
+    "options": [
+      "What's the Wi-Fi password?",
+      "Which is the password of Wi-Fi?",
+      "How is the Wi-Fi password?",
+      "What the Wi-Fi password is?"
+    ],
+    "answer": 0,
+    "explain": "\"Qual é...?\" pedindo uma informação vira \"What's...?\" em inglês, não \"Which is...?\"."
+  },
+  {
+    "id": "ev-a2-18",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "\"I'm looking for my keys.\" Look for means:",
+    "options": [
+      "look at",
+      "try to find",
+      "take care of",
+      "wait for"
+    ],
+    "answer": 1,
+    "explain": "\"Look for\" = procurar. \"Look at\" = olhar para; \"look after\" = cuidar."
+  },
+  {
+    "id": "ev-a2-19",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "On the phone, you want the other person to wait. You say:",
+    "options": [
+      "Expect a second.",
+      "Hold on a second.",
+      "Stay a second of me.",
+      "Attend a second."
+    ],
+    "answer": 1,
+    "explain": "\"Hold on\" = espere um pouco. \"Expect\" é falso amigo: significa esperar no sentido de ter expectativa."
+  },
+  {
+    "id": "ev-a2-20",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Someone asks \"How was your weekend?\" A natural answer:",
+    "options": [
+      "It is great, thanks!",
+      "It was greatly, thanks!",
+      "It were great, thanks!",
+      "It was great, thanks!"
+    ],
+    "answer": 3,
+    "explain": "O fim de semana já passou, então use o passado \"was\" com o adjetivo \"great\"."
+  },
+  {
+    "id": "ev-a2-21",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Could you send me the report ___ Friday? It's the deadline.",
+    "options": [
+      "until",
+      "by",
+      "in",
+      "since"
+    ],
+    "answer": 1,
+    "explain": "'By Friday' = até sexta, no máximo (prazo); 'until' indica algo que dura até aquele momento."
+  },
+  {
+    "id": "ev-a2-22",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Mr. Lee isn't here right now. Can I take a ___?",
+    "options": [
+      "letter",
+      "paper",
+      "message",
+      "notice"
+    ],
+    "answer": 2,
+    "explain": "'Take a message' = anotar um recado ao telefone."
+  },
+  {
+    "id": "ev-a2-23",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "What does 'ASAP' mean in an email?",
+    "options": [
+      "as simple as possible",
+      "as soon as possible",
+      "always send a phrase",
+      "after sales and payment"
+    ],
+    "answer": 1,
+    "explain": "ASAP = as soon as possible, ou seja, o quanto antes."
+  },
+  {
+    "id": "ev-a2-24",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "I'm afraid I can't ___ the meeting tomorrow.",
+    "options": [
+      "assist",
+      "attend",
+      "watch",
+      "frequent"
+    ],
+    "answer": 1,
+    "explain": "'Attend' = comparecer; 'assist' significa ajudar (falso cognato)."
+  },
+  {
+    "id": "ev-a2-25",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Please find the document ___.",
+    "options": [
+      "attached",
+      "attaching",
+      "attach",
+      "attachment"
+    ],
+    "answer": 0,
+    "explain": "'Please find attached' é a fórmula clássica para avisar que há um anexo no e-mail."
+  },
+  {
+    "id": "ev-a2-26",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "I look forward ___ from you.",
+    "options": [
+      "to hear",
+      "to hearing",
+      "hearing",
+      "for hearing"
+    ],
+    "answer": 1,
+    "explain": "Em 'look forward to', o 'to' é preposição, então o verbo vem com -ing."
+  },
+  {
+    "id": "ev-a2-27",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Interview: 'What are your strengths?' asks about your ___.",
+    "options": [
+      "salary",
+      "best qualities",
+      "weak points",
+      "last job"
+    ],
+    "answer": 1,
+    "explain": "Strengths = pontos fortes; weaknesses = pontos fracos."
+  },
+  {
+    "id": "ev-a2-28",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Sorry, the line is ___. Please call again later.",
+    "options": [
+      "full",
+      "occupied",
+      "busy",
+      "closed"
+    ],
+    "answer": 2,
+    "explain": "Linha telefônica ocupada em inglês é 'busy'."
+  },
+  {
+    "id": "ev-a2-29",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Which is a polite way to ask a coworker for help?",
+    "options": [
+      "Help me now.",
+      "You help me.",
+      "Give help!",
+      "Could you help me with this?"
+    ],
+    "answer": 3,
+    "explain": "'Could you...?' é uma forma educada de fazer pedidos no trabalho."
+  },
+  {
+    "id": "ev-a2-30",
+    "cat": "everyday",
+    "level": "A2",
+    "q": "Please ___ the form and return it to HR.",
+    "options": [
+      "fill up",
+      "fill in",
+      "full in",
+      "feel in"
+    ],
+    "answer": 1,
+    "explain": "'Fill in' (ou fill out) a form = preencher; 'fill up' é encher (tanque, copo)."
+  },
+  {
+    "id": "ev-b1-01",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"We ran out of milk.\" This means:",
+    "options": [
+      "We spilled the milk.",
+      "We ran to buy milk.",
+      "There's no milk left.",
+      "The milk went bad."
+    ],
+    "answer": 2,
+    "explain": "\"Run out of\" = ficar sem algo porque acabou: \"We ran out of milk\" = acabou o leite."
+  },
+  {
+    "id": "ev-b1-02",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Your friend Chloe says \"I'll give you a hand with the boxes.\" She will:",
+    "options": [
+      "help you",
+      "give you a gift",
+      "clap for you",
+      "shake your hand"
+    ],
+    "answer": 0,
+    "explain": "\"Give someone a hand\" = dar uma mão, ajudar alguém."
+  },
+  {
+    "id": "ev-b1-03",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"We should catch up soon!\" means:",
+    "options": [
+      "We should run after someone.",
+      "We should talk and share news soon.",
+      "We should arrive on time.",
+      "We should take a bus together."
+    ],
+    "answer": 1,
+    "explain": "\"Catch up\" = colocar o papo em dia com alguém que você não vê há um tempo."
+  },
+  {
+    "id": "ev-b1-04",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "At a fast-food place: \"For here or to go?\" They want to know if you'll:",
+    "options": [
+      "pay now or later",
+      "sit inside or outside",
+      "order now or later",
+      "eat there or take the food away"
+    ],
+    "answer": 3,
+    "explain": "\"For here\" = comer no local; \"to go\" = para viagem. No Reino Unido, diz-se \"eat in or take away\"."
+  },
+  {
+    "id": "ev-b1-05",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "After dinner, Kenji says \"It's on me tonight.\" He means:",
+    "options": [
+      "It's my turn to cook.",
+      "I'm wearing it tonight.",
+      "I'll pay tonight.",
+      "I'm responsible for the mess."
+    ],
+    "answer": 2,
+    "explain": "\"It's on me\" = eu pago, é por minha conta. Também se diz \"My treat\"."
+  },
+  {
+    "id": "ev-b1-06",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Someone says \"Break a leg!\" before your presentation. They mean:",
+    "options": [
+      "Be careful!",
+      "Good luck!",
+      "Hurry up!",
+      "Calm down!"
+    ],
+    "answer": 1,
+    "explain": "\"Break a leg!\" é uma forma divertida de desejar boa sorte, típica antes de apresentações e shows."
+  },
+  {
+    "id": "ev-b1-07",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"Can you turn down the music?\" means:",
+    "options": [
+      "Can you make it quieter?",
+      "Can you change the song?",
+      "Can you make it louder?",
+      "Can you stop the party?"
+    ],
+    "answer": 0,
+    "explain": "\"Turn down\" o volume = abaixar. \"Turn up\" = aumentar."
+  },
+  {
+    "id": "ev-b1-08",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "You comment on a friend's post: \"This made my day!\" You mean:",
+    "options": [
+      "It took all my day.",
+      "I made this photo.",
+      "It's a daily post.",
+      "It made me really happy."
+    ],
+    "answer": 3,
+    "explain": "\"Make someone's day\" = deixar alguém muito feliz, ganhar o dia."
+  },
+  {
+    "id": "ev-b1-09",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "You text a friend: \"I'm running late.\" This means:",
+    "options": [
+      "I'm jogging tonight.",
+      "I'm going to be late.",
+      "I run late at night.",
+      "I'm late for my run."
+    ],
+    "answer": 1,
+    "explain": "\"I'm running late\" = estou atrasado(a), vou chegar depois do combinado."
+  },
+  {
+    "id": "ev-b1-10",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"Let's split the bill.\" means:",
+    "options": [
+      "cancel the order",
+      "leave a tip",
+      "share the cost",
+      "ask for a discount"
+    ],
+    "answer": 2,
+    "explain": "\"Split the bill\" = dividir a conta entre as pessoas."
+  },
+  {
+    "id": "ev-b1-11",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"Don't worry, I'll figure it out.\" means:",
+    "options": [
+      "I'll find a solution.",
+      "I'll draw a figure.",
+      "I'll give up.",
+      "I'll count the numbers."
+    ],
+    "answer": 0,
+    "explain": "\"Figure out\" = descobrir, entender ou achar a solução para algo."
+  },
+  {
+    "id": "ev-b1-12",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "At the airport, you ask when your plane leaves:",
+    "options": [
+      "What time the flight goes up?",
+      "What time does the flight take out?",
+      "When the flight lifts?",
+      "What time does the flight take off?"
+    ],
+    "answer": 3,
+    "explain": "\"Take off\" = decolar. O avião pousando é \"land\"."
+  },
+  {
+    "id": "ev-b1-13",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Your coworker Omar says \"Hang in there!\" He means:",
+    "options": [
+      "Wait on the phone.",
+      "Don't give up.",
+      "Hang your coat.",
+      "Stay at home."
+    ],
+    "answer": 1,
+    "explain": "\"Hang in there!\" = aguenta firme, não desista."
+  },
+  {
+    "id": "ev-b1-14",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"Sorry, I can't make it to the party.\" means:",
+    "options": [
+      "I can't organize the party.",
+      "I can't cook for the party.",
+      "I can't go to the party.",
+      "I can't find the party."
+    ],
+    "answer": 2,
+    "explain": "\"Make it\" = conseguir ir ou chegar a um evento."
+  },
+  {
+    "id": "ev-b1-15",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"I'm broke this month.\" means:",
+    "options": [
+      "I have no money.",
+      "I'm injured.",
+      "I'm very busy.",
+      "I'm feeling sad."
+    ],
+    "answer": 0,
+    "explain": "\"Broke\" (informal) = sem dinheiro, duro. Não confunda com \"broken\" = quebrado."
+  },
+  {
+    "id": "ev-b1-16",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"It was just a game. Get over it!\" means:",
+    "options": [
+      "Jump over it.",
+      "Get it back.",
+      "Think about it again.",
+      "Stop being upset about it."
+    ],
+    "answer": 3,
+    "explain": "\"Get over something\" = superar, deixar de ficar chateado com algo."
+  },
+  {
+    "id": "ev-b1-17",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Someone asks \"Do you mind if I sit here?\" You're OK with it. You say:",
+    "options": [
+      "Yes, I do.",
+      "No, go ahead.",
+      "Yes, I mind, sit.",
+      "No, I mind."
+    ],
+    "answer": 1,
+    "explain": "\"Do you mind...?\" pergunta se incomoda. Para permitir, responda \"No\" (não me incomoda): \"No, go ahead\"."
+  },
+  {
+    "id": "ev-b1-18",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "In a conversation, \"Sorry, I'm not following.\" means:",
+    "options": [
+      "I don't agree.",
+      "I'm not walking behind you.",
+      "I don't understand.",
+      "I'm not listening."
+    ],
+    "answer": 2,
+    "explain": "Numa conversa, \"I'm not following\" = não estou entendendo o raciocínio."
+  },
+  {
+    "id": "ev-b1-19",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "\"Keep me posted!\" means:",
+    "options": [
+      "Keep me updated.",
+      "Send me a letter.",
+      "Post my photo.",
+      "Wait for me."
+    ],
+    "answer": 0,
+    "explain": "\"Keep me posted\" = me mantenha informado, me avise das novidades."
+  },
+  {
+    "id": "ev-b1-20",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Nadia sees an old friend and says \"Long time no see!\" It means:",
+    "options": [
+      "I can't see very far.",
+      "See you in a long time.",
+      "I didn't see you there.",
+      "We haven't seen each other in ages."
+    ],
+    "answer": 3,
+    "explain": "\"Long time no see!\" = quanto tempo! Cumprimento informal para quem você não vê há tempos."
+  },
+  {
+    "id": "ev-b1-21",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "'Let's touch base next week' means:",
+    "options": [
+      "let's meet at the office",
+      "let's talk briefly to update each other",
+      "let's finish the project",
+      "let's play a game"
+    ],
+    "answer": 1,
+    "explain": "'Touch base' = entrar em contato rapidamente para alinhar as coisas."
+  },
+  {
+    "id": "ev-b1-22",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "I'll ___ up with the client tomorrow to check if they got the proposal.",
+    "options": [
+      "give",
+      "keep",
+      "follow",
+      "take"
+    ],
+    "answer": 2,
+    "explain": "'Follow up' = dar seguimento, retomar o contato para checar algo."
+  },
+  {
+    "id": "ev-b1-23",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Could you ___ me know when the documents are ready?",
+    "options": [
+      "let",
+      "make",
+      "say",
+      "give"
+    ],
+    "answer": 0,
+    "explain": "'Let me know' = me avise; estrutura: let + pessoa + verbo."
+  },
+  {
+    "id": "ev-b1-24",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "'The deadline is tomorrow.' A deadline is:",
+    "options": [
+      "a dangerous line",
+      "the start of a project",
+      "a long meeting",
+      "the final date to finish something"
+    ],
+    "answer": 3,
+    "explain": "Deadline é o prazo final para entregar algo."
+  },
+  {
+    "id": "ev-b1-25",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Email: 'I am writing ___ your request for a quote.'",
+    "options": [
+      "regard",
+      "regarding",
+      "regards",
+      "in regard"
+    ],
+    "answer": 1,
+    "explain": "'Regarding' = a respeito de; 'Regards' é só o fechamento do e-mail."
+  },
+  {
+    "id": "ev-b1-26",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "The candidate has a lot of ___ in marketing.",
+    "options": [
+      "experiences",
+      "experience",
+      "experiment",
+      "expert"
+    ],
+    "answer": 1,
+    "explain": "No sentido profissional, 'experience' é incontável: a lot of experience."
+  },
+  {
+    "id": "ev-b1-27",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "Can we ___ the meeting? I have an emergency today.",
+    "options": [
+      "anticipate",
+      "pretend",
+      "attend",
+      "postpone"
+    ],
+    "answer": 3,
+    "explain": "'Postpone' = adiar. 'Anticipate' = prever, esperar (não antecipar); 'pretend' = fingir."
+  },
+  {
+    "id": "ev-b1-28",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "I'm sorry, how do you write your surname? Could you ___ it, please?",
+    "options": [
+      "talk",
+      "say me",
+      "spell",
+      "tell"
+    ],
+    "answer": 2,
+    "explain": "'Spell' = soletrar, dizer letra por letra."
+  },
+  {
+    "id": "ev-b1-29",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "She's not available. Should I ask her to call you ___?",
+    "options": [
+      "return",
+      "around",
+      "back",
+      "over"
+    ],
+    "answer": 2,
+    "explain": "'Call back' = retornar a ligação."
+  },
+  {
+    "id": "ev-b1-30",
+    "cat": "everyday",
+    "level": "B1",
+    "q": "A CV (or résumé) is a document that shows your ___.",
+    "options": [
+      "monthly expenses",
+      "company rules",
+      "travel plans",
+      "work experience and education"
+    ],
+    "answer": 3,
+    "explain": "CV/résumé é o currículo: experiência profissional e formação."
+  },
+  {
+    "id": "ev-b2-01",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"The test? It was a piece of cake.\" means:",
+    "options": [
+      "It was a dessert.",
+      "It was very easy.",
+      "It was a small part.",
+      "It was delicious."
+    ],
+    "answer": 1,
+    "explain": "\"A piece of cake\" = moleza, algo muito fácil."
+  },
+  {
+    "id": "ev-b2-02",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "You suggest a movie and Theo says \"I'm down!\" He means:",
+    "options": [
+      "I'm sad.",
+      "I'm lying down.",
+      "I'm in, let's do it.",
+      "I'm not interested."
+    ],
+    "answer": 2,
+    "explain": "Na gíria, \"I'm down\" (ou \"I'm down for that\") = topo, estou dentro. \"Feeling down\" é que significa triste."
+  },
+  {
+    "id": "ev-b2-03",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"Let's call it a day.\" means:",
+    "options": [
+      "Let's stop working for now.",
+      "Let's phone someone today.",
+      "Let's name the day.",
+      "Let's start early."
+    ],
+    "answer": 0,
+    "explain": "\"Call it a day\" = encerrar o trabalho ou a atividade por hoje."
+  },
+  {
+    "id": "ev-b2-04",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"That new song is fire!\" (slang) means:",
+    "options": [
+      "It's dangerous.",
+      "It's too loud.",
+      "It's really bad.",
+      "It's really good."
+    ],
+    "answer": 3,
+    "explain": "Na gíria atual, \"fire\" = incrível, muito bom. Ex.: \"Your outfit is fire!\"."
+  },
+  {
+    "id": "ev-b2-05",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"I'll sleep on it.\" means:",
+    "options": [
+      "I'll go to bed now.",
+      "I'll forget about it.",
+      "I'll think about it before deciding.",
+      "I'll dream about it."
+    ],
+    "answer": 2,
+    "explain": "\"Sleep on it\" = deixar para decidir depois, com calma (até o dia seguinte)."
+  },
+  {
+    "id": "ev-b2-06",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Leo says his date is \"ghosting\" him. She:",
+    "options": [
+      "is scaring him",
+      "suddenly stopped replying",
+      "is following him secretly",
+      "posts about him a lot"
+    ],
+    "answer": 1,
+    "explain": "\"Ghost someone\" = sumir e parar de responder alguém sem explicação."
+  },
+  {
+    "id": "ev-b2-07",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"She's on the fence about the trip.\" means she:",
+    "options": [
+      "is excited",
+      "has cancelled it",
+      "is waiting outside",
+      "hasn't decided yet"
+    ],
+    "answer": 3,
+    "explain": "\"On the fence\" = em cima do muro, indeciso(a)."
+  },
+  {
+    "id": "ev-b2-08",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"I didn't get it at first, but then it clicked.\" Clicked means:",
+    "options": [
+      "I suddenly understood.",
+      "I pressed a button.",
+      "I made a noise.",
+      "I gave up."
+    ],
+    "answer": 0,
+    "explain": "Quando algo \"clicks\", você finalmente entende: a ficha caiu."
+  },
+  {
+    "id": "ev-b2-09",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Your friend says \"My bad!\" She's:",
+    "options": [
+      "feeling sick",
+      "complaining about you",
+      "admitting a mistake",
+      "saying she's upset"
+    ],
+    "answer": 2,
+    "explain": "\"My bad!\" (informal) = foi mal, a culpa é minha."
+  },
+  {
+    "id": "ev-b2-10",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "At work: \"Can you cover my shift tomorrow?\" means:",
+    "options": [
+      "hide my mistake",
+      "work in my place",
+      "pay for my lunch",
+      "check my schedule"
+    ],
+    "answer": 1,
+    "explain": "\"Cover someone's shift\" = trabalhar no turno de outra pessoa, substituí-la."
+  },
+  {
+    "id": "ev-b2-11",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"These sneakers cost an arm and a leg.\" means:",
+    "options": [
+      "They're dangerous.",
+      "They're very cheap.",
+      "They take forever to arrive.",
+      "They're very expensive."
+    ],
+    "answer": 3,
+    "explain": "\"Cost an arm and a leg\" = custar os olhos da cara, ser caríssimo."
+  },
+  {
+    "id": "ev-b2-12",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"FOMO\" stands for:",
+    "options": [
+      "friends of my own",
+      "feeling of moving on",
+      "fear of missing out",
+      "free online meeting offer"
+    ],
+    "answer": 2,
+    "explain": "FOMO = fear of missing out: medo de ficar de fora de algo legal que os outros estão vivendo."
+  },
+  {
+    "id": "ev-b2-13",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "After a long hike, Sofia says \"I'm beat.\" She means:",
+    "options": [
+      "She lost a game.",
+      "She's exhausted.",
+      "She's excited.",
+      "She's hungry."
+    ],
+    "answer": 1,
+    "explain": "\"I'm beat\" (informal) = estou morto(a) de cansaço. \"I got beat\" é que seria perder."
+  },
+  {
+    "id": "ev-b2-14",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Your friend says \"Spill the tea!\" She wants you to:",
+    "options": [
+      "tell her the gossip",
+      "clean the table",
+      "make some tea",
+      "calm down"
+    ],
+    "answer": 0,
+    "explain": "Na gíria, \"tea\" = fofoca. \"Spill the tea\" = conta tudo, solta a fofoca."
+  },
+  {
+    "id": "ev-b2-15",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"We don't have a plan. Let's play it by ear.\" means:",
+    "options": [
+      "Let's play music.",
+      "Let's listen carefully.",
+      "Let's follow the plan.",
+      "Let's decide as things happen."
+    ],
+    "answer": 3,
+    "explain": "\"Play it by ear\" = improvisar, ir decidindo conforme as coisas acontecem."
+  },
+  {
+    "id": "ev-b2-16",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"My brother is a couch potato.\" He:",
+    "options": [
+      "loves cooking",
+      "watches a lot of TV and does little",
+      "sells furniture",
+      "is very tall"
+    ],
+    "answer": 1,
+    "explain": "\"Couch potato\" = pessoa sedentária que passa o tempo no sofá vendo TV."
+  },
+  {
+    "id": "ev-b2-17",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"Tell me everything, I'm all ears.\" means:",
+    "options": [
+      "I can't hear well.",
+      "I'm tired of listening.",
+      "I'm listening carefully.",
+      "I have big ears."
+    ],
+    "answer": 2,
+    "explain": "\"I'm all ears\" = sou todo ouvidos, estou prestando total atenção."
+  },
+  {
+    "id": "ev-b2-18",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"___, I live in Lisbon, but I'm moving soon.\" (= nowadays)",
+    "options": [
+      "Actually",
+      "Currently",
+      "Actual",
+      "Eventually"
+    ],
+    "answer": 1,
+    "explain": "\"Currently\" = atualmente. \"Actually\" é falso cognato (= na verdade) e \"eventually\" = no fim, finalmente."
+  },
+  {
+    "id": "ev-b2-19",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"Hit me up when you're free.\" means:",
+    "options": [
+      "Wake me up.",
+      "Pick me up.",
+      "Remind me.",
+      "Get in touch with me."
+    ],
+    "answer": 3,
+    "explain": "\"Hit me up\" (gíria) = me chama, me manda mensagem, entra em contato."
+  },
+  {
+    "id": "ev-b2-20",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "\"Getting tickets now? That's a long shot.\" means:",
+    "options": [
+      "It's unlikely to work.",
+      "It's far away.",
+      "It takes a long time.",
+      "It's a great photo."
+    ],
+    "answer": 0,
+    "explain": "\"A long shot\" = algo com pouca chance de dar certo."
+  },
+  {
+    "id": "ev-b2-21",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Let's ___ this decision until we have more data.",
+    "options": [
+      "put off",
+      "put up",
+      "put out",
+      "put down"
+    ],
+    "answer": 0,
+    "explain": "'Put off' = adiar; 'put up' = hospedar/erguer."
+  },
+  {
+    "id": "ev-b2-22",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "We need to think outside the ___ to solve this problem.",
+    "options": [
+      "square",
+      "box",
+      "room",
+      "line"
+    ],
+    "answer": 1,
+    "explain": "'Think outside the box' = pensar de forma criativa, fora do padrão."
+  },
+  {
+    "id": "ev-b2-23",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "'Let's get the ball rolling' means:",
+    "options": [
+      "let's play a game",
+      "let's take a break",
+      "let's finish early",
+      "let's start"
+    ],
+    "answer": 3,
+    "explain": "'Get the ball rolling' = dar o pontapé inicial, começar algo."
+  },
+  {
+    "id": "ev-b2-24",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "In a meeting, 'Let's wrap up' means:",
+    "options": [
+      "Let's finish",
+      "Let's begin",
+      "Let's vote",
+      "Let's argue"
+    ],
+    "answer": 0,
+    "explain": "'Wrap up' = encerrar, concluir uma reunião ou tarefa."
+  },
+  {
+    "id": "ev-b2-25",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "The figures in this report aren't ___. Please double-check them.",
+    "options": [
+      "actual",
+      "accurate",
+      "actually",
+      "eventual"
+    ],
+    "answer": 1,
+    "explain": "'Accurate' = preciso, correto; 'actual' significa real (falso cognato)."
+  },
+  {
+    "id": "ev-b2-26",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Interview: 'Where do you see yourself in five years?' is about your ___.",
+    "options": [
+      "current salary",
+      "career goals",
+      "family",
+      "hobbies"
+    ],
+    "answer": 1,
+    "explain": "A pergunta avalia seus objetivos de carreira (career goals)."
+  },
+  {
+    "id": "ev-b2-27",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Please ___ me when you email the supplier.",
+    "options": [
+      "cv",
+      "ps",
+      "cc",
+      "re"
+    ],
+    "answer": 2,
+    "explain": "'CC' (carbon copy) = colocar alguém em cópia no e-mail."
+  },
+  {
+    "id": "ev-b2-28",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "Let's move on to the next item on the ___.",
+    "options": [
+      "diary",
+      "calendar",
+      "schedule list",
+      "agenda"
+    ],
+    "answer": 3,
+    "explain": "Em inglês, 'agenda' é a pauta da reunião; agenda pessoal é 'planner' ou 'diary'."
+  },
+  {
+    "id": "ev-b2-29",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "The meeting has been ___ to Thursday because the director is traveling.",
+    "options": [
+      "removed",
+      "mounted",
+      "moved",
+      "remarked"
+    ],
+    "answer": 2,
+    "explain": "'Move a meeting to' = remarcar para outro dia; 'remark' é comentar."
+  },
+  {
+    "id": "ev-b2-30",
+    "cat": "everyday",
+    "level": "B2",
+    "q": "I'm not sure I ___. Could you clarify what you mean?",
+    "options": [
+      "follow you",
+      "follow to you",
+      "pursue you",
+      "chase you"
+    ],
+    "answer": 0,
+    "explain": "'I follow you' = estou acompanhando seu raciocínio."
+  },
+  {
+    "id": "ev-c1-01",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Don't beat around the bush.\" means:",
+    "options": [
+      "Don't waste money.",
+      "Don't be rude.",
+      "Get to the point.",
+      "Stay calm."
+    ],
+    "answer": 2,
+    "explain": "\"Beat around the bush\" = enrolar, fazer rodeios. O pedido é: vá direto ao ponto."
+  },
+  {
+    "id": "ev-c1-02",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"I've made my offer. The ball is in your court.\" means:",
+    "options": [
+      "It's your decision now.",
+      "You lost the game.",
+      "You're in trouble.",
+      "You should relax."
+    ],
+    "answer": 0,
+    "explain": "\"The ball is in your court\" = agora é com você, a próxima decisão é sua."
+  },
+  {
+    "id": "ev-c1-03",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"She took his promise with a grain of salt.\" She:",
+    "options": [
+      "found it boring",
+      "accepted it happily",
+      "complained about it",
+      "didn't fully believe it"
+    ],
+    "answer": 3,
+    "explain": "\"Take something with a grain of salt\" = não acreditar totalmente, ver com desconfiança."
+  },
+  {
+    "id": "ev-c1-04",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"I'm not going to sugarcoat it.\" means:",
+    "options": [
+      "I won't talk about it.",
+      "I'll say it directly, even if it hurts.",
+      "I'll keep it short.",
+      "I'll make it sound nicer."
+    ],
+    "answer": 1,
+    "explain": "\"Sugarcoat\" = dourar a pílula. Não fazer isso = falar a verdade nua e crua."
+  },
+  {
+    "id": "ev-c1-05",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "The plan failed. \"We're back to square one.\" means:",
+    "options": [
+      "We're winning.",
+      "We're home.",
+      "We have to start again.",
+      "We finished early."
+    ],
+    "answer": 2,
+    "explain": "\"Back to square one\" = voltar à estaca zero."
+  },
+  {
+    "id": "ev-c1-06",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"You wanted that job? Sorry, that ship has sailed.\" means:",
+    "options": [
+      "The trip started.",
+      "The opportunity is gone.",
+      "It's too early.",
+      "Everything is fine."
+    ],
+    "answer": 1,
+    "explain": "\"That ship has sailed\" = a oportunidade já passou, agora é tarde."
+  },
+  {
+    "id": "ev-c1-07",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"He's always throwing shade at his old teammates.\" He's:",
+    "options": [
+      "making subtle insults",
+      "protecting them",
+      "copying them",
+      "ignoring them"
+    ],
+    "answer": 0,
+    "explain": "\"Throw shade\" (gíria) = alfinetar, criticar de forma indireta e sutil."
+  },
+  {
+    "id": "ev-c1-08",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "Declining an invitation: \"Can I take a rain check?\" means:",
+    "options": [
+      "Only if it doesn't rain.",
+      "I accept.",
+      "Never ask me again.",
+      "Not now, but maybe another time."
+    ],
+    "answer": 3,
+    "explain": "\"Take a rain check\" = recusar agora, mas deixar para outra vez."
+  },
+  {
+    "id": "ev-c1-09",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Relax, it's not rocket science.\" means:",
+    "options": [
+      "It's not scientific.",
+      "It's not interesting.",
+      "It's not hard to understand.",
+      "It's not true."
+    ],
+    "answer": 2,
+    "explain": "\"It's not rocket science\" = não é nenhum bicho de sete cabeças."
+  },
+  {
+    "id": "ev-c1-10",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Serena Williams is the GOAT.\" This means she's:",
+    "options": [
+      "stubborn",
+      "the greatest of all time",
+      "the oldest player",
+      "a beginner"
+    ],
+    "answer": 1,
+    "explain": "GOAT = Greatest Of All Time, o(a) melhor de todos os tempos."
+  },
+  {
+    "id": "ev-c1-11",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"The builders cut corners on this house.\" They:",
+    "options": [
+      "took a shorter route",
+      "hired more people",
+      "worked extra hours",
+      "did things cheaply or carelessly"
+    ],
+    "answer": 3,
+    "explain": "\"Cut corners\" = economizar tempo ou dinheiro fazendo algo mal feito."
+  },
+  {
+    "id": "ev-c1-12",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Let's not jump the gun. We don't have all the facts yet.\" means:",
+    "options": [
+      "Let's not fight about it.",
+      "Let's not act too soon.",
+      "Let's not give up.",
+      "Let's not waste money."
+    ],
+    "answer": 1,
+    "explain": "\"Jump the gun\" = precipitar-se, agir antes da hora (como largar antes do tiro de partida numa corrida)."
+  },
+  {
+    "id": "ev-c1-13",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Gabriel tends to blow things out of proportion.\" He:",
+    "options": [
+      "breaks things easily",
+      "exaggerates how serious things are",
+      "spends too much",
+      "forgets things"
+    ],
+    "answer": 1,
+    "explain": "\"Blow things out of proportion\" = exagerar, fazer tempestade em copo d'água."
+  },
+  {
+    "id": "ev-c1-14",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"I can't make heads or tails of this manual.\" means:",
+    "options": [
+      "I can't decide.",
+      "I can't find it.",
+      "I can't finish it.",
+      "I can't understand it at all."
+    ],
+    "answer": 3,
+    "explain": "\"Can't make heads or tails of\" = não entender nada. Não tem a ver com cara ou coroa."
+  },
+  {
+    "id": "ev-c1-15",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Calling him a genius is a bit of a stretch.\" means:",
+    "options": [
+      "It's an exaggeration.",
+      "It's very flexible.",
+      "It's far away.",
+      "It's a long break."
+    ],
+    "answer": 0,
+    "explain": "\"That's a stretch\" = isso é forçar a barra, um exagero."
+  },
+  {
+    "id": "ev-c1-16",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Low-key, I loved that show.\" Low-key means:",
+    "options": [
+      "loudly",
+      "not at all",
+      "kind of, quietly",
+      "extremely"
+    ],
+    "answer": 2,
+    "explain": "Na gíria, \"low-key\" = meio que, discretamente. O oposto, \"high-key\", = abertamente."
+  },
+  {
+    "id": "ev-c1-17",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"You hit the nail on the head.\" means:",
+    "options": [
+      "You made a mistake.",
+      "You're exactly right.",
+      "You worked hard.",
+      "You were too harsh."
+    ],
+    "answer": 1,
+    "explain": "\"Hit the nail on the head\" = acertar em cheio, na mosca."
+  },
+  {
+    "id": "ev-c1-18",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"You're late again, but I'll let it slide this time.\" means:",
+    "options": [
+      "I'll let it fall.",
+      "I'll forget the plan.",
+      "I'll show the slides.",
+      "I won't complain this time."
+    ],
+    "answer": 3,
+    "explain": "\"Let it slide\" = deixar passar, não reclamar ou punir desta vez."
+  },
+  {
+    "id": "ev-c1-19",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"We argued last year, but I'm not one to hold a grudge.\" means:",
+    "options": [
+      "I don't like to argue.",
+      "I never lend money.",
+      "I don't stay angry at people for long.",
+      "I don't keep secrets."
+    ],
+    "answer": 2,
+    "explain": "\"Hold a grudge\" = guardar rancor. \"Not one to...\" = não sou de fazer isso."
+  },
+  {
+    "id": "ev-c1-20",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "\"Train or bus? It's six of one, half a dozen of the other.\" means:",
+    "options": [
+      "One option is clearly better.",
+      "We need more options.",
+      "Both are basically the same.",
+      "It's too complicated."
+    ],
+    "answer": 2,
+    "explain": "\"Six of one, half a dozen of the other\" = dá no mesmo, tanto faz."
+  },
+  {
+    "id": "ev-c1-21",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "Which is the most diplomatic way to disagree in a meeting?",
+    "options": [
+      "You're wrong about that.",
+      "That's a terrible idea.",
+      "I see your point, but I'm not entirely convinced.",
+      "No way, that won't work."
+    ],
+    "answer": 2,
+    "explain": "Reconhecer o ponto do outro antes de discordar ('I see your point, but...') suaviza o desacordo."
+  },
+  {
+    "id": "ev-c1-22",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "We're willing to meet you ___ on the price.",
+    "options": [
+      "halfway",
+      "at half",
+      "by half",
+      "halfly"
+    ],
+    "answer": 0,
+    "explain": "'Meet someone halfway' = fazer concessões e chegar a um meio-termo."
+  },
+  {
+    "id": "ev-c1-23",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "Most formal: 'I ___ you could send me the invoice by Friday.'",
+    "options": [
+      "want that",
+      "wish that",
+      "need so",
+      "would be grateful if"
+    ],
+    "answer": 3,
+    "explain": "'I would be grateful if you could...' é uma fórmula formal e muito educada de pedido."
+  },
+  {
+    "id": "ev-c1-24",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "'Let's take this offline' in a meeting means:",
+    "options": [
+      "turn off the internet",
+      "cancel the project",
+      "write it on paper",
+      "discuss it privately later"
+    ],
+    "answer": 3,
+    "explain": "'Take it offline' = discutir depois, em particular, fora da reunião."
+  },
+  {
+    "id": "ev-c1-25",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "'Going forward' in a corporate email means:",
+    "options": [
+      "walking ahead",
+      "as a promotion",
+      "from now on",
+      "in the past"
+    ],
+    "answer": 2,
+    "explain": "'Going forward' = daqui para frente, a partir de agora."
+  },
+  {
+    "id": "ev-c1-26",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "The Portuguese 'eventualmente' (às vezes) is best translated as:",
+    "options": [
+      "eventually",
+      "finally",
+      "actually",
+      "occasionally"
+    ],
+    "answer": 3,
+    "explain": "'Eventually' = no fim das contas; 'eventualmente' (às vezes) = occasionally."
+  },
+  {
+    "id": "ev-c1-27",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "We appreciate your patience and apologize for any ___ caused.",
+    "options": [
+      "inconvenience",
+      "incommodity",
+      "disturbance of",
+      "trouble of"
+    ],
+    "answer": 0,
+    "explain": "'Apologize for any inconvenience' é a fórmula padrão de desculpas formais."
+  },
+  {
+    "id": "ev-c1-28",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "Your proposal has merit; ___, the timing isn't right for us.",
+    "options": [
+      "although",
+      "however",
+      "despite",
+      "even though"
+    ],
+    "answer": 1,
+    "explain": "Após ponto e vírgula, usamos o advérbio 'however'; 'although' e 'despite' não funcionam aí."
+  },
+  {
+    "id": "ev-c1-29",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "'Can you give me a ballpark figure?' asks for:",
+    "options": [
+      "an exact invoice",
+      "a sports score",
+      "a rough estimate",
+      "a final contract"
+    ],
+    "answer": 2,
+    "explain": "'Ballpark figure' = uma estimativa aproximada."
+  },
+  {
+    "id": "ev-c1-30",
+    "cat": "everyday",
+    "level": "C1",
+    "q": "'Let's not reinvent the wheel' means:",
+    "options": [
+      "build a new vehicle",
+      "use existing solutions, don't start from scratch",
+      "ignore past mistakes",
+      "work faster than competitors"
+    ],
+    "answer": 1,
+    "explain": "'Reinvent the wheel' = perder tempo criando algo que já existe e funciona."
+  }
+]

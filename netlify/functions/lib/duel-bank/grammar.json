@@ -1,0 +1,1402 @@
+[
+ {
+  "id": "gr-a1-01",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "She ___ to school every day.",
+  "options": [
+   "go",
+   "gone",
+   "going",
+   "goes"
+  ],
+  "answer": 3,
+  "explain": "Com he/she/it no presente simples, o verbo ganha -s ou -es: goes."
+ },
+ {
+  "id": "gr-a1-02",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "I ___ a student.",
+  "options": [
+   "is",
+   "are",
+   "am",
+   "be"
+  ],
+  "answer": 2,
+  "explain": "O verbo to be com I é sempre am: I am (I'm)."
+ },
+ {
+  "id": "gr-a1-03",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "There ___ two cats in the garden.",
+  "options": [
+   "are",
+   "is",
+   "be",
+   "has"
+  ],
+  "answer": 0,
+  "explain": "There are é usado com plural (two cats). There is é para singular. Não se usa has para 'ter/existir'."
+ },
+ {
+  "id": "gr-a1-04",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "___ you like pizza?",
+  "options": [
+   "Does",
+   "Is",
+   "Do",
+   "Are"
+  ],
+  "answer": 2,
+  "explain": "Perguntas no presente simples com you usam o auxiliar do: Do you like...?"
+ },
+ {
+  "id": "gr-a1-05",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "He ___ like coffee.",
+  "options": [
+   "isn't",
+   "not",
+   "doesn't",
+   "don't"
+  ],
+  "answer": 2,
+  "explain": "Negativa no presente simples com he/she/it usa doesn't + verbo na forma base: doesn't like."
+ },
+ {
+  "id": "gr-a1-06",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "This is ___ umbrella.",
+  "options": [
+   "a",
+   "an",
+   "some",
+   "any"
+  ],
+  "answer": 1,
+  "explain": "Usa-se an antes de som de vogal: an umbrella, an apple, an egg."
+ },
+ {
+  "id": "gr-a1-07",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "My birthday is ___ May.",
+  "options": [
+   "on",
+   "at",
+   "in",
+   "to"
+  ],
+  "answer": 2,
+  "explain": "Com meses, anos e estações usamos in: in May, in 2025, in summer."
+ },
+ {
+  "id": "gr-a1-08",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "The class starts ___ 8 o'clock.",
+  "options": [
+   "in",
+   "on",
+   "to",
+   "at"
+  ],
+  "answer": 3,
+  "explain": "Com horários exatos usamos at: at 8 o'clock, at noon, at midnight."
+ },
+ {
+  "id": "gr-a1-09",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "Look! The children ___ in the park.",
+  "options": [
+   "play",
+   "played",
+   "plays",
+   "are playing"
+  ],
+  "answer": 3,
+  "explain": "Look! indica algo acontecendo agora, então usamos o presente contínuo: are playing."
+ },
+ {
+  "id": "gr-a1-10",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "Is this ___ bag, Pedro?",
+  "options": [
+   "your",
+   "you",
+   "yours",
+   "you're"
+  ],
+  "answer": 0,
+  "explain": "Antes de um substantivo usamos o possessivo your (seu/sua). You're = you are."
+ },
+ {
+  "id": "gr-a1-11",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "I have two ___.",
+  "options": [
+   "child",
+   "childs",
+   "children",
+   "childrens"
+  ],
+  "answer": 2,
+  "explain": "Child tem plural irregular: children. Não se acrescenta -s."
+ },
+ {
+  "id": "gr-a1-12",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "She can ___ very well.",
+  "options": [
+   "swim",
+   "swims",
+   "swimming",
+   "to swim"
+  ],
+  "answer": 0,
+  "explain": "Depois de can o verbo fica na forma base, sem -s e sem to: can swim."
+ },
+ {
+  "id": "gr-a1-13",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "___ is your name?",
+  "options": [
+   "What",
+   "Who",
+   "How",
+   "Where"
+  ],
+  "answer": 0,
+  "explain": "Em inglês se pergunta o nome com What: What is your name? 'How is your name' é tradução literal errada."
+ },
+ {
+  "id": "gr-a1-14",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "We ___ TV last night.",
+  "options": [
+   "watched",
+   "watch",
+   "watches",
+   "watching"
+  ],
+  "answer": 0,
+  "explain": "Last night indica passado, então usamos o passado simples: watched."
+ },
+ {
+  "id": "gr-a1-15",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "Tom is ___ than his brother.",
+  "options": [
+   "more tall",
+   "tall",
+   "tallest",
+   "taller"
+  ],
+  "answer": 3,
+  "explain": "Adjetivos curtos formam o comparativo com -er + than: taller than. 'More tall' está errado."
+ },
+ {
+  "id": "gr-a1-16",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "Can you help ___? I'm lost.",
+  "options": [
+   "I",
+   "my",
+   "me",
+   "mine"
+  ],
+  "answer": 2,
+  "explain": "Depois do verbo usamos o pronome objeto: help me. I é sujeito, my e mine indicam posse."
+ },
+ {
+  "id": "gr-a1-17",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "Choose the correct sentence.",
+  "options": [
+   "She has 20 years.",
+   "She have 20 years.",
+   "She is 20 years old.",
+   "She are 20 years old."
+  ],
+  "answer": 2,
+  "explain": "Idade em inglês usa o verbo to be, não have: She is 20 (years old)."
+ },
+ {
+  "id": "gr-a1-18",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "How ___ apples do you want?",
+  "options": [
+   "much",
+   "lot",
+   "many",
+   "some"
+  ],
+  "answer": 2,
+  "explain": "How many é para coisas contáveis no plural (apples). How much é para incontáveis (water, money)."
+ },
+ {
+  "id": "gr-a1-19",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "There isn't ___ milk in the fridge.",
+  "options": [
+   "some",
+   "any",
+   "many",
+   "a"
+  ],
+  "answer": 1,
+  "explain": "Em frases negativas e perguntas usamos any: There isn't any milk."
+ },
+ {
+  "id": "gr-a1-20",
+  "cat": "grammar",
+  "level": "A1",
+  "q": "She ___ at home yesterday.",
+  "options": [
+   "were",
+   "is",
+   "be",
+   "was"
+  ],
+  "answer": 3,
+  "explain": "Passado de to be com I/he/she/it é was. Were é para you/we/they."
+ },
+ {
+  "id": "gr-a2-01",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I have never ___ sushi.",
+  "options": [
+   "eat",
+   "ate",
+   "eaten",
+   "eating"
+  ],
+  "answer": 2,
+  "explain": "O present perfect usa have + particípio passado: have eaten. Ate é o passado simples."
+ },
+ {
+  "id": "gr-a2-02",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I was taking a shower when the phone ___.",
+  "options": [
+   "ring",
+   "rung",
+   "was ring",
+   "rang"
+  ],
+  "answer": 3,
+  "explain": "Ação longa no past continuous é interrompida por uma curta no passado simples: rang."
+ },
+ {
+  "id": "gr-a2-03",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "You ___ wear a seatbelt in the car. It's the law.",
+  "options": [
+   "must",
+   "mustn't",
+   "can",
+   "would"
+  ],
+  "answer": 0,
+  "explain": "Must expressa obrigação. Mustn't é proibição, o contrário do sentido da frase."
+ },
+ {
+  "id": "gr-a2-04",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "This is the ___ movie I have ever seen.",
+  "options": [
+   "good",
+   "better",
+   "best",
+   "most good"
+  ],
+  "answer": 2,
+  "explain": "Good tem superlativo irregular: good, better, the best."
+ },
+ {
+  "id": "gr-a2-05",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I'm interested ___ music.",
+  "options": [
+   "on",
+   "in",
+   "at",
+   "for"
+  ],
+  "answer": 1,
+  "explain": "O adjetivo interested sempre vem com in: interested in something."
+ },
+ {
+  "id": "gr-a2-06",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "We ___ visit our grandparents next weekend.",
+  "options": [
+   "going to",
+   "are going to",
+   "go to",
+   "will to"
+  ],
+  "answer": 1,
+  "explain": "Para planos futuros usamos be going to + verbo: we are going to visit. O verbo to be não pode faltar."
+ },
+ {
+  "id": "gr-a2-07",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "He's not as tall ___ his sister.",
+  "options": [
+   "than",
+   "like",
+   "as",
+   "that"
+  ],
+  "answer": 2,
+  "explain": "A estrutura de igualdade é as + adjetivo + as: not as tall as."
+ },
+ {
+  "id": "gr-a2-08",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I ___ play the piano when I was a child.",
+  "options": [
+   "used to",
+   "use to",
+   "was used to",
+   "am used to"
+  ],
+  "answer": 0,
+  "explain": "Used to + verbo indica hábito no passado que não existe mais."
+ },
+ {
+  "id": "gr-a2-09",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I haven't finished my homework ___.",
+  "options": [
+   "already",
+   "yet",
+   "just",
+   "ago"
+  ],
+  "answer": 1,
+  "explain": "Yet é usado no fim de frases negativas e perguntas no present perfect: haven't finished yet."
+ },
+ {
+  "id": "gr-a2-10",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "She has lived here ___ 2019.",
+  "options": [
+   "for",
+   "from",
+   "ago",
+   "since"
+  ],
+  "answer": 3,
+  "explain": "Since + ponto de início (2019). For + duração (for five years)."
+ },
+ {
+  "id": "gr-a2-11",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "If it rains tomorrow, we ___ at home.",
+  "options": [
+   "would stay",
+   "stayed",
+   "will stay",
+   "staying"
+  ],
+  "answer": 2,
+  "explain": "Primeira condicional: if + presente simples, will + verbo. Fala de algo possível no futuro."
+ },
+ {
+  "id": "gr-a2-12",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "Is this phone ___? I found it on the table.",
+  "options": [
+   "you",
+   "your",
+   "yours",
+   "yourself"
+  ],
+  "answer": 2,
+  "explain": "Sem substantivo depois, usamos o pronome possessivo yours (o seu)."
+ },
+ {
+  "id": "gr-a2-13",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "There are ___ people at the beach today.",
+  "options": [
+   "a lot of",
+   "much",
+   "a lot",
+   "many of"
+  ],
+  "answer": 0,
+  "explain": "A lot of + substantivo significa 'muitos'. Much é para incontáveis e 'a lot' sozinho não vem antes do substantivo."
+ },
+ {
+  "id": "gr-a2-14",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I'm tired ___ I went to bed late.",
+  "options": [
+   "so",
+   "but",
+   "because",
+   "although"
+  ],
+  "answer": 2,
+  "explain": "Because introduz a causa (por que estou cansado). So introduziria a consequência."
+ },
+ {
+  "id": "gr-a2-15",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "I enjoy ___ in the rain.",
+  "options": [
+   "walking",
+   "walk",
+   "to walk",
+   "walked"
+  ],
+  "answer": 0,
+  "explain": "Depois de enjoy o verbo vai para a forma -ing: enjoy walking."
+ },
+ {
+  "id": "gr-a2-16",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "She asked me ___ her with the boxes.",
+  "options": [
+   "help",
+   "helping",
+   "to help",
+   "for help"
+  ],
+  "answer": 2,
+  "explain": "A estrutura é ask someone to do something: asked me to help."
+ },
+ {
+  "id": "gr-a2-17",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "The Mona Lisa ___ by Leonardo da Vinci.",
+  "options": [
+   "painted",
+   "was painted",
+   "is painting",
+   "has painted"
+  ],
+  "answer": 1,
+  "explain": "Voz passiva no passado: was/were + particípio. A pintura não pintou nada, ela foi pintada."
+ },
+ {
+  "id": "gr-a2-18",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "Choose the correct sentence.",
+  "options": [
+   "I didn't went to the party.",
+   "I don't went to the party.",
+   "I not went to the party.",
+   "I didn't go to the party."
+  ],
+  "answer": 3,
+  "explain": "Depois de didn't o verbo volta para a forma base: didn't go. O passado já está no auxiliar."
+ },
+ {
+  "id": "gr-a2-19",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "___ you ever been to Salvador?",
+  "options": [
+   "Did",
+   "Do",
+   "Were",
+   "Have"
+  ],
+  "answer": 3,
+  "explain": "Com ever + been usamos o present perfect: Have you ever been...?"
+ },
+ {
+  "id": "gr-a2-20",
+  "cat": "grammar",
+  "level": "A2",
+  "q": "My brother is good ___ math.",
+  "options": [
+   "in",
+   "on",
+   "at",
+   "with"
+  ],
+  "answer": 2,
+  "explain": "Em inglês se diz good at something. 'Good in' é erro comum de quem traduz do português."
+ },
+ {
+  "id": "gr-b1-01",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "If I ___ rich, I would travel around the world.",
+  "options": [
+   "am",
+   "would be",
+   "will be",
+   "were"
+  ],
+  "answer": 3,
+  "explain": "Segunda condicional (hipótese irreal): if + passado, would + verbo. Com to be usa-se were."
+ },
+ {
+  "id": "gr-b1-02",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "I've been waiting ___ two hours.",
+  "options": [
+   "since",
+   "during",
+   "for",
+   "ago"
+  ],
+  "answer": 2,
+  "explain": "For indica duração (two hours). Since indica o ponto de início e during não se usa com números assim."
+ },
+ {
+  "id": "gr-b1-03",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "You look tired. ___ you been running?",
+  "options": [
+   "Have",
+   "Did",
+   "Were",
+   "Are"
+  ],
+  "answer": 0,
+  "explain": "Present perfect continuous: have/has + been + -ing. Explica o resultado visível agora."
+ },
+ {
+  "id": "gr-b1-04",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "The book ___ I bought yesterday is great.",
+  "options": [
+   "who",
+   "which",
+   "what",
+   "whose"
+  ],
+  "answer": 1,
+  "explain": "Which (ou that) é o pronome relativo para coisas. Who é para pessoas e what não liga orações assim."
+ },
+ {
+  "id": "gr-b1-05",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "'I'm leaving tomorrow,' she said. → She said she was leaving the ___ day.",
+  "options": [
+   "next",
+   "tomorrow",
+   "last",
+   "before"
+  ],
+  "answer": 0,
+  "explain": "No reported speech, tomorrow costuma virar the next day (ou the following day)."
+ },
+ {
+  "id": "gr-b1-06",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "You ___ use your phone during the exam. It's not allowed.",
+  "options": [
+   "mustn't",
+   "don't have to",
+   "needn't",
+   "shouldn't to"
+  ],
+  "answer": 0,
+  "explain": "Mustn't = proibição. Don't have to e needn't significam 'não é necessário', que muda o sentido."
+ },
+ {
+  "id": "gr-b1-07",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "I'm looking forward ___ you.",
+  "options": [
+   "to see",
+   "to seeing",
+   "seeing",
+   "see"
+  ],
+  "answer": 1,
+  "explain": "Em look forward to, o to é preposição, então o verbo vem com -ing: to seeing."
+ },
+ {
+  "id": "gr-b1-08",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "By the time we arrived, the movie ___.",
+  "options": [
+   "has already started",
+   "already starts",
+   "had already started",
+   "was already start"
+  ],
+  "answer": 2,
+  "explain": "Past perfect (had + particípio) mostra uma ação anterior a outra no passado."
+ },
+ {
+  "id": "gr-b1-09",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "She's used to ___ early.",
+  "options": [
+   "wake up",
+   "waking up",
+   "woke up",
+   "wakes up"
+  ],
+  "answer": 1,
+  "explain": "Be used to (estar acostumado a) é seguido de -ing: used to waking up."
+ },
+ {
+  "id": "gr-b1-10",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "My phone ___ repaired at the moment.",
+  "options": [
+   "is being",
+   "is",
+   "has being",
+   "was be"
+  ],
+  "answer": 0,
+  "explain": "Passiva no presente contínuo: is being + particípio. At the moment indica ação em andamento."
+ },
+ {
+  "id": "gr-b1-11",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "Do you know where ___?",
+  "options": [
+   "is the station",
+   "the station is",
+   "is station",
+   "the station does"
+  ],
+  "answer": 1,
+  "explain": "Em perguntas indiretas (Do you know...?) a ordem é de afirmação: sujeito + verbo."
+ },
+ {
+  "id": "gr-b1-12",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "I wish I ___ speak French.",
+  "options": [
+   "can",
+   "am able",
+   "will",
+   "could"
+  ],
+  "answer": 3,
+  "explain": "Wish sobre o presente usa o passado: can vira could."
+ },
+ {
+  "id": "gr-b1-13",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "It's the first time I ___ here.",
+  "options": [
+   "am",
+   "was",
+   "have been",
+   "be"
+  ],
+  "answer": 2,
+  "explain": "Depois de It's the first time usamos o present perfect: have been."
+ },
+ {
+  "id": "gr-b1-14",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "___ you hurry, you'll miss the bus.",
+  "options": [
+   "If",
+   "When",
+   "Unless",
+   "Although"
+  ],
+  "answer": 2,
+  "explain": "Unless = if not (a menos que). Se você não se apressar, vai perder o ônibus."
+ },
+ {
+  "id": "gr-b1-15",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "It's ___ hot to go outside.",
+  "options": [
+   "too",
+   "enough",
+   "so much",
+   "very much"
+  ],
+  "answer": 0,
+  "explain": "Too + adjetivo + to indica excesso que impede algo: too hot to go out."
+ },
+ {
+  "id": "gr-b1-16",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "Neither Carla ___ Bruno came to class.",
+  "options": [
+   "or",
+   "nor",
+   "and",
+   "neither"
+  ],
+  "answer": 1,
+  "explain": "O par correto é neither... nor (nem... nem). Either combina com or."
+ },
+ {
+  "id": "gr-b1-17",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "I'd rather ___ at home tonight.",
+  "options": [
+   "to stay",
+   "staying",
+   "stayed",
+   "stay"
+  ],
+  "answer": 3,
+  "explain": "Would rather é seguido do verbo na forma base, sem to: I'd rather stay."
+ },
+ {
+  "id": "gr-b1-18",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "She made me ___ the dishes.",
+  "options": [
+   "to wash",
+   "wash",
+   "washing",
+   "washed"
+  ],
+  "answer": 1,
+  "explain": "Make someone do something: depois de make + pessoa, o verbo vem sem to."
+ },
+ {
+  "id": "gr-b1-19",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "The more you practice, ___ you get.",
+  "options": [
+   "better",
+   "more better",
+   "the best",
+   "the better"
+  ],
+  "answer": 3,
+  "explain": "Estrutura de progressão: the + comparativo, the + comparativo (quanto mais..., melhor...)."
+ },
+ {
+  "id": "gr-b1-20",
+  "cat": "grammar",
+  "level": "B1",
+  "q": "Choose the correct sentence.",
+  "options": [
+   "I have seen him yesterday.",
+   "I have saw him yesterday.",
+   "I seen him yesterday.",
+   "I saw him yesterday."
+  ],
+  "answer": 3,
+  "explain": "Com tempo definido no passado (yesterday) usamos o passado simples, não o present perfect."
+ },
+ {
+  "id": "gr-b2-01",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "If I had studied harder, I ___ the exam.",
+  "options": [
+   "would pass",
+   "had passed",
+   "will pass",
+   "would have passed"
+  ],
+  "answer": 3,
+  "explain": "Terceira condicional: if + past perfect, would have + particípio. Fala de um passado que não aconteceu."
+ },
+ {
+  "id": "gr-b2-02",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "She ___ be at home. All the lights are off and her car is gone.",
+  "options": [
+   "must",
+   "should",
+   "can't",
+   "would"
+  ],
+  "answer": 2,
+  "explain": "Can't be expressa uma dedução negativa com certeza: é impossível que ela esteja em casa."
+ },
+ {
+  "id": "gr-b2-03",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "The new bridge ___ next year.",
+  "options": [
+   "will build",
+   "will be built",
+   "is building",
+   "builds"
+  ],
+  "answer": 1,
+  "explain": "A ponte não constrói, ela é construída: passiva no futuro = will be + particípio."
+ },
+ {
+  "id": "gr-b2-04",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "He denied ___ the window.",
+  "options": [
+   "to break",
+   "break",
+   "breaking",
+   "to have broke"
+  ],
+  "answer": 2,
+  "explain": "Deny é seguido de -ing: deny doing something."
+ },
+ {
+  "id": "gr-b2-05",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "He asked me ___ I could help him.",
+  "options": [
+   "if",
+   "that",
+   "what",
+   "which"
+  ],
+  "answer": 0,
+  "explain": "Perguntas de sim/não no reported speech são introduzidas por if ou whether."
+ },
+ {
+  "id": "gr-b2-06",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "By the end of this year, she ___ here for ten years.",
+  "options": [
+   "will work",
+   "has worked",
+   "works",
+   "will have worked"
+  ],
+  "answer": 3,
+  "explain": "Future perfect (will have + particípio) mostra algo concluído até um ponto no futuro."
+ },
+ {
+  "id": "gr-b2-07",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "You ___ have told me! I would have helped.",
+  "options": [
+   "should",
+   "must",
+   "would",
+   "can"
+  ],
+  "answer": 0,
+  "explain": "Should have + particípio expressa crítica ou arrependimento: você deveria ter me contado."
+ },
+ {
+  "id": "gr-b2-08",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "Despite ___ tired, she finished the race.",
+  "options": [
+   "she was",
+   "being",
+   "to be",
+   "be"
+  ],
+  "answer": 1,
+  "explain": "Despite é preposição: vem seguido de substantivo ou -ing, nunca de oração com sujeito."
+ },
+ {
+  "id": "gr-b2-09",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "I'll lend you the money ___ you pay me back next week.",
+  "options": [
+   "unless",
+   "as long as",
+   "although",
+   "in case"
+  ],
+  "answer": 1,
+  "explain": "As long as = desde que, contanto que. Indica uma condição."
+ },
+ {
+  "id": "gr-b2-10",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "The man ___ car was stolen called the police.",
+  "options": [
+   "who",
+   "whom",
+   "which",
+   "whose"
+  ],
+  "answer": 3,
+  "explain": "Whose indica posse em orações relativas: o homem cujo carro foi roubado."
+ },
+ {
+  "id": "gr-b2-11",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "They were exhausted because they ___ all day.",
+  "options": [
+   "have been working",
+   "had been working",
+   "were work",
+   "has worked"
+  ],
+  "answer": 1,
+  "explain": "Past perfect continuous (had been + -ing) mostra uma ação longa antes de um momento passado."
+ },
+ {
+  "id": "gr-b2-12",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "I wish I ___ that. I'm so sorry.",
+  "options": [
+   "didn't say",
+   "wouldn't say",
+   "haven't said",
+   "hadn't said"
+  ],
+  "answer": 3,
+  "explain": "Arrependimento sobre o passado: wish + past perfect (hadn't said)."
+ },
+ {
+  "id": "gr-b2-13",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "He is said ___ very rich.",
+  "options": [
+   "being",
+   "be",
+   "that he is",
+   "to be"
+  ],
+  "answer": 3,
+  "explain": "Passiva impessoal: subject + is said + to + verbo (dizem que ele é muito rico)."
+ },
+ {
+  "id": "gr-b2-14",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "I had my hair ___ yesterday.",
+  "options": [
+   "cutting",
+   "cut",
+   "to cut",
+   "cuts"
+  ],
+  "answer": 1,
+  "explain": "Have something done (causativo): alguém fez por você. Usa o particípio: cut."
+ },
+ {
+  "id": "gr-b2-15",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "'Don't touch it,' she told me. → She told me ___ it.",
+  "options": [
+   "don't touch",
+   "not touch",
+   "not to touch",
+   "to not touching"
+  ],
+  "answer": 2,
+  "explain": "Ordem negativa no reported speech: tell someone not to do something."
+ },
+ {
+  "id": "gr-b2-16",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "___ the rain, we went out.",
+  "options": [
+   "Although",
+   "In spite of",
+   "Even",
+   "Despite of"
+  ],
+  "answer": 1,
+  "explain": "In spite of + substantivo. Although pede oração completa e 'despite of' não existe."
+ },
+ {
+  "id": "gr-b2-17",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "You'd better ___ a jacket. It's cold.",
+  "options": [
+   "to take",
+   "taking",
+   "take",
+   "took"
+  ],
+  "answer": 2,
+  "explain": "Had better ('d better) é seguido do verbo na forma base, sem to."
+ },
+ {
+  "id": "gr-b2-18",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "If I had taken that job, I ___ in Lisbon now.",
+  "options": [
+   "would have lived",
+   "will live",
+   "would be living",
+   "had lived"
+  ],
+  "answer": 2,
+  "explain": "Condicional mista: passado irreal (had taken) com resultado no presente (now): would be living."
+ },
+ {
+  "id": "gr-b2-19",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "I don't mind ___ the dishes.",
+  "options": [
+   "to do",
+   "doing",
+   "do",
+   "to doing"
+  ],
+  "answer": 1,
+  "explain": "Mind é seguido de -ing: I don't mind doing it (não me importo de fazer)."
+ },
+ {
+  "id": "gr-b2-20",
+  "cat": "grammar",
+  "level": "B2",
+  "q": "Choose the correct sentence.",
+  "options": [
+   "I suggest you call her.",
+   "I suggest you to call her.",
+   "I suggest to you call her.",
+   "I suggest you calling her."
+  ],
+  "answer": 0,
+  "explain": "Suggest não aceita pessoa + to: use suggest (that) you call ou suggest calling."
+ },
+ {
+  "id": "gr-c1-01",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "Never ___ such a beautiful view.",
+  "options": [
+   "I have seen",
+   "have I seen",
+   "I saw",
+   "did I saw"
+  ],
+  "answer": 1,
+  "explain": "Após advérbios negativos no início (Never, Rarely), há inversão: auxiliar antes do sujeito."
+ },
+ {
+  "id": "gr-c1-02",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "But for your help, I ___ failed.",
+  "options": [
+   "would have",
+   "had",
+   "will have",
+   "would"
+  ],
+  "answer": 0,
+  "explain": "But for = se não fosse por. Funciona como terceira condicional: would have + particípio."
+ },
+ {
+  "id": "gr-c1-03",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "No sooner had we arrived ___ it started to rain.",
+  "options": [
+   "when",
+   "then",
+   "that",
+   "than"
+  ],
+  "answer": 3,
+  "explain": "A expressão fixa é no sooner... than (mal... e já). Hardly e scarcely é que usam when."
+ },
+ {
+  "id": "gr-c1-04",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "She ___ have left already. Her coat is still here.",
+  "options": [
+   "can't",
+   "must",
+   "had",
+   "would"
+  ],
+  "answer": 0,
+  "explain": "Can't have + particípio: dedução negativa sobre o passado. O casaco prova que ela não saiu."
+ },
+ {
+  "id": "gr-c1-05",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "The results were contrary ___ what we expected.",
+  "options": [
+   "of",
+   "to",
+   "with",
+   "from"
+  ],
+  "answer": 1,
+  "explain": "Contrary sempre vem com to: contrary to (ao contrário de)."
+ },
+ {
+  "id": "gr-c1-06",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "___ I love my job, I sometimes need a break from it.",
+  "options": [
+   "Despite",
+   "Much as",
+   "However",
+   "In spite"
+  ],
+  "answer": 1,
+  "explain": "Much as = por mais que, embora. Vem antes de oração completa; despite e in spite (of) pedem substantivo ou -ing."
+ },
+ {
+  "id": "gr-c1-07",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "He is the last person ___ to you.",
+  "options": [
+   "to lie",
+   "lying",
+   "lie",
+   "lied"
+  ],
+  "answer": 0,
+  "explain": "The last person + to + verbo = a última pessoa que faria isso (ele jamais mentiria)."
+ },
+ {
+  "id": "gr-c1-08",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "___ I need right now is a long holiday.",
+  "options": [
+   "What",
+   "That",
+   "Which",
+   "It"
+  ],
+  "answer": 0,
+  "explain": "Cleft sentence com What: 'What I need is...' dá ênfase (o que eu preciso é...)."
+ },
+ {
+  "id": "gr-c1-09",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "If only I ___ listened to your advice!",
+  "options": [
+   "have",
+   "had",
+   "would",
+   "did"
+  ],
+  "answer": 1,
+  "explain": "If only + past perfect expressa arrependimento forte sobre o passado: If only I had listened."
+ },
+ {
+  "id": "gr-c1-10",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "She is thought ___ the country last week.",
+  "options": [
+   "to leave",
+   "that she left",
+   "leaving",
+   "to have left"
+  ],
+  "answer": 3,
+  "explain": "Passiva impessoal sobre o passado: is thought + to have + particípio (last week)."
+ },
+ {
+  "id": "gr-c1-11",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "___ finished the report, she went home.",
+  "options": [
+   "Having",
+   "Had",
+   "Have",
+   "To have"
+  ],
+  "answer": 0,
+  "explain": "Participle clause: Having + particípio indica ação concluída antes da outra (depois de terminar...)."
+ },
+ {
+  "id": "gr-c1-12",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "I object ___ treated like a child.",
+  "options": [
+   "to be",
+   "to being",
+   "being",
+   "for being"
+  ],
+  "answer": 1,
+  "explain": "Em object to, o to é preposição, então o verbo vem com -ing: object to being."
+ },
+ {
+  "id": "gr-c1-13",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "I wish you ___ interrupting me all the time!",
+  "options": [
+   "will stop",
+   "stop",
+   "are stopping",
+   "would stop"
+  ],
+  "answer": 3,
+  "explain": "Wish + would expressa irritação com um hábito de outra pessoa e desejo de que mude."
+ },
+ {
+  "id": "gr-c1-14",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "The number of students ___ increased this year.",
+  "options": [
+   "have",
+   "were",
+   "are",
+   "has"
+  ],
+  "answer": 3,
+  "explain": "The number of é singular (o número), então o verbo concorda no singular: has. 'A number of' seria plural."
+ },
+ {
+  "id": "gr-c1-15",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "She was on the verge ___ up.",
+  "options": [
+   "to give",
+   "for giving",
+   "giving",
+   "of giving"
+  ],
+  "answer": 3,
+  "explain": "On the verge of + -ing = prestes a, à beira de fazer algo."
+ },
+ {
+  "id": "gr-c1-16",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "Hardly anyone came to the event, ___?",
+  "options": [
+   "didn't they",
+   "did they",
+   "did he",
+   "didn't he"
+  ],
+  "answer": 1,
+  "explain": "Hardly anyone já é negativo, então a question tag fica positiva. Anyone retoma com they."
+ },
+ {
+  "id": "gr-c1-17",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "There's no point ___ him. He won't change his mind.",
+  "options": [
+   "calling to",
+   "in calling",
+   "to be call",
+   "for call"
+  ],
+  "answer": 1,
+  "explain": "There's no point in + -ing = não adianta fazer algo."
+ },
+ {
+  "id": "gr-c1-18",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "Try as he ___, he couldn't open the jar.",
+  "options": [
+   "might",
+   "should",
+   "was",
+   "has"
+  ],
+  "answer": 0,
+  "explain": "Try as he might é expressão fixa: por mais que tentasse."
+ },
+ {
+  "id": "gr-c1-19",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "You needn't ___ a taxi. I could have driven you.",
+  "options": [
+   "take",
+   "have taken",
+   "taking",
+   "took"
+  ],
+  "answer": 1,
+  "explain": "Needn't have + particípio: você fez algo que não era necessário (pegou o táxi à toa)."
+ },
+ {
+  "id": "gr-c1-20",
+  "cat": "grammar",
+  "level": "C1",
+  "q": "Choose the correct sentence.",
+  "options": [
+   "If I have known, I'd have gone.",
+   "If I would knew, I'd have gone.",
+   "If I had known, I'd have gone.",
+   "If I knew, I'd have went."
+  ],
+  "answer": 2,
+  "explain": "Terceira condicional: if + past perfect (had known), would have + particípio (gone, não went)."
+ }
+]

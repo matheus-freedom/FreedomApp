@@ -22,6 +22,8 @@ interface SelectionScreenProps {
   onOpenActivities: () => void;
   onOpenProfile: () => void;
   onOpenChallenges: () => void;
+  // Duelos que esperam uma ação do aluno (convite recebido ou sua vez).
+  duelBadge?: number;
   onOpenChat: (userId: string) => void;
   onOpenAdmin?: () => void;
   onOpenRankingHistory: () => void;
@@ -78,7 +80,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
   user, onStart, onOpenStudyPlan, onStartPlacement, onOpenActivities,
   onOpenProfile, onOpenChallenges, onOpenChat, onOpenAdmin, onOpenRankingHistory, onOpenJourney, onOpenFredExplains,
   isLoading, initialLevel = null, initialTheme = null, initialTopic = null,
-  hasActivePlan, onUserUpdate, onBuyExtra
+  hasActivePlan, onUserUpdate, onBuyExtra, duelBadge = 0
 }) => {
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(initialLevel);
@@ -624,7 +626,12 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           )}
         </button>
 
-        <button onClick={onOpenChallenges} className="p-5 bg-[#2a2a2a] rounded-[2rem] border border-white/5 hover:border-[#f7931e]/50 transition-all flex flex-col items-center justify-center gap-3 group">
+        <button onClick={onOpenChallenges} className={`relative p-5 bg-[#2a2a2a] rounded-[2rem] border hover:border-[#f7931e]/50 transition-all flex flex-col items-center justify-center gap-3 group ${duelBadge > 0 ? 'border-[#f7931e]/60' : 'border-white/5'}`}>
+          {duelBadge > 0 ? (
+            <span className="absolute top-3 right-3 min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#f7931e] text-[#222222] text-[11px] font-black flex items-center justify-center animate-pulse" title="Duelos esperando você">{duelBadge}</span>
+          ) : (
+            <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest">Roleta</span>
+          )}
           <div className="p-4 rounded-2xl bg-[#333333] text-red-400 group-hover:bg-red-500 group-hover:text-white transition-colors"><Sword className="w-6 h-6" /></div>
           <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-white">Desafios</span>
         </button>

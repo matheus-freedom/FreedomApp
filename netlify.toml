@@ -51,6 +51,18 @@
 [functions.fred-explains-background]
   timeout = 900
 
+# Desafios — Duelo da Roleta. Toda jogada (girar, responder, coroa,
+# prêmio, aposta) é decidida aqui, dentro de transação. Nunca chama
+# a IA direto: quando o banco de perguntas de uma categoria/nível
+# fica perto de acabar, dispara a function de baixo.
+[functions.duel]
+  timeout = 26
+
+# Gera uma leva de perguntas novas para o duelo (uma categoria+nível
+# por vez) e grava em duel_bank. Background = até 15 minutos.
+[functions.duel-bank-background]
+  timeout = 900
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

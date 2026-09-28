@@ -1,0 +1,1502 @@
+[
+ {
+  "id": "li-a1-01",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Look! There is a big ship on the river.",
+  "q": "What did you hear?",
+  "options": [
+   "sheep",
+   "ship",
+   "shop",
+   "chip"
+  ],
+  "answer": 1,
+  "explain": "Ship (navio) tem 'i' curto; sheep (ovelha) tem 'i' longo, como um 'iii' esticado."
+ },
+ {
+  "id": "li-a1-02",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "My name is Laura and I am twelve years old.",
+  "q": "How old is Laura?",
+  "options": [
+   "Twelve",
+   "Twenty",
+   "Two",
+   "Eleven"
+  ],
+  "answer": 0,
+  "explain": "Twelve = 12; twenty = 20. Preste atenção no final: -elve x -enty."
+ },
+ {
+  "id": "li-a1-03",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "The cat is under the table.",
+  "q": "Where is the cat?",
+  "options": [
+   "On the table",
+   "Next to the table",
+   "Under the table",
+   "Behind the table"
+  ],
+  "answer": 2,
+  "explain": "Under = embaixo de. On = em cima; behind = atrás; next to = ao lado."
+ },
+ {
+  "id": "li-a1-04",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Can I have a pen, please? I want to write my name.",
+  "q": "What does the speaker want?",
+  "options": [
+   "A pan",
+   "A pen",
+   "A pin",
+   "A pig"
+  ],
+  "answer": 1,
+  "explain": "Pen (caneta) soa com 'é'; pan (panela) tem 'a' bem aberto; pin (alfinete) tem 'i'."
+ },
+ {
+  "id": "li-a1-05",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "It is three o'clock.",
+  "q": "What time is it?",
+  "options": [
+   "3:30",
+   "10:00",
+   "3:00",
+   "13:00"
+  ],
+  "answer": 2,
+  "explain": "Three o'clock = três horas em ponto; o'clock indica hora exata."
+ },
+ {
+  "id": "li-a1-06",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "My brother likes green apples.",
+  "q": "What color are the apples?",
+  "options": [
+   "Red",
+   "Yellow",
+   "Grey",
+   "Green"
+  ],
+  "answer": 3,
+  "explain": "Green = verde. Cuidado: grey (cinza) começa com som parecido."
+ },
+ {
+  "id": "li-a1-07",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "I live in a small house.",
+  "q": "Which word did you hear?",
+  "options": [
+   "live",
+   "leave",
+   "love",
+   "life"
+  ],
+  "answer": 0,
+  "explain": "Live (morar) tem 'i' curto; leave (sair, partir) tem 'i' longo."
+ },
+ {
+  "id": "li-a1-08",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Open your books to page ten.",
+  "q": "Which page does the teacher say?",
+  "options": [
+   "Page two",
+   "Page seven",
+   "Page twelve",
+   "Page ten"
+  ],
+  "answer": 3,
+  "explain": "Ten = 10. Não confunda com two (2) e twelve (12)."
+ },
+ {
+  "id": "li-a1-09",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "We go to the beach on Sunday.",
+  "q": "When do they go to the beach?",
+  "options": [
+   "On Saturday",
+   "On Sunday",
+   "On Monday",
+   "On Thursday"
+  ],
+  "answer": 1,
+  "explain": "Sunday = domingo; Saturday = sábado. Dias da semana em inglês levam letra maiúscula."
+ },
+ {
+  "id": "li-a1-10",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "She has a black bag.",
+  "q": "What does she have?",
+  "options": [
+   "A black bag",
+   "A black bug",
+   "A blue bag",
+   "A black bed"
+  ],
+  "answer": 0,
+  "explain": "Bag (bolsa) tem 'a' bem aberto; bug (inseto) soa perto de 'bâg'."
+ },
+ {
+  "id": "li-a1-11",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "There are four chairs in the kitchen.",
+  "q": "How many chairs are there?",
+  "options": [
+   "Fourteen",
+   "Four",
+   "Forty",
+   "Five"
+  ],
+  "answer": 1,
+  "explain": "Four = 4; fourteen = 14; forty = 40. Preste atenção na sílaba final."
+ },
+ {
+  "id": "li-a1-12",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "I am hungry.",
+  "q": "How does the speaker feel?",
+  "options": [
+   "Angry",
+   "Tired",
+   "Hungry",
+   "Happy"
+  ],
+  "answer": 2,
+  "explain": "Hungry = com fome. Angry (bravo) soa parecido, mas não tem o 'h' inicial."
+ },
+ {
+  "id": "li-a1-13",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "My father is a doctor.",
+  "q": "What is the father's job?",
+  "options": [
+   "Teacher",
+   "Driver",
+   "Dentist",
+   "Doctor"
+  ],
+  "answer": 3,
+  "explain": "Doctor = médico. Dentist = dentista; driver = motorista."
+ },
+ {
+  "id": "li-a1-14",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Turn left at the park.",
+  "q": "Which way should you turn?",
+  "options": [
+   "Left",
+   "Right",
+   "Straight on",
+   "Back"
+  ],
+  "answer": 0,
+  "explain": "Left = esquerda; right = direita. Turn left = vire à esquerda."
+ },
+ {
+  "id": "li-a1-15",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "I drink milk every morning.",
+  "q": "What does the speaker drink?",
+  "options": [
+   "Water",
+   "Juice",
+   "Milk",
+   "Tea"
+  ],
+  "answer": 2,
+  "explain": "Milk = leite. Every morning = toda manhã."
+ },
+ {
+  "id": "li-a1-16",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "This is my dog, Max.",
+  "q": "What is Max?",
+  "options": [
+   "A cat",
+   "A dog",
+   "A duck",
+   "A fish"
+  ],
+  "answer": 1,
+  "explain": "Dog = cachorro; duck = pato, que tem som parecido."
+ },
+ {
+  "id": "li-a1-17",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "The shop opens at nine.",
+  "q": "When does the shop open?",
+  "options": [
+   "At five",
+   "At night",
+   "At noon",
+   "At nine"
+  ],
+  "answer": 3,
+  "explain": "Nine = 9. Night (noite) começa igual a nine, mas termina com som de 't'."
+ },
+ {
+  "id": "li-a1-18",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Look at that big hat on his head!",
+  "q": "Which word did you hear?",
+  "options": [
+   "hot",
+   "hat",
+   "hut",
+   "hit"
+  ],
+  "answer": 1,
+  "explain": "Hat (chapéu) tem 'a' aberto; hot (quente) soa como 'ó'; hit (bater) tem 'i'."
+ },
+ {
+  "id": "li-a1-19",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "Good night, see you tomorrow.",
+  "q": "When will they meet again?",
+  "options": [
+   "Today",
+   "Tonight",
+   "Tomorrow",
+   "Tuesday"
+  ],
+  "answer": 2,
+  "explain": "Tomorrow = amanhã. Tonight = hoje à noite."
+ },
+ {
+  "id": "li-a1-20",
+  "cat": "listening",
+  "level": "A1",
+  "audio": "My sister has long brown hair.",
+  "q": "What is the sister's hair like?",
+  "options": [
+   "Long and brown",
+   "Short and brown",
+   "Long and black",
+   "Short and blond"
+  ],
+  "answer": 0,
+  "explain": "Long = comprido; brown = castanho. O adjetivo vem antes do substantivo: long brown hair."
+ },
+ {
+  "id": "li-a2-01",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The train to London leaves at seven thirty from platform four.",
+  "q": "What time does the train leave?",
+  "options": [
+   "7:13",
+   "7:30",
+   "7:40",
+   "6:30"
+  ],
+  "answer": 1,
+  "explain": "Seven thirty = 7:30. Thirty tem acento no início; thirteen (13), no final."
+ },
+ {
+  "id": "li-a2-02",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "A ticket for the museum costs fifteen dollars, but students pay only eight.",
+  "q": "How much do students pay?",
+  "options": [
+   "$15",
+   "$50",
+   "$8",
+   "$18"
+  ],
+  "answer": 2,
+  "explain": "Students pay only eight = estudantes pagam só 8. Fifteen (15) é o preço normal."
+ },
+ {
+  "id": "li-a2-03",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "I'm sorry, I can't come to your party on Saturday. I have to visit my grandmother.",
+  "q": "Why can't the speaker go to the party?",
+  "options": [
+   "A family visit",
+   "Work",
+   "Being sick",
+   "An exam"
+  ],
+  "answer": 0,
+  "explain": "Have to visit my grandmother = preciso visitar minha avó: um compromisso de família."
+ },
+ {
+  "id": "li-a2-04",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Can you buy some bread, six eggs and a bottle of water on your way home?",
+  "q": "How many eggs does the speaker need?",
+  "options": [
+   "Two",
+   "Sixteen",
+   "Seven",
+   "Six"
+  ],
+  "answer": 3,
+  "explain": "Six = 6; sixteen = 16. Ouça o final -teen para diferenciar."
+ },
+ {
+  "id": "li-a2-05",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "My phone number is nine eight seven, five five two, four one zero.",
+  "q": "What is the phone number?",
+  "options": [
+   "987-552-410",
+   "987-525-410",
+   "978-552-410",
+   "987-552-401"
+  ],
+  "answer": 0,
+  "explain": "Telefones são ditos dígito por dígito, em blocos; o zero às vezes é dito 'oh'."
+ },
+ {
+  "id": "li-a2-06",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Hello, this is Anna. I'm calling about the flat. Is it still available?",
+  "q": "Why is Anna calling?",
+  "options": [
+   "To rent a car",
+   "To ask about an apartment",
+   "To book a table",
+   "To buy a phone"
+  ],
+  "answer": 1,
+  "explain": "Flat é o termo britânico para apartment (apartamento). Available = disponível."
+ },
+ {
+  "id": "li-a2-07",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The weather will be cold and rainy in the morning, but sunny in the afternoon.",
+  "q": "What will the weather be like in the afternoon?",
+  "options": [
+   "Rainy",
+   "Cold",
+   "Sunny",
+   "Windy"
+  ],
+  "answer": 2,
+  "explain": "In the afternoon = à tarde. Frio e chuva são só de manhã (in the morning)."
+ },
+ {
+  "id": "li-a2-08",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Excuse me, the bank is on the corner, opposite the supermarket.",
+  "q": "Where is the bank?",
+  "options": [
+   "Next to the supermarket",
+   "Across from the supermarket",
+   "Behind the supermarket",
+   "Inside the supermarket"
+  ],
+  "answer": 1,
+  "explain": "Opposite = em frente, do outro lado da rua; é o mesmo que across from."
+ },
+ {
+  "id": "li-a2-09",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "I usually get up at six, but on weekends I sleep until ten.",
+  "q": "When does the speaker get up on weekends?",
+  "options": [
+   "At six",
+   "At seven",
+   "At two",
+   "At ten"
+  ],
+  "answer": 3,
+  "explain": "On weekends = nos fins de semana; sleep until ten = dormir até as dez."
+ },
+ {
+  "id": "li-a2-10",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "We're sorry, flight two four five to Miami is delayed by forty minutes.",
+  "q": "What is the problem with the flight?",
+  "options": [
+   "It is cancelled.",
+   "It is fourteen minutes late.",
+   "It is forty minutes late.",
+   "The gate changed."
+  ],
+  "answer": 2,
+  "explain": "Delayed = atrasado. Forty (40) tem acento no início; fourteen (14), no final."
+ },
+ {
+  "id": "li-a2-11",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The weather is nice, so I want to walk to work today.",
+  "q": "How will the speaker go to work?",
+  "options": [
+   "On foot",
+   "By car",
+   "By bike",
+   "By bus"
+  ],
+  "answer": 0,
+  "explain": "Walk (caminhar) soa como 'wók', sem o L; work (trabalho) soa como 'wârk'."
+ },
+ {
+  "id": "li-a2-12",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The library closes at eight in the evening.",
+  "q": "When does the library close?",
+  "options": [
+   "8:00 a.m.",
+   "6:00 p.m.",
+   "8:00 p.m.",
+   "9:00 p.m."
+  ],
+  "answer": 2,
+  "explain": "In the evening = à noite; logo, eight in the evening = 20h (8 p.m.)."
+ },
+ {
+  "id": "li-a2-13",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "I'd like a large orange juice and a cheese sandwich, please.",
+  "q": "What does the customer order?",
+  "options": [
+   "Apple juice and a cheese sandwich",
+   "Orange juice and a ham sandwich",
+   "Orange juice and a cheesecake",
+   "Orange juice and a cheese sandwich"
+  ],
+  "answer": 3,
+  "explain": "I'd like = eu gostaria; é a forma educada de pedir algo num café ou restaurante."
+ },
+ {
+  "id": "li-a2-14",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The English course starts on the third of May.",
+  "q": "When does the course start?",
+  "options": [
+   "May 13th",
+   "May 3rd",
+   "March 3rd",
+   "May 30th"
+  ],
+  "answer": 1,
+  "explain": "The third of May = 3 de maio. Datas usam ordinais: third = terceiro."
+ },
+ {
+  "id": "li-a2-15",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Sorry I'm late. I missed the bus, so I took a taxi.",
+  "q": "How did the speaker arrive?",
+  "options": [
+   "By bus",
+   "On foot",
+   "By taxi",
+   "By train"
+  ],
+  "answer": 2,
+  "explain": "Missed the bus = perdeu o ônibus; took a taxi = pegou um táxi."
+ },
+ {
+  "id": "li-a2-16",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "My cousin is a nurse. She works at night in a big hospital.",
+  "q": "When does the cousin work?",
+  "options": [
+   "In the morning",
+   "In the afternoon",
+   "On weekends only",
+   "At night"
+  ],
+  "answer": 3,
+  "explain": "Works at night = trabalha à noite. Nurse = enfermeira."
+ },
+ {
+  "id": "li-a2-17",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "The shoes were sixty dollars, but today they are on sale for forty.",
+  "q": "How much are the shoes today?",
+  "options": [
+   "$60",
+   "$40",
+   "$14",
+   "$16"
+  ],
+  "answer": 1,
+  "explain": "On sale = em promoção. Hoje custam forty (40), não sixty (60)."
+ },
+ {
+  "id": "li-a2-18",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Did you see the full moon last night?",
+  "q": "Which word did you hear?",
+  "options": [
+   "fool",
+   "fall",
+   "full",
+   "feel"
+  ],
+  "answer": 2,
+  "explain": "Full (cheio) tem 'u' curto; fool (bobo) tem 'u' longo; fall (cair) soa como 'fól'."
+ },
+ {
+  "id": "li-a2-19",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "Take the lift to the fifth floor. My office is the second door on the right.",
+  "q": "Where is the office?",
+  "options": [
+   "5th floor, 2nd door on the right",
+   "2nd floor, 5th door on the right",
+   "5th floor, 2nd door on the left",
+   "4th floor, 2nd door on the right"
+  ],
+  "answer": 0,
+  "explain": "Lift (britânico) = elevator. Fifth floor = 5º andar; on the right = à direita."
+ },
+ {
+  "id": "li-a2-20",
+  "cat": "listening",
+  "level": "A2",
+  "audio": "I'm really tired because I studied until two in the morning.",
+  "q": "Why is the speaker tired?",
+  "options": [
+   "Worked late",
+   "Played games late",
+   "Went to a party",
+   "Studied late"
+  ],
+  "answer": 3,
+  "explain": "Studied until two in the morning = estudou até as duas da manhã."
+ },
+ {
+  "id": "li-b1-01",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Attention, please. The store will close in fifteen minutes. Please take your items to the checkout.",
+  "q": "What should customers do?",
+  "options": [
+   "Leave the store now",
+   "Go to the checkout",
+   "Come back tomorrow",
+   "Wait fifty minutes"
+  ],
+  "answer": 1,
+  "explain": "Checkout = caixa. In fifteen minutes = daqui a 15 minutos, não 50."
+ },
+ {
+  "id": "li-b1-02",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "I was going to take the bus, but it started raining, so my dad gave me a ride.",
+  "q": "How did the speaker travel?",
+  "options": [
+   "By bus",
+   "On foot",
+   "By car, with Dad",
+   "By bike"
+  ],
+  "answer": 2,
+  "explain": "Give someone a ride = dar carona. O plano do ônibus mudou por causa da chuva."
+ },
+ {
+  "id": "li-b1-03",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "The meeting was supposed to start at ten, but it has been moved to eleven fifteen.",
+  "q": "What time does the meeting start now?",
+  "options": [
+   "10:00",
+   "11:50",
+   "10:15",
+   "11:15"
+  ],
+  "answer": 3,
+  "explain": "Has been moved to = foi remarcada para. Fifteen (15) é diferente de fifty (50)."
+ },
+ {
+  "id": "li-b1-04",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "If you order before midnight, delivery is free. After that, it costs five ninety-nine.",
+  "q": "How can you get free delivery?",
+  "options": [
+   "Order before midnight",
+   "Order after midnight",
+   "Spend $5.99 more",
+   "Pick it up at the store"
+  ],
+  "answer": 0,
+  "explain": "Before midnight = antes da meia-noite; depois disso, a entrega custa 5,99."
+ },
+ {
+  "id": "li-b1-05",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Honestly, the movie was too long, but the music was amazing.",
+  "q": "What did the speaker like about the movie?",
+  "options": [
+   "The length",
+   "The music",
+   "The actors",
+   "The ending"
+  ],
+  "answer": 1,
+  "explain": "Too long é uma crítica; amazing (incrível) é o elogio, e vai para a música."
+ },
+ {
+  "id": "li-b1-06",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Could you speak up a little? I can't hear you very well.",
+  "q": "What does the speaker want?",
+  "options": [
+   "You to stop talking",
+   "You to talk faster",
+   "You to write it down",
+   "You to talk louder"
+  ],
+  "answer": 3,
+  "explain": "Speak up = falar mais alto. Não confunda com shut up (calar a boca)."
+ },
+ {
+  "id": "li-b1-07",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "The doctor said I need to rest for three days and drink lots of water.",
+  "q": "How long should the speaker rest?",
+  "options": [
+   "Two days",
+   "Three days",
+   "Thirteen days",
+   "A week"
+  ],
+  "answer": 1,
+  "explain": "Rest for three days = descansar por três dias; for indica duração."
+ },
+ {
+  "id": "li-b1-08",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "We ran out of milk, so I made black coffee instead.",
+  "q": "Why did the speaker make black coffee?",
+  "options": [
+   "They don't like milk.",
+   "The milk was old.",
+   "There was no milk left.",
+   "They were in a hurry."
+  ],
+  "answer": 2,
+  "explain": "Run out of = acabar (o estoque de algo). Instead = em vez disso."
+ },
+ {
+  "id": "li-b1-09",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Hi, it's Bruno. I'm stuck in traffic, so start the presentation without me. I'll be there in twenty minutes.",
+  "q": "What does Bruno ask his colleagues to do?",
+  "options": [
+   "Start without him",
+   "Wait for him",
+   "Cancel the presentation",
+   "Call him back"
+  ],
+  "answer": 0,
+  "explain": "Stuck in traffic = preso no trânsito; ele pede que comecem sem ele (without me)."
+ },
+ {
+  "id": "li-b1-10",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "The gym is open from six in the morning to ten at night, except on Sundays, when it closes at two in the afternoon.",
+  "q": "When does the gym close on Sundays?",
+  "options": [
+   "At 10 p.m.",
+   "At 6 a.m.",
+   "At 2 p.m.",
+   "At noon"
+  ],
+  "answer": 2,
+  "explain": "Except on Sundays = exceto aos domingos, quando fecha às duas da tarde."
+ },
+ {
+  "id": "li-b1-11",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "I've been learning the guitar for about three years, and I practice every evening.",
+  "q": "How long has the speaker been learning the guitar?",
+  "options": [
+   "Three months",
+   "Since last week",
+   "Thirty years",
+   "About three years"
+  ],
+  "answer": 3,
+  "explain": "Have been learning for = vem aprendendo há; for indica quanto tempo dura a ação."
+ },
+ {
+  "id": "li-b1-12",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Our hotel room had a beautiful view of the sea, but the bed was really uncomfortable.",
+  "q": "What was the problem with the hotel?",
+  "options": [
+   "The view",
+   "The bed",
+   "The noise",
+   "The price"
+  ],
+  "answer": 1,
+  "explain": "Uncomfortable = desconfortável. A vista (view of the sea) foi elogiada."
+ },
+ {
+  "id": "li-b1-13",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Please don't forget to bring your passport and a copy of your ticket to the airport.",
+  "q": "What must you take to the airport?",
+  "options": [
+   "Only your passport",
+   "Your ID card and ticket",
+   "Your passport and a ticket copy",
+   "Your passport and some cash"
+  ],
+  "answer": 2,
+  "explain": "Don't forget to bring = não esqueça de levar: passaporte e uma cópia da passagem."
+ },
+ {
+  "id": "li-b1-14",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "My sister is two years older than me. I'm fifteen, so she's seventeen.",
+  "q": "How old is the speaker?",
+  "options": [
+   "Seventeen",
+   "Fifteen",
+   "Fifty",
+   "Thirteen"
+  ],
+  "answer": 1,
+  "explain": "I'm fifteen = tenho 15 anos. A irmã, dois anos mais velha (older), tem 17."
+ },
+ {
+  "id": "li-b1-15",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "The museum is free on Wednesdays, but you need to book your visit online first.",
+  "q": "What do you need to do before a free visit?",
+  "options": [
+   "Pay at the door",
+   "Go on a Monday",
+   "Bring a student card",
+   "Book online"
+  ],
+  "answer": 3,
+  "explain": "Book = reservar. Free on Wednesdays = grátis às quartas, com reserva online."
+ },
+ {
+  "id": "li-b1-16",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "I'm not sure about the red jacket. Can I try it in a smaller size?",
+  "q": "What does the customer want?",
+  "options": [
+   "A smaller size",
+   "A different color",
+   "A refund",
+   "A bigger size"
+  ],
+  "answer": 0,
+  "explain": "Try it in a smaller size = experimentar num tamanho menor."
+ },
+ {
+  "id": "li-b1-17",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Turn off the oven after forty-five minutes, and let the cake cool down before you cut it.",
+  "q": "What should you do before cutting the cake?",
+  "options": [
+   "Heat it again",
+   "Add some sugar",
+   "Let it cool down",
+   "Bake it for fifteen minutes"
+  ],
+  "answer": 2,
+  "explain": "Cool down = esfriar. Before you cut it = antes de cortar."
+ },
+ {
+  "id": "li-b1-18",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Sorry, the number you are calling is not available. Please try again later.",
+  "q": "Where would you hear this?",
+  "options": [
+   "On the phone",
+   "At a train station",
+   "On the radio",
+   "At a restaurant"
+  ],
+  "answer": 0,
+  "explain": "The number you are calling = o número para o qual você liga: é uma mensagem telefônica."
+ },
+ {
+  "id": "li-b1-19",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "Take this road for two kilometers, then turn right at the gas station. The school is just after the bridge.",
+  "q": "Where is the school?",
+  "options": [
+   "Just after the bridge",
+   "Before the bridge",
+   "Next to the gas station",
+   "Across from the gas station"
+  ],
+  "answer": 0,
+  "explain": "Just after the bridge = logo depois da ponte. Gas station = posto de gasolina."
+ },
+ {
+  "id": "li-b1-20",
+  "cat": "listening",
+  "level": "B1",
+  "audio": "I'd love to join you for lunch, but I've already eaten. Maybe a coffee later?",
+  "q": "What does the speaker suggest?",
+  "options": [
+   "Having lunch now",
+   "Eating dinner together",
+   "Skipping lunch",
+   "Having coffee later"
+  ],
+  "answer": 3,
+  "explain": "I've already eaten = já comi. Maybe a coffee later? = que tal um café mais tarde?"
+ },
+ {
+  "id": "li-b2-01",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Oh great, another meeting that could have been an email. Just what I needed today.",
+  "q": "How does the speaker feel about the meeting?",
+  "options": [
+   "Excited",
+   "Annoyed",
+   "Nervous",
+   "Grateful"
+  ],
+  "answer": 1,
+  "explain": "O tom é sarcástico: 'Oh great' e 'just what I needed' expressam irritação."
+ },
+ {
+  "id": "li-b2-02",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "I wouldn't say no to another slice of that pie, if there's any left.",
+  "q": "What does the speaker mean?",
+  "options": [
+   "They don't like the pie.",
+   "They are already full.",
+   "They would like more pie.",
+   "They want the recipe."
+  ],
+  "answer": 2,
+  "explain": "I wouldn't say no to = eu aceitaria; é um jeito educado de pedir algo."
+ },
+ {
+  "id": "li-b2-03",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "You might want to double-check those numbers before you send the report to the director.",
+  "q": "What is the speaker doing?",
+  "options": [
+   "Praising the report",
+   "Asking for more time",
+   "Refusing to help",
+   "Politely warning about errors"
+  ],
+  "answer": 3,
+  "explain": "You might want to... é uma sugestão educada; indica que pode haver erros nos números."
+ },
+ {
+  "id": "li-b2-04",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "I've been meaning to call you for weeks, but things have been crazy at work.",
+  "q": "What is the speaker doing?",
+  "options": [
+   "Apologizing for not calling",
+   "Complaining about a friend",
+   "Inviting someone to work",
+   "Asking for help at work"
+  ],
+  "answer": 0,
+  "explain": "I've been meaning to = eu estava querendo (mas não fiz); é um pedido de desculpas."
+ },
+ {
+  "id": "li-b2-05",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Well, the food was fine, I suppose, but I'm not sure I'd go back.",
+  "q": "What is the speaker's opinion of the restaurant?",
+  "options": [
+   "Enthusiastic",
+   "Unimpressed",
+   "Furious",
+   "Very positive"
+  ],
+  "answer": 1,
+  "explain": "'Fine, I suppose' e 'not sure I'd go back' mostram uma opinião morna, sem entusiasmo."
+ },
+ {
+  "id": "li-b2-06",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "If I'd known the traffic would be this bad, I'd have taken the metro.",
+  "q": "What can we infer?",
+  "options": [
+   "The speaker took the metro.",
+   "The metro was closed.",
+   "The speaker didn't take the metro.",
+   "The traffic was light."
+  ],
+  "answer": 2,
+  "explain": "Third conditional (If I'd known... I'd have taken) fala de algo que NÃO aconteceu."
+ },
+ {
+  "id": "li-b2-07",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Sure, I can cover your shift on Friday, as long as you take mine next Tuesday.",
+  "q": "What does the speaker agree to do?",
+  "options": [
+   "Take Friday off",
+   "Work both days",
+   "Refuse to help",
+   "Work Friday if the other person works Tuesday"
+  ],
+  "answer": 3,
+  "explain": "As long as = desde que. É uma troca: cobre a sexta se o outro cobrir a terça."
+ },
+ {
+  "id": "li-b2-08",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Honestly, I couldn't care less who wins the game tonight.",
+  "q": "How does the speaker feel about the game?",
+  "options": [
+   "Very excited",
+   "Totally uninterested",
+   "A little nervous",
+   "Worried about the result"
+  ],
+  "answer": 1,
+  "explain": "Couldn't care less = não estou nem aí; expressa total falta de interesse."
+ },
+ {
+  "id": "li-b2-09",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Next stop, Central Station. Change here for the airport line. Please mind the gap.",
+  "q": "Why should airport passengers get off at Central Station?",
+  "options": [
+   "To change to another line",
+   "To buy tickets",
+   "Because the train ends there",
+   "To meet a guide"
+  ],
+  "answer": 0,
+  "explain": "Change here for = faça a baldeação aqui para. Mind the gap = cuidado com o vão."
+ },
+ {
+  "id": "li-b2-10",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "I'm not saying your idea is bad. It's just that we tried something similar last year, and it didn't really take off.",
+  "q": "What does the speaker think of the idea?",
+  "options": [
+   "It's excellent.",
+   "It's completely new.",
+   "It probably won't succeed.",
+   "It's too expensive."
+  ],
+  "answer": 2,
+  "explain": "Take off = decolar, fazer sucesso. A fala sugere, com tato, que a ideia pode não dar certo."
+ },
+ {
+  "id": "li-b2-11",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Mariana was supposed to be here an hour ago. It's not like her to be late.",
+  "q": "What does the speaker suggest about Mariana?",
+  "options": [
+   "She is usually late.",
+   "She is usually punctual.",
+   "She has already arrived.",
+   "She forgot about the meeting."
+  ],
+  "answer": 1,
+  "explain": "It's not like her = não é típico dela; ou seja, ela normalmente é pontual."
+ },
+ {
+  "id": "li-b2-12",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Could you keep it down a bit? Some of us are trying to study in here.",
+  "q": "What does the speaker want?",
+  "options": [
+   "More light",
+   "Help with homework",
+   "To borrow a book",
+   "Less noise"
+  ],
+  "answer": 3,
+  "explain": "Keep it down = fazer menos barulho. O tom mostra uma leve irritação."
+ },
+ {
+  "id": "li-b2-13",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "The flight was delayed, the hotel lost our booking, and then it rained all week. Still, we had a laugh.",
+  "q": "What was the speaker's overall experience?",
+  "options": [
+   "Fun despite the problems",
+   "Terrible from start to finish",
+   "Relaxing and perfect",
+   "Boring and quiet"
+  ],
+  "answer": 0,
+  "explain": "Still = mesmo assim; had a laugh = se divertiu. Apesar dos problemas, foi divertido."
+ },
+ {
+  "id": "li-b2-14",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "I'd rather you didn't post that photo of me online, if you don't mind.",
+  "q": "What is the speaker asking?",
+  "options": [
+   "To post the photo now",
+   "To take a better photo",
+   "Not to post the photo",
+   "To tag them in it"
+  ],
+  "answer": 2,
+  "explain": "I'd rather you didn't = eu preferiria que você não fizesse; é um pedido educado."
+ },
+ {
+  "id": "li-b2-15",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "If Pedro says it'll be ready on Monday, I'd plan for Thursday at the earliest.",
+  "q": "What does the speaker think about Pedro?",
+  "options": [
+   "He is always early.",
+   "He works very fast.",
+   "He never finishes anything.",
+   "He usually runs late."
+  ],
+  "answer": 3,
+  "explain": "At the earliest = na melhor das hipóteses; ou seja, Pedro costuma atrasar."
+ },
+ {
+  "id": "li-b2-16",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "You'll never guess who I bumped into at the mall today. Our old English teacher!",
+  "q": "How did the speaker meet the teacher?",
+  "options": [
+   "At a planned meeting",
+   "By chance",
+   "Online",
+   "At school"
+  ],
+  "answer": 1,
+  "explain": "Bump into = encontrar alguém por acaso, sem ter combinado."
+ },
+ {
+  "id": "li-b2-17",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "The new app is great, don't get me wrong. I just wish it didn't drain my battery so fast.",
+  "q": "What is the speaker's complaint?",
+  "options": [
+   "The app uses a lot of battery.",
+   "The app is boring.",
+   "The app is expensive.",
+   "The app is hard to use."
+  ],
+  "answer": 0,
+  "explain": "Drain the battery = descarregar a bateria. 'Don't get me wrong' suaviza a crítica."
+ },
+ {
+  "id": "li-b2-18",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Tickets for Saturday's concert sold out in ten minutes, so we'll have to settle for the Sunday show.",
+  "q": "What will the speakers probably do?",
+  "options": [
+   "Go to the Saturday concert",
+   "Stay at home",
+   "Buy tickets for next year",
+   "Go to the Sunday show"
+  ],
+  "answer": 3,
+  "explain": "Settle for = contentar-se com uma segunda opção; sold out = esgotado."
+ },
+ {
+  "id": "li-b2-19",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "Look, I know you're busy, but this really can't wait until tomorrow.",
+  "q": "What is the speaker expressing?",
+  "options": [
+   "Gratitude",
+   "Boredom",
+   "Urgency",
+   "Surprise"
+  ],
+  "answer": 2,
+  "explain": "Can't wait until tomorrow = não pode esperar até amanhã; indica urgência."
+ },
+ {
+  "id": "li-b2-20",
+  "cat": "listening",
+  "level": "B2",
+  "audio": "I'm sure Lucas meant well, but his comment came across as a bit rude.",
+  "q": "What does the speaker think about Lucas?",
+  "options": [
+   "He meant well but sounded rude.",
+   "He wanted to be rude.",
+   "He is always polite.",
+   "He apologized for it."
+  ],
+  "answer": 0,
+  "explain": "Mean well = ter boa intenção; come across as = soar como, passar a impressão de."
+ },
+ {
+  "id": "li-c1-01",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Frankly, calling the project a success would be stretching it. We hit our targets, but only after cutting half the features.",
+  "q": "What is the speaker's view of the project?",
+  "options": [
+   "A complete triumph",
+   "A qualified success at best",
+   "A total failure",
+   "Too early to judge"
+  ],
+  "answer": 1,
+  "explain": "Stretching it = exagerar. Ele admite as metas batidas, mas com ressalvas sérias."
+ },
+ {
+  "id": "li-c1-02",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "I'm not one to gossip, but let's just say Daniel's promotion raised a few eyebrows in the office.",
+  "q": "What does the speaker imply?",
+  "options": [
+   "Everyone celebrated it.",
+   "Daniel refused it.",
+   "The speaker was promoted too.",
+   "People found it surprising or suspicious."
+  ],
+  "answer": 3,
+  "explain": "Raise eyebrows = causar surpresa ou desconfiança."
+ },
+ {
+  "id": "li-c1-03",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Had we known about the strike earlier, we could have rebooked everyone on the morning flight.",
+  "q": "What happened?",
+  "options": [
+   "They learned about the strike too late.",
+   "They rebooked everyone in time.",
+   "The morning flight was cancelled.",
+   "The strike was called off."
+  ],
+  "answer": 0,
+  "explain": "Had we known = If we had known; a inversão indica algo que não aconteceu."
+ },
+ {
+  "id": "li-c1-04",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "The report makes some valid points, although I'd take its conclusions with a pinch of salt, given who paid for it.",
+  "q": "Why is the speaker cautious about the report?",
+  "options": [
+   "It is too long.",
+   "It is out of date.",
+   "Its funder may have biased it.",
+   "It has no valid points."
+  ],
+  "answer": 2,
+  "explain": "With a pinch of salt = com desconfiança; given who paid for it sugere possível viés."
+ },
+ {
+  "id": "li-c1-05",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Needless to say, the new manager's first speech didn't exactly win the team over.",
+  "q": "How did the team react to the speech?",
+  "options": [
+   "Enthusiastically",
+   "Without much approval",
+   "With great relief",
+   "With loud applause"
+  ],
+  "answer": 1,
+  "explain": "Didn't exactly = não foi bem assim (eufemismo); win over = conquistar."
+ },
+ {
+  "id": "li-c1-06",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "It's not that I object to working late now and then. What bothers me is being expected to, without so much as a thank you.",
+  "q": "What is the speaker's main complaint?",
+  "options": [
+   "Having to work late at all",
+   "Their low salary",
+   "Their long commute",
+   "The lack of appreciation"
+  ],
+  "answer": 3,
+  "explain": "Without so much as = sem nem mesmo. O incômodo é a falta de reconhecimento."
+ },
+ {
+  "id": "li-c1-07",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "By the time we reach the summit, the sun will have set, so we'd better turn back now.",
+  "q": "Why does the speaker suggest turning back?",
+  "options": [
+   "It will be dark before they reach the top.",
+   "They are too tired.",
+   "The weather is bad.",
+   "They are lost."
+  ],
+  "answer": 0,
+  "explain": "Will have set = terá se posto (future perfect): vai escurecer antes de chegarem ao topo."
+ },
+ {
+  "id": "li-c1-08",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "With all due respect, I think you're missing the point. Nobody is questioning the budget. The issue is the timeline.",
+  "q": "What does the speaker want to clarify?",
+  "options": [
+   "The budget is too high.",
+   "The real problem is the schedule.",
+   "They agree completely.",
+   "They want to cancel the plan."
+  ],
+  "answer": 1,
+  "explain": "Missing the point = não entender o essencial. Timeline = cronograma, prazo."
+ },
+ {
+  "id": "li-c1-09",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Rather than waiting for the perfect moment, Camila decided to launch the product and fix any issues along the way.",
+  "q": "What does this say about Camila's approach?",
+  "options": [
+   "She is a perfectionist.",
+   "She avoids risks.",
+   "She prefers to act and adjust later.",
+   "She waits for approval."
+  ],
+  "answer": 2,
+  "explain": "Along the way = ao longo do caminho. Ela prefere agir já e ajustar depois."
+ },
+ {
+  "id": "li-c1-10",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "I'd hardly call it a bargain. Once you add delivery and installation, it costs more than the one in the shop.",
+  "q": "What does the speaker think about the offer?",
+  "options": [
+   "It isn't really cheap.",
+   "It's a great deal.",
+   "It's worth waiting for.",
+   "It's the cheapest option."
+  ],
+  "answer": 0,
+  "explain": "Hardly = dificilmente; I'd hardly call it a bargain = não é pechincha nenhuma."
+ },
+ {
+  "id": "li-c1-11",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Well, that went about as well as could be expected, all things considered.",
+  "q": "What does the speaker mean?",
+  "options": [
+   "It was a disaster.",
+   "It was far better than expected.",
+   "It was OK, given the circumstances.",
+   "It was cancelled."
+  ],
+  "answer": 2,
+  "explain": "As well as could be expected = tão bem quanto dava; all things considered = considerando tudo."
+ },
+ {
+  "id": "li-c1-12",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Much as I admire her talent, I can't overlook the fact that she missed three deadlines in a row.",
+  "q": "What is the speaker's attitude towards her?",
+  "options": [
+   "Only admiration",
+   "Complete indifference",
+   "Pure anger",
+   "Admiration mixed with criticism"
+  ],
+  "answer": 3,
+  "explain": "Much as = por mais que (concessão). Overlook = ignorar, deixar passar."
+ },
+ {
+  "id": "li-c1-13",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "I'll grant you that the plan is ambitious, but ambitious and unrealistic aren't the same thing.",
+  "q": "What is the speaker arguing about the plan?",
+  "options": [
+   "That it is unrealistic",
+   "That it is ambitious but achievable",
+   "That it should be cancelled",
+   "That it is too simple"
+  ],
+  "answer": 1,
+  "explain": "I'll grant you = admito que. Ele concede o ponto, mas diz que ambicioso não é irrealista."
+ },
+ {
+  "id": "li-c1-14",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "You've caught me at a bit of a bad time, I'm afraid. Mind if I get back to you once things calm down?",
+  "q": "What does the speaker want to do?",
+  "options": [
+   "Talk later",
+   "Complain about the call",
+   "Ask for urgent help",
+   "Never talk again"
+  ],
+  "answer": 0,
+  "explain": "Caught me at a bad time = me pegou numa hora ruim; get back to you = retornar o contato."
+ },
+ {
+  "id": "li-c1-15",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Not only did the new policy fail to cut costs, it actually drove some of our best people away.",
+  "q": "What was the result of the policy?",
+  "options": [
+   "It saved money but lost staff.",
+   "It saved money and kept staff.",
+   "It attracted new talent.",
+   "It didn't save money and lost good staff."
+  ],
+  "answer": 3,
+  "explain": "Not only... soma dois problemas; drive away = afastar, fazer alguém ir embora."
+ },
+ {
+  "id": "li-c1-16",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Between you and me, the interview could have gone better. I kept rambling whenever they asked about my weaknesses.",
+  "q": "What went wrong in the interview?",
+  "options": [
+   "The speaker arrived late.",
+   "The interviewer was rude.",
+   "The speaker talked too much without focus.",
+   "The speaker forgot the questions."
+  ],
+  "answer": 2,
+  "explain": "Ramble = falar sem parar e sem foco. Between you and me = cá entre nós."
+ },
+ {
+  "id": "li-c1-17",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "Of course, I'd be delighted to spend my entire weekend redoing a report nobody will read.",
+  "q": "What is the speaker's real attitude?",
+  "options": [
+   "Sarcastic and unhappy",
+   "Genuinely delighted",
+   "Nervous",
+   "Proud"
+  ],
+  "answer": 0,
+  "explain": "O exagero (delighted, entire weekend, nobody will read) revela sarcasmo e insatisfação."
+ },
+ {
+  "id": "li-c1-18",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "The figures speak for themselves. Sales have plateaued, and unless we rethink our strategy, we risk falling behind.",
+  "q": "What is the speaker's main message?",
+  "options": [
+   "Sales are rising fast.",
+   "The strategy is working well.",
+   "Change is needed to stay competitive.",
+   "Sales have dropped sharply."
+  ],
+  "answer": 2,
+  "explain": "Plateau = estabilizar, parar de crescer. Unless we rethink = a não ser que repensemos."
+ },
+ {
+  "id": "li-c1-19",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "I was all set to accept the offer, but the more I read the contract, the less convinced I became.",
+  "q": "How did the speaker's feelings change?",
+  "options": [
+   "From doubtful to certain",
+   "They stayed positive",
+   "They stayed negative",
+   "From certain to doubtful"
+  ],
+  "answer": 3,
+  "explain": "All set to = pronto para. The more..., the less... = quanto mais..., menos...: a dúvida cresceu."
+ },
+ {
+  "id": "li-c1-20",
+  "cat": "listening",
+  "level": "C1",
+  "audio": "It goes without saying that the event wouldn't have happened without the volunteers, who gave up their weekends to make it work.",
+  "q": "What is the speaker doing?",
+  "options": [
+   "Criticizing the volunteers",
+   "Praising the volunteers",
+   "Recruiting new volunteers",
+   "Cancelling the event"
+  ],
+  "answer": 1,
+  "explain": "It goes without saying = nem é preciso dizer; gave up their weekends = abriram mão dos fins de semana."
+ }
+]

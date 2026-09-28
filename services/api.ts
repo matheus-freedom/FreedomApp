@@ -314,7 +314,8 @@ export const api = {
   admin_getUserHistory: async (userId: string): Promise<ActivityRecord[]> => {
     const q = query(collection(db, 'history'), where('userId', '==', userId));
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
+    // Duelos não são exercícios: ficam fora da ficha do aluno no painel.
+    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel').sort((a, b) => b.date - a.date);
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -389,7 +390,9 @@ export const api = {
 
   admin_getHistorySince: async (since: number): Promise<any[]> => {
     const snap = await getDocs(query(collection(db, 'history'), where('date', '>=', since)));
-    return snap.docs.map(d => d.data());
+    // Duelos gravam no histórico (é de lá que sai o Hall da Fama), mas
+    // não são exercícios: ficam fora das contas do painel.
+    return snap.docs.map(d => d.data()).filter((h: any) => h.type !== 'duel');
   },
 
   admin_getUserSessions: async (userId: string): Promise<any[]> => {
@@ -424,7 +427,17 @@ export const api = {
     await updateDoc(userRef, { notifications: clean(list.map(n => n.id === notificationId ? { ...n, read: true } : n)) });
   },
 
-  saveUser: async (user: UserSession) => { await setDoc(doc(db, 'users', user.userId), clean(user)); },
+  // Salva SÓ os campos do perfil. Antes regravava o documento inteiro
+  // (inclusive saldo e XP que estavam na memória da tela): se um prêmio
+  // de duelo ou um pote de aposta caísse enquanto o aluno editava o
+  // perfil, o salvamento apagava o prêmio.
+  saveUser: async (user: UserSession) => {
+    await updateDoc(doc(db, 'users', user.userId), clean({
+      username: user.username, fullName: user.fullName, userName: user.userName,
+      age: user.age, gender: user.gender, email: user.email,
+      profilePhoto: user.profilePhoto ?? null, guide: user.guide,
+    }));
+  },
 
   updateGuide: async (userId: string, guide: GuideCharacter): Promise<void> => {
     const userRef = doc(db, 'users', userId);
@@ -762,7 +775,8 @@ export const api = {
   getHistory: async (userId: string): Promise<ActivityRecord[]> => {
     const q = query(collection(db, 'history'), where('userId', '==', userId));
     const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as ActivityRecord).sort((a, b) => b.date - a.date);
+    // Duelos ficam fora de "Minhas atividades" (não dá para "Refazer" um duelo).
+    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel').sort((a, b) => b.date - a.date);
   },
 
   saveActivity: async (userId: string, record: ActivityRecord): Promise<void> => {
