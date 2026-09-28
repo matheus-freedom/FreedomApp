@@ -170,7 +170,8 @@ const DuelGame: React.FC<Props> = ({ duelId, initial, uid, onBack, onChanged, on
       setDuel(d); onChanged();
       if (!accept) onBack();
     } catch (e) {
-      if (e instanceof DuelApiError && e.code === 'NEED_LEVEL') { showToast(e.message, 'info'); onBack(); }
+      // Sem nível: volta ao hub, que abre o "Qual seu nível?" sozinho.
+      if (e instanceof DuelApiError && e.code === 'NEED_LEVEL') { showToast('Antes de aceitar, conte pra gente o seu nível 😉', 'info'); onBack(); }
       else handleError(e);
     } finally { setBusy(false); }
   };

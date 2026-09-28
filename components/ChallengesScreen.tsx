@@ -60,6 +60,13 @@ const ChallengesScreen: React.FC<ChallengesScreenProps> = ({ user, onHome, onUse
   }, [uid, user, onUserUpdate, onBadgeChange]);
 
   useEffect(() => { refresh(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Aluno sem nível que recebeu convite: pergunta o nível logo de cara
+  // (senão ele clicaria em "Aceitar" e só receberia um aviso).
+  const askedLevel = React.useRef(false);
+  useEffect(() => {
+    if (askedLevel.current || !me?.needLevel) return;
+    if (duels.some(d => d.status === 'invited' && d.players[1] === uid)) { askedLevel.current = true; setShowLevel(true); }
+  }, [me, duels, uid]);
   useEffect(() => {
     if (view.kind !== 'hub') return;
     const t = setInterval(() => { if (!document.hidden) refresh(true); }, 20000);
