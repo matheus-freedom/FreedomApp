@@ -38,6 +38,25 @@ type Feedback = { result: DuelResult; event: string; timedOut?: boolean; next: D
 
 const vibrate = (p: number | number[]) => { try { navigator.vibrate?.(p); } catch { /* sem suporte */ } };
 
+// ── Voz do Listening ──────────────────────────────────────────
+// O Mac (e o iPhone) trazem, junto com as vozes normais, vozes "de
+// brincadeira" (Albert, Bells, Zarvox...). Pegar simplesmente a
+// primeira voz em inglês caía justamente numa delas — foi o que o
+// teste real mostrou (voz "Albert", robótica). Aqui preferimos vozes
+// naturais conhecidas de cada sistema e descartamos as esquisitas.
+const NOVELTY_VOICES = /bolhas|sinos|órgão|orgao|sussurr|boas notícias|más notícias|violoncelo|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy/i;
+const PREFERRED_VOICES = ['Google US English', 'Samantha', 'Ava', 'Allison', 'Susan', 'Tom', 'Alex', 'Microsoft Aria', 'Microsoft Jenny', 'Microsoft Guy', 'Microsoft Zira', 'Nicky', 'Aaron', 'Evan', 'Joelle', 'Nathan', 'Noelle', 'Zoe', 'Karen', 'Daniel', 'Google UK English Female'];
+export const pickEnglishVoice = (): SpeechSynthesisVoice | null => {
+  const all = window.speechSynthesis?.getVoices?.() || [];
+  const english = all.filter(v => v.lang.replace('_', '-').toLowerCase().startsWith('en') && !NOVELTY_VOICES.test(v.name));
+  for (const name of PREFERRED_VOICES) {
+    const hit = english.find(v => v.name.startsWith(name) && v.lang.replace('_', '-').startsWith('en-US'))
+      || english.find(v => v.name.startsWith(name));
+    if (hit) return hit;
+  }
+  return english.find(v => v.lang.replace('_', '-') === 'en-US') || english[0] || null;
+};
+
 const DuelGame: React.FC<Props> = ({ duelId, initial, uid, onBack, onChanged, onRematch }) => {
   const [duel, setDuel] = useState<Duel | null>(initial || null);
   const [busy, setBusy] = useState(false);
@@ -444,7 +463,7 @@ const QuestionCard: React.FC<{
     if (!q?.audio || !canSpeak || plays >= 2) return;
     const u = new SpeechSynthesisUtterance(q.audio);
     u.lang = 'en-US'; u.rate = 0.9;
-    const voice = window.speechSynthesis.getVoices().find(v => v.lang === 'en-US') || window.speechSynthesis.getVoices().find(v => v.lang.startsWith('en'));
+    const voice = pickEnglishVoice();
     if (voice) u.voice = voice;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
