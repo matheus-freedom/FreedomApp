@@ -1,0 +1,1402 @@
+[
+  {
+    "id": "tr-a1-01",
+    "cat": "travel",
+    "level": "A1",
+    "q": "You need the toilet at a café. You ask: \"Excuse me, where is the ___?\"",
+    "options": [
+      "bath",
+      "bathroom",
+      "bathe",
+      "bathing"
+    ],
+    "answer": 1,
+    "explain": "Bathroom é o banheiro. Bath é banheira ou banho, e bathe é o verbo tomar banho."
+  },
+  {
+    "id": "tr-a1-02",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Can I have some ___, please? I'm thirsty.",
+    "options": [
+      "bread",
+      "soap",
+      "water",
+      "keys"
+    ],
+    "answer": 2,
+    "explain": "Thirsty = com sede. Quem tem sede pede water (água)."
+  },
+  {
+    "id": "tr-a1-03",
+    "cat": "travel",
+    "level": "A1",
+    "q": "How much ___ this T-shirt?",
+    "options": [
+      "are",
+      "do",
+      "does",
+      "is"
+    ],
+    "answer": 3,
+    "explain": "Para perguntar o preço de UMA coisa: How much is...? Para várias: How much are...?"
+  },
+  {
+    "id": "tr-a1-04",
+    "cat": "travel",
+    "level": "A1",
+    "q": "What does the sign EXIT mean?",
+    "options": [
+      "the way out",
+      "the way in",
+      "success",
+      "closed"
+    ],
+    "answer": 0,
+    "explain": "Exit é saída. Não confunda com êxito (success). Entrada é entrance."
+  },
+  {
+    "id": "tr-a1-05",
+    "cat": "travel",
+    "level": "A1",
+    "q": "The hotel receptionist asks: \"What's your name, please?\" You say:",
+    "options": [
+      "I'm fine, thanks.",
+      "My name is Lucas Silva.",
+      "I'm 25.",
+      "Yes, please."
+    ],
+    "answer": 1,
+    "explain": "A pergunta é sobre o nome, então a resposta natural é My name is... ou I'm..."
+  },
+  {
+    "id": "tr-a1-06",
+    "cat": "travel",
+    "level": "A1",
+    "q": "I'd like a ticket ___ London, please.",
+    "options": [
+      "to",
+      "in",
+      "at",
+      "on"
+    ],
+    "answer": 0,
+    "explain": "Para indicar destino usamos to: a ticket to London (uma passagem para Londres)."
+  },
+  {
+    "id": "tr-a1-07",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Where is the ___? I want to take a train.",
+    "options": [
+      "airport",
+      "station",
+      "hospital",
+      "bank"
+    ],
+    "answer": 1,
+    "explain": "Trens partem da station (estação). No aeroporto pegamos avião."
+  },
+  {
+    "id": "tr-a1-08",
+    "cat": "travel",
+    "level": "A1",
+    "q": "The shop sign says CLOSED. This means:",
+    "options": [
+      "You can go in now.",
+      "You can't go in now.",
+      "It's free.",
+      "It's new."
+    ],
+    "answer": 1,
+    "explain": "Closed = fechado. O contrário é open (aberto)."
+  },
+  {
+    "id": "tr-a1-09",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Is there a ___ near here? I need some cash.",
+    "options": [
+      "bakery",
+      "cash machine",
+      "gym",
+      "beach"
+    ],
+    "answer": 1,
+    "explain": "Cash machine (nos EUA, ATM) é o caixa eletrônico, onde se saca dinheiro (cash)."
+  },
+  {
+    "id": "tr-a1-10",
+    "cat": "travel",
+    "level": "A1",
+    "q": "The waiter asks: \"Anything to drink?\" You say:",
+    "options": [
+      "Orange juice, please.",
+      "I'm from Brazil.",
+      "Yes, I am.",
+      "Two o'clock."
+    ],
+    "answer": 0,
+    "explain": "O garçom pergunta sobre bebida, então você diz o que quer beber + please."
+  },
+  {
+    "id": "tr-a1-11",
+    "cat": "travel",
+    "level": "A1",
+    "q": "My passport is ___ my bag.",
+    "options": [
+      "in",
+      "of",
+      "at",
+      "to"
+    ],
+    "answer": 0,
+    "explain": "In = dentro de. O passaporte está dentro da bolsa: in my bag."
+  },
+  {
+    "id": "tr-a1-12",
+    "cat": "travel",
+    "level": "A1",
+    "q": "What time ___ the bus leave?",
+    "options": [
+      "do",
+      "is",
+      "does",
+      "are"
+    ],
+    "answer": 2,
+    "explain": "Pergunta no presente simples com he/she/it (the bus) usa does + verbo na forma base."
+  },
+  {
+    "id": "tr-a1-13",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Hi, I have a ___ for two nights. My name is Ana Costa.",
+    "options": [
+      "reservation",
+      "reservoir",
+      "preservative",
+      "resort"
+    ],
+    "answer": 0,
+    "explain": "Reservation é reserva. Reservoir é reservatório, preservative é conservante e resort é um tipo de hotel."
+  },
+  {
+    "id": "tr-a1-14",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Excuse me, ___ the museum far from here?",
+    "options": [
+      "is",
+      "are",
+      "has",
+      "does"
+    ],
+    "answer": 0,
+    "explain": "Com adjetivo (far) usamos o verbo be: Is the museum far? = O museu é longe?"
+  },
+  {
+    "id": "tr-a1-15",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Can I pay ___ card?",
+    "options": [
+      "to",
+      "of",
+      "on",
+      "by"
+    ],
+    "answer": 3,
+    "explain": "Pay by card = pagar com cartão. Também dizemos pay in cash (em dinheiro)."
+  },
+  {
+    "id": "tr-a1-16",
+    "cat": "travel",
+    "level": "A1",
+    "q": "Turn ___ at the corner, and the hotel is on your right.",
+    "options": [
+      "leave",
+      "left",
+      "lift",
+      "late"
+    ],
+    "answer": 1,
+    "explain": "Turn left = vire à esquerda. Leave é sair/deixar, e lift é elevador (no inglês britânico)."
+  },
+  {
+    "id": "tr-a1-17",
+    "cat": "travel",
+    "level": "A1",
+    "q": "What is a suitcase?",
+    "options": [
+      "a type of suit",
+      "a small box for rings",
+      "a big bag for your clothes on a trip",
+      "a winter coat"
+    ],
+    "answer": 2,
+    "explain": "Suitcase é a mala de viagem. Não tem nada a ver com suit (terno)."
+  },
+  {
+    "id": "tr-a1-18",
+    "cat": "travel",
+    "level": "A1",
+    "q": "The sign says NO SMOKING. What can't you do here?",
+    "options": [
+      "eat",
+      "smoke",
+      "talk",
+      "sleep"
+    ],
+    "answer": 1,
+    "explain": "No + verbo com -ing indica proibição: No smoking = proibido fumar."
+  },
+  {
+    "id": "tr-a1-19",
+    "cat": "travel",
+    "level": "A1",
+    "q": "You are lost. You ask a woman: \"Excuse me, ___ you help me?\"",
+    "options": [
+      "are",
+      "is",
+      "do",
+      "can"
+    ],
+    "answer": 3,
+    "explain": "Para pedir ajuda usamos can: Can you help me? = Você pode me ajudar?"
+  },
+  {
+    "id": "tr-a1-20",
+    "cat": "travel",
+    "level": "A1",
+    "q": "After dinner, you ask the waiter: \"Can I have the ___, please?\"",
+    "options": [
+      "bill",
+      "count",
+      "account",
+      "note"
+    ],
+    "answer": 0,
+    "explain": "A conta do restaurante é the bill (nos EUA também the check). Account é conta bancária."
+  },
+  {
+    "id": "tr-a2-01",
+    "cat": "travel",
+    "level": "A2",
+    "q": "I'd like to ___ in, please. Here's my passport.",
+    "options": [
+      "make",
+      "do",
+      "check",
+      "get"
+    ],
+    "answer": 2,
+    "explain": "Check in = fazer o check-in (no hotel ou no aeroporto). Check out = sair do hotel."
+  },
+  {
+    "id": "tr-a2-02",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Is breakfast ___ in the price?",
+    "options": [
+      "included",
+      "including",
+      "include",
+      "includes"
+    ],
+    "answer": 0,
+    "explain": "Is ... included? = está incluído? Usamos o particípio (included) depois de be."
+  },
+  {
+    "id": "tr-a2-03",
+    "cat": "travel",
+    "level": "A2",
+    "q": "At the airport, you go to \"Baggage Claim\" to:",
+    "options": [
+      "buy a new bag",
+      "pick up your checked bags",
+      "make a complaint",
+      "check in"
+    ],
+    "answer": 1,
+    "explain": "Baggage claim é a esteira onde você retira as malas despachadas. Claim aqui é retirar, não reclamar."
+  },
+  {
+    "id": "tr-a2-04",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Excuse me, how do I ___ to the train station?",
+    "options": [
+      "arrive",
+      "reach to",
+      "going",
+      "get"
+    ],
+    "answer": 3,
+    "explain": "How do I get to...? é o jeito natural de pedir direções. Reach não leva to, e arrive usa at/in."
+  },
+  {
+    "id": "tr-a2-05",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Our flight was ___ because of the storm. We left three hours late.",
+    "options": [
+      "early",
+      "delayed",
+      "lost",
+      "boarded"
+    ],
+    "answer": 1,
+    "explain": "Delayed = atrasado. Um voo delayed sai depois do horário previsto."
+  },
+  {
+    "id": "tr-a2-06",
+    "cat": "travel",
+    "level": "A2",
+    "q": "What is a boarding pass?",
+    "options": [
+      "the document you show to get on the plane",
+      "a monthly bus pass",
+      "a hotel room key",
+      "a type of visa"
+    ],
+    "answer": 0,
+    "explain": "Boarding pass é o cartão de embarque. To board = embarcar."
+  },
+  {
+    "id": "tr-a2-07",
+    "cat": "travel",
+    "level": "A2",
+    "q": "The taxi driver asks: \"Where to?\" You say:",
+    "options": [
+      "Yes, it is.",
+      "Twenty dollars.",
+      "To the Grand Hotel, please.",
+      "I'm fine."
+    ],
+    "answer": 2,
+    "explain": "Where to? = Para onde? Responda com o destino: To + lugar + please."
+  },
+  {
+    "id": "tr-a2-08",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Could I have a table ___ two, please?",
+    "options": [
+      "to",
+      "of",
+      "with",
+      "for"
+    ],
+    "answer": 3,
+    "explain": "A table for two = uma mesa para duas pessoas. Usamos for para indicar quantas pessoas."
+  },
+  {
+    "id": "tr-a2-09",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Oh no! I ___ my wallet. I can't find it anywhere.",
+    "options": [
+      "lose",
+      "lost",
+      "losed",
+      "have lose"
+    ],
+    "answer": 1,
+    "explain": "Lose é irregular: o passado é lost. Losed não existe."
+  },
+  {
+    "id": "tr-a2-10",
+    "cat": "travel",
+    "level": "A2",
+    "q": "You want to go to Oxford and come back the same day. You ask for:",
+    "options": [
+      "a one-way ticket",
+      "a round-trip ticket",
+      "a single room",
+      "a boarding gate"
+    ],
+    "answer": 1,
+    "explain": "Round-trip ticket é passagem de ida e volta (no Reino Unido, return ticket). One-way é só ida."
+  },
+  {
+    "id": "tr-a2-11",
+    "cat": "travel",
+    "level": "A2",
+    "q": "The museum ___ at 9 a.m. and closes at 5 p.m.",
+    "options": [
+      "open",
+      "opening",
+      "opens",
+      "is opening"
+    ],
+    "answer": 2,
+    "explain": "Horários fixos usam o presente simples; com it/the museum o verbo ganha -s: opens."
+  },
+  {
+    "id": "tr-a2-12",
+    "cat": "travel",
+    "level": "A2",
+    "q": "Could you ___ a photo of us, please?",
+    "options": [
+      "make",
+      "do",
+      "take",
+      "have"
+    ],
+    "answer": 2,
+    "explain": "Em inglês tiramos foto com take: take a photo. Make a photo é erro comum de brasileiros."
+  },
+  {
+    "id": "tr-a2-13",
+    "cat": "travel",
+    "level": "A2",
+    "q": "The elevator has a sign: OUT OF ORDER. This means:",
+    "options": [
+      "It isn't working.",
+      "It's in the wrong place.",
+      "It's only for staff.",
+      "It's full."
+    ],
+    "answer": 0,
+    "explain": "Out of order = quebrado, fora de serviço. Muito comum em elevadores e máquinas."
+  },
+  {
+    "id": "tr-a2-14",
+    "cat": "travel",
+    "level": "A2",
+    "q": "The pharmacist says: \"Take this medicine ___ a day, after meals.\"",
+    "options": [
+      "two",
+      "second",
+      "double",
+      "twice"
+    ],
+    "answer": 3,
+    "explain": "Twice = duas vezes. Once = uma vez, three times = três vezes."
+  },
+  {
+    "id": "tr-a2-15",
+    "cat": "travel",
+    "level": "A2",
+    "q": "On a train, you want to sit down. You ask: \"Excuse me, is this seat ___?\"",
+    "options": [
+      "busy",
+      "taken",
+      "occupy",
+      "took"
+    ],
+    "answer": 1,
+    "explain": "Is this seat taken? = Esse lugar está ocupado? Busy é para pessoas ocupadas, não lugares."
+  },
+  {
+    "id": "tr-a2-16",
+    "cat": "travel",
+    "level": "A2",
+    "q": "I'm looking ___ the bus stop. Is it near here?",
+    "options": [
+      "for",
+      "at",
+      "after",
+      "to"
+    ],
+    "answer": 0,
+    "explain": "Look for = procurar. Look at = olhar para, look after = cuidar de."
+  },
+  {
+    "id": "tr-a2-17",
+    "cat": "travel",
+    "level": "A2",
+    "q": "How long does it ___ to get to the airport?",
+    "options": [
+      "spend",
+      "last",
+      "take",
+      "need"
+    ],
+    "answer": 2,
+    "explain": "How long does it take...? pergunta quanto tempo leva para fazer algo."
+  },
+  {
+    "id": "tr-a2-18",
+    "cat": "travel",
+    "level": "A2",
+    "q": "\"What time is check-out?\" \"___ 11 a.m.\"",
+    "options": [
+      "In",
+      "On",
+      "For",
+      "At"
+    ],
+    "answer": 3,
+    "explain": "Com horários exatos usamos at: at 11 a.m., at noon."
+  },
+  {
+    "id": "tr-a2-19",
+    "cat": "travel",
+    "level": "A2",
+    "q": "On a plane, what is an aisle seat?",
+    "options": [
+      "the seat next to the window",
+      "the seat next to the corridor",
+      "the middle seat",
+      "a seat in first class"
+    ],
+    "answer": 1,
+    "explain": "Aisle (pronuncia-se \"ail\") é o corredor. Window seat é janela e middle seat é o do meio."
+  },
+  {
+    "id": "tr-a2-20",
+    "cat": "travel",
+    "level": "A2",
+    "q": "A shop assistant asks: \"Can I help you?\" You only want to look. You say:",
+    "options": [
+      "No, I'm not helping.",
+      "Yes, I'm watching.",
+      "No, thanks. I'm just looking.",
+      "No, I don't look."
+    ],
+    "answer": 2,
+    "explain": "I'm just looking = só estou olhando. É a resposta educada padrão em lojas."
+  },
+  {
+    "id": "tr-b1-01",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Our flight to Paris isn't direct: we have a two-hour ___ in Lisbon.",
+    "options": [
+      "layover",
+      "gateway",
+      "takeoff",
+      "landing"
+    ],
+    "answer": 0,
+    "explain": "Layover (ou stopover) é a escala entre dois voos. Takeoff é decolagem e landing, pouso."
+  },
+  {
+    "id": "tr-b1-02",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Immigration officer: \"What's the purpose of your visit?\" You say:",
+    "options": [
+      "By plane.",
+      "For two weeks.",
+      "I'm here on vacation.",
+      "At a hotel downtown."
+    ],
+    "answer": 2,
+    "explain": "Purpose = motivo. Responda o motivo: on vacation (UK: on holiday), on business, to visit family."
+  },
+  {
+    "id": "tr-b1-03",
+    "cat": "travel",
+    "level": "B1",
+    "q": "I'd like to ___ a complaint about the noise in my room.",
+    "options": [
+      "do",
+      "make",
+      "take",
+      "give"
+    ],
+    "answer": 1,
+    "explain": "A colocação correta é make a complaint (fazer uma reclamação)."
+  },
+  {
+    "id": "tr-b1-04",
+    "cat": "travel",
+    "level": "B1",
+    "q": "If you miss your connection, the airline ___ you on the next flight.",
+    "options": [
+      "would put",
+      "puts on",
+      "will to put",
+      "will put"
+    ],
+    "answer": 3,
+    "explain": "Primeiro condicional: If + presente, will + verbo base. Will nunca é seguido de to."
+  },
+  {
+    "id": "tr-b1-05",
+    "cat": "travel",
+    "level": "B1",
+    "q": "On the London Underground you hear \"Mind the gap\". It means:",
+    "options": [
+      "Be careful of the space between the train and the platform.",
+      "Don't forget your bag.",
+      "Please keep quiet.",
+      "Stand in line."
+    ],
+    "answer": 0,
+    "explain": "Mind = tome cuidado com; gap = vão. Aviso famoso do metrô de Londres."
+  },
+  {
+    "id": "tr-b1-06",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Could you tell me where the nearest pharmacy ___?",
+    "options": [
+      "is it",
+      "does",
+      "is",
+      "are"
+    ],
+    "answer": 2,
+    "explain": "Em perguntas indiretas (Could you tell me...) não invertemos: where the pharmacy is."
+  },
+  {
+    "id": "tr-b1-07",
+    "cat": "travel",
+    "level": "B1",
+    "q": "The hotel is fully ___ this weekend, so there are no rooms available.",
+    "options": [
+      "bought",
+      "booked",
+      "charged",
+      "paid"
+    ],
+    "answer": 1,
+    "explain": "Fully booked = lotado, sem vagas. Book = reservar."
+  },
+  {
+    "id": "tr-b1-08",
+    "cat": "travel",
+    "level": "B1",
+    "q": "I'd like to exchange some reais ___ euros, please.",
+    "options": [
+      "for",
+      "by",
+      "in",
+      "at"
+    ],
+    "answer": 0,
+    "explain": "Exchange A for B = trocar A por B. Também se diz change reais into euros."
+  },
+  {
+    "id": "tr-b1-09",
+    "cat": "travel",
+    "level": "B1",
+    "q": "What does \"sightseeing\" mean?",
+    "options": [
+      "watching the sea",
+      "buying souvenirs",
+      "having an eye test",
+      "visiting famous places as a tourist"
+    ],
+    "answer": 3,
+    "explain": "Sightseeing é passear conhecendo pontos turísticos (sights). Go sightseeing = fazer turismo."
+  },
+  {
+    "id": "tr-b1-10",
+    "cat": "travel",
+    "level": "B1",
+    "q": "The flight attendant says: \"Please fasten your seatbelt.\" This means:",
+    "options": [
+      "go faster",
+      "take off your seatbelt",
+      "put on your seatbelt",
+      "change seats"
+    ],
+    "answer": 2,
+    "explain": "Fasten = apertar, prender. Não confunda com fast (rápido)."
+  },
+  {
+    "id": "tr-b1-11",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Sorry, I didn't catch that. Could you ___ it, please?",
+    "options": [
+      "tell",
+      "repeat",
+      "say again it",
+      "speak"
+    ],
+    "answer": 1,
+    "explain": "Didn't catch = não entendi. Repeat it ou say it again; o it vem antes de again."
+  },
+  {
+    "id": "tr-b1-12",
+    "cat": "travel",
+    "level": "B1",
+    "q": "We ___ for five hours when we finally saw the hotel.",
+    "options": [
+      "have been driving",
+      "drive",
+      "are driving",
+      "had been driving"
+    ],
+    "answer": 3,
+    "explain": "Past perfect continuous (had been + -ing) mostra ação que durou até um momento do passado."
+  },
+  {
+    "id": "tr-b1-13",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Hi, this is room 204. The air conditioning isn't ___.",
+    "options": [
+      "working",
+      "work",
+      "walking",
+      "doing"
+    ],
+    "answer": 0,
+    "explain": "Para aparelhos, isn't working = não está funcionando."
+  },
+  {
+    "id": "tr-b1-14",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Can you recommend a good place ___ lunch near here?",
+    "options": [
+      "to",
+      "of",
+      "for",
+      "in"
+    ],
+    "answer": 2,
+    "explain": "A place for lunch (substantivo) ou a place to have lunch (verbo). To sozinho pede um verbo."
+  },
+  {
+    "id": "tr-b1-15",
+    "cat": "travel",
+    "level": "B1",
+    "q": "\"I'd like to return these shoes.\" \"Sure. Do you have the ___?\"",
+    "options": [
+      "recipe",
+      "receipt",
+      "revenue",
+      "reception"
+    ],
+    "answer": 1,
+    "explain": "Receipt (o p é mudo) é o recibo/nota fiscal. Recipe é receita de comida."
+  },
+  {
+    "id": "tr-b1-16",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Car rental agent: \"Please return the car with a full ___.\"",
+    "options": [
+      "trunk",
+      "engine",
+      "deposit",
+      "tank"
+    ],
+    "answer": 3,
+    "explain": "Tank é o tanque de combustível. Trunk é o porta-malas (UK: boot)."
+  },
+  {
+    "id": "tr-b1-17",
+    "cat": "travel",
+    "level": "B1",
+    "q": "A sign in the park says: KEEP OFF THE GRASS. It means:",
+    "options": [
+      "Keep the grass clean.",
+      "Don't walk on the grass.",
+      "Water the grass.",
+      "Sit only on the grass."
+    ],
+    "answer": 1,
+    "explain": "Keep off = não entre, fique fora. É uma proibição educada comum em parques."
+  },
+  {
+    "id": "tr-b1-18",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Is the castle ___ to walk to, or should we take a bus?",
+    "options": [
+      "close enough",
+      "enough close",
+      "too close",
+      "so close"
+    ],
+    "answer": 0,
+    "explain": "Enough vem DEPOIS do adjetivo: close enough = perto o suficiente."
+  },
+  {
+    "id": "tr-b1-19",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Receptionist: \"Would you like a wake-up call?\" You say:",
+    "options": [
+      "Yes, I'm awake now.",
+      "No, I don't call.",
+      "Yes, at 6:30, please.",
+      "I'd like to call later."
+    ],
+    "answer": 2,
+    "explain": "Wake-up call é a ligação do hotel para te acordar. Basta dizer o horário."
+  },
+  {
+    "id": "tr-b1-20",
+    "cat": "travel",
+    "level": "B1",
+    "q": "Excuse me, which ___ does the flight to Madrid leave from?",
+    "options": [
+      "door",
+      "gate",
+      "port",
+      "exit"
+    ],
+    "answer": 1,
+    "explain": "No aeroporto, portão de embarque é gate. Port é porto de navios."
+  },
+  {
+    "id": "tr-b2-01",
+    "cat": "travel",
+    "level": "B2",
+    "q": "My luggage didn't arrive. Where can I ___ a claim for lost baggage?",
+    "options": [
+      "fill",
+      "ask",
+      "file",
+      "make up"
+    ],
+    "answer": 2,
+    "explain": "File a claim = registrar uma reclamação/pedido formal. Fill usa-se com fill out a form."
+  },
+  {
+    "id": "tr-b2-02",
+    "cat": "travel",
+    "level": "B2",
+    "q": "We were ___ to business class because economy was overbooked.",
+    "options": [
+      "promoted",
+      "updated",
+      "upgrade",
+      "upgraded"
+    ],
+    "answer": 3,
+    "explain": "Get upgraded = ser passado para uma classe superior. Promoted é para promoção no emprego."
+  },
+  {
+    "id": "tr-b2-03",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Notice: \"Guests are kindly requested to vacate their rooms by 11 a.m.\" Guests must:",
+    "options": [
+      "clean their rooms by 11",
+      "leave their rooms by 11",
+      "stay in their rooms until 11",
+      "pay for the room by 11"
+    ],
+    "answer": 1,
+    "explain": "Vacate = desocupar, sair. By 11 = até as 11, no máximo."
+  },
+  {
+    "id": "tr-b2-04",
+    "cat": "travel",
+    "level": "B2",
+    "q": "If I ___ my passport in the hotel safe this morning, I wouldn't be so worried now.",
+    "options": [
+      "left",
+      "have left",
+      "had left",
+      "would leave"
+    ],
+    "answer": 2,
+    "explain": "Condicional misto: passado (If I had left) com consequência no presente (wouldn't be... now)."
+  },
+  {
+    "id": "tr-b2-05",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Our flight was ___ to Manchester because of fog in London.",
+    "options": [
+      "deviated",
+      "diverted",
+      "derailed",
+      "departed"
+    ],
+    "answer": 1,
+    "explain": "Divert = desviar um voo para outro aeroporto. Derail é descarrilar (trem)."
+  },
+  {
+    "id": "tr-b2-06",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Would you mind ___ me where the nearest subway station is?",
+    "options": [
+      "to tell",
+      "tell",
+      "told",
+      "telling"
+    ],
+    "answer": 3,
+    "explain": "Depois de Would you mind usamos o verbo com -ing: Would you mind telling me...?"
+  },
+  {
+    "id": "tr-b2-07",
+    "cat": "travel",
+    "level": "B2",
+    "q": "A sign in a car park says: PAY AND DISPLAY. You must:",
+    "options": [
+      "buy a ticket and leave it visible in your car",
+      "pay at the exit",
+      "show your ID to the attendant",
+      "park for free"
+    ],
+    "answer": 0,
+    "explain": "Display = exibir. Você compra o tíquete e deixa no painel, visível pela janela."
+  },
+  {
+    "id": "tr-b2-08",
+    "cat": "travel",
+    "level": "B2",
+    "q": "The guide said we ___ take photos inside the chapel, so I put my phone away.",
+    "options": [
+      "didn't have to",
+      "needn't",
+      "weren't allowed to",
+      "mustn't to"
+    ],
+    "answer": 2,
+    "explain": "Not allowed to = proibido. Didn't have to/needn't indicam só falta de obrigação."
+  },
+  {
+    "id": "tr-b2-09",
+    "cat": "travel",
+    "level": "B2",
+    "q": "A \"red-eye\" flight is one that:",
+    "options": [
+      "is always delayed",
+      "leaves late at night and arrives early in the morning",
+      "is in first class",
+      "goes to a hot country"
+    ],
+    "answer": 1,
+    "explain": "Red-eye é o voo noturno: você chega de manhã com os olhos vermelhos de sono."
+  },
+  {
+    "id": "tr-b2-10",
+    "cat": "travel",
+    "level": "B2",
+    "q": "The room was nothing ___ the photos on the website.",
+    "options": [
+      "as",
+      "similar",
+      "alike",
+      "like"
+    ],
+    "answer": 3,
+    "explain": "Nothing like = nada parecido com. É uma forma comum de reclamar de algo diferente do anunciado."
+  },
+  {
+    "id": "tr-b2-11",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Customs officer: \"Do you have anything to ___?\"",
+    "options": [
+      "declare",
+      "inform",
+      "notify",
+      "advise"
+    ],
+    "answer": 0,
+    "explain": "Declare = declarar itens na alfândega (customs). Nothing to declare = nada a declarar."
+  },
+  {
+    "id": "tr-b2-12",
+    "cat": "travel",
+    "level": "B2",
+    "q": "By the time we got to the station, the last train ___.",
+    "options": [
+      "has already left",
+      "leaves already",
+      "had already left",
+      "is already leaving"
+    ],
+    "answer": 2,
+    "explain": "By the time + passado pede past perfect para a ação anterior: had already left."
+  },
+  {
+    "id": "tr-b2-13",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Could you ___ me up at the hotel at 8? My flight lands at 7.",
+    "options": [
+      "take",
+      "pick",
+      "bring",
+      "carry"
+    ],
+    "answer": 1,
+    "explain": "Pick someone up = buscar alguém de carro. Phrasal verb muito usado em viagens."
+  },
+  {
+    "id": "tr-b2-14",
+    "cat": "travel",
+    "level": "B2",
+    "q": "A travel blog describes a village as \"off the beaten track\". It is:",
+    "options": [
+      "closed for repairs",
+      "next to the main road",
+      "very crowded",
+      "away from the usual tourist areas"
+    ],
+    "answer": 3,
+    "explain": "Off the beaten track (US: path) = fora do roteiro turístico comum, pouco visitado."
+  },
+  {
+    "id": "tr-b2-15",
+    "cat": "travel",
+    "level": "B2",
+    "q": "The tour costs $50, ___ lunch and entrance fees.",
+    "options": [
+      "included",
+      "include",
+      "including",
+      "inclusive"
+    ],
+    "answer": 2,
+    "explain": "Including = incluindo, antes do que está incluso. Inclusive exigiria of: inclusive of lunch."
+  },
+  {
+    "id": "tr-b2-16",
+    "cat": "travel",
+    "level": "B2",
+    "q": "We'd better ___ a taxi, or we'll miss the flight.",
+    "options": [
+      "to take",
+      "take",
+      "taking",
+      "took"
+    ],
+    "answer": 1,
+    "explain": "Had better ('d better) é seguido do verbo na forma base, sem to."
+  },
+  {
+    "id": "tr-b2-17",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Rental agent: \"You can add a second driver, but there's a small ___.\"",
+    "options": [
+      "fare",
+      "rate",
+      "fine",
+      "fee"
+    ],
+    "answer": 3,
+    "explain": "Fee = taxa cobrada por um serviço. Fine é multa (punição) e fare é o preço da passagem."
+  },
+  {
+    "id": "tr-b2-18",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Sorry, I think you've ___ me. I only had one coffee, not two.",
+    "options": [
+      "overcharged",
+      "overpaid",
+      "undercharged",
+      "overcome"
+    ],
+    "answer": 0,
+    "explain": "Overcharge = cobrar a mais. Overpay seria você pagar a mais por conta própria."
+  },
+  {
+    "id": "tr-b2-19",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Tickets for the tour sell out quickly, so book well in ___.",
+    "options": [
+      "before",
+      "advance",
+      "front",
+      "early"
+    ],
+    "answer": 1,
+    "explain": "In advance = com antecedência. Book in advance é muito comum em sites de viagem."
+  },
+  {
+    "id": "tr-b2-20",
+    "cat": "travel",
+    "level": "B2",
+    "q": "Receptionist: \"I'm afraid we have no record of your booking.\" This means:",
+    "options": [
+      "They're scared of you.",
+      "Your booking is confirmed.",
+      "They can't find your reservation.",
+      "They recorded your call."
+    ],
+    "answer": 2,
+    "explain": "I'm afraid aqui é um jeito educado de dar má notícia (infelizmente), não \"estou com medo\"."
+  },
+  {
+    "id": "tr-c1-01",
+    "cat": "travel",
+    "level": "C1",
+    "q": "I'm requesting a full refund, as the tour fell well ___ what was advertised.",
+    "options": [
+      "below of",
+      "short of",
+      "under to",
+      "behind to"
+    ],
+    "answer": 1,
+    "explain": "Fall short of = ficar aquém de, não corresponder ao esperado."
+  },
+  {
+    "id": "tr-c1-02",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Airport notice: \"Unattended baggage may be removed and destroyed.\" The real message is:",
+    "options": [
+      "Security will look after your bags.",
+      "You can leave bags here safely.",
+      "Bags are destroyed every day.",
+      "Don't leave your bags alone."
+    ],
+    "answer": 3,
+    "explain": "Unattended = sem ninguém tomando conta. O aviso indireto quer dizer: não deixe malas sozinhas."
+  },
+  {
+    "id": "tr-c1-03",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Had we known about the train strike, we ___ a different route.",
+    "options": [
+      "would take",
+      "had taken",
+      "would have taken",
+      "will have taken"
+    ],
+    "answer": 2,
+    "explain": "Had we known = If we had known (terceiro condicional com inversão), pede would have + particípio."
+  },
+  {
+    "id": "tr-c1-04",
+    "cat": "travel",
+    "level": "C1",
+    "q": "The hotel offered us a voucher, but it didn't ___ for the inconvenience we'd suffered.",
+    "options": [
+      "pay off",
+      "make up",
+      "come up",
+      "get over"
+    ],
+    "answer": 1,
+    "explain": "Make up for = compensar. Pay off é quitar ou dar resultado; get over é superar."
+  },
+  {
+    "id": "tr-c1-05",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Your ticket says \"non-transferable\". This means:",
+    "options": [
+      "You can't get your money back.",
+      "It's only valid on one train.",
+      "Only the named passenger can use it.",
+      "You can't change the date."
+    ],
+    "answer": 2,
+    "explain": "Transfer = passar para outra pessoa. Non-transferable = só o titular pode usar."
+  },
+  {
+    "id": "tr-c1-06",
+    "cat": "travel",
+    "level": "C1",
+    "q": "A hotel upgrade offer is \"subject to availability\". This means:",
+    "options": [
+      "only if there are rooms left",
+      "only for members",
+      "only after payment",
+      "only on weekends"
+    ],
+    "answer": 0,
+    "explain": "Subject to availability = sujeito à disponibilidade; só vale se houver vaga."
+  },
+  {
+    "id": "tr-c1-07",
+    "cat": "travel",
+    "level": "C1",
+    "q": "\"I am writing to express my ___ with the service I received during my stay.\"",
+    "options": [
+      "unsatisfaction",
+      "insatisfaction",
+      "displeasing",
+      "dissatisfaction"
+    ],
+    "answer": 3,
+    "explain": "O substantivo correto é dissatisfaction. Insatisfaction e unsatisfaction não existem em inglês padrão."
+  },
+  {
+    "id": "tr-c1-08",
+    "cat": "travel",
+    "level": "C1",
+    "q": "No sooner ___ we checked in than the fire alarm went off.",
+    "options": [
+      "did",
+      "had",
+      "have",
+      "were"
+    ],
+    "answer": 1,
+    "explain": "No sooner + had + sujeito + particípio... than: inversão formal para \"mal tínhamos... quando\"."
+  },
+  {
+    "id": "tr-c1-09",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Our bags got lost again. It's high time the airline ___ its baggage system.",
+    "options": [
+      "improves",
+      "will improve",
+      "improved",
+      "has improved"
+    ],
+    "answer": 2,
+    "explain": "It's high time + sujeito + passado simples expressa que algo já deveria ter sido feito: improved."
+  },
+  {
+    "id": "tr-c1-10",
+    "cat": "travel",
+    "level": "C1",
+    "q": "The flight was overbooked, so the airline asked passengers to give ___ their seats for compensation.",
+    "options": [
+      "in",
+      "off",
+      "out",
+      "up"
+    ],
+    "answer": 3,
+    "explain": "Give up = abrir mão de algo. Give in é ceder numa discussão; give out é distribuir."
+  },
+  {
+    "id": "tr-c1-11",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Notice: \"Please allow extra time for security screening during peak periods.\" It means:",
+    "options": [
+      "Arrive earlier: checks take longer at busy times.",
+      "Security closes at busy times.",
+      "You can skip security at busy times.",
+      "Screens show extra flight times."
+    ],
+    "answer": 0,
+    "explain": "Allow extra time = reserve mais tempo. Peak periods = horários de pico."
+  },
+  {
+    "id": "tr-c1-12",
+    "cat": "travel",
+    "level": "C1",
+    "q": "The tour was ___ disappointing: half the sites were closed and the guide barely spoke.",
+    "options": [
+      "heavily",
+      "bitterly",
+      "strongly",
+      "hardly"
+    ],
+    "answer": 1,
+    "explain": "Bitterly disappointing é colocação fixa (profundamente decepcionante). Hardly = quase nada."
+  },
+  {
+    "id": "tr-c1-13",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Under EU rules, airlines have a ___ of care to passengers during long delays.",
+    "options": [
+      "debt",
+      "charge",
+      "duty",
+      "load"
+    ],
+    "answer": 2,
+    "explain": "Duty of care = dever de assistência (comida, hotel etc.). Termo usado em reclamações formais."
+  },
+  {
+    "id": "tr-c1-14",
+    "cat": "travel",
+    "level": "C1",
+    "q": "I understand it isn't your fault, but I'd ___ you could find another solution.",
+    "options": [
+      "appreciate it if",
+      "be grateful that",
+      "like that",
+      "wish that"
+    ],
+    "answer": 0,
+    "explain": "I'd appreciate it if you could... é um pedido firme e educado. Note o it depois de appreciate."
+  },
+  {
+    "id": "tr-c1-15",
+    "cat": "travel",
+    "level": "C1",
+    "q": "A beach sign says: \"Bathing is at your own risk.\" This means:",
+    "options": [
+      "Swimming is forbidden.",
+      "There are lifeguards on duty.",
+      "You must pay to swim.",
+      "No one is responsible if something happens to you."
+    ],
+    "answer": 3,
+    "explain": "At your own risk = por sua conta e risco. Não proíbe, mas tira a responsabilidade do local."
+  },
+  {
+    "id": "tr-c1-16",
+    "cat": "travel",
+    "level": "C1",
+    "q": "After the cancellation, the airline agreed to ___ us for the cost of the hotel.",
+    "options": [
+      "refund back",
+      "reimburse",
+      "return back",
+      "repay back"
+    ],
+    "answer": 1,
+    "explain": "Reimburse someone for something = reembolsar alguém por um gasto. Back com refund/repay é redundante."
+  },
+  {
+    "id": "tr-c1-17",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Having ___ our connecting flight, we spent the night at the airport.",
+    "options": [
+      "lost",
+      "losing",
+      "missed",
+      "missing"
+    ],
+    "answer": 2,
+    "explain": "Miss a flight = perder o voo (não chegar a tempo). Lose é perder um objeto. Having + particípio."
+  },
+  {
+    "id": "tr-c1-18",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Before booking, always read the fine print. \"The fine print\" is:",
+    "options": [
+      "the detailed conditions that are easy to overlook",
+      "a penalty fee",
+      "a high-quality photo",
+      "the printed ticket"
+    ],
+    "answer": 0,
+    "explain": "Fine print (UK: small print) são as letras miúdas do contrato. Aqui fine não é multa."
+  },
+  {
+    "id": "tr-c1-19",
+    "cat": "travel",
+    "level": "C1",
+    "q": "Were your flight ___ cancelled, you would be entitled to a full refund.",
+    "options": [
+      "be",
+      "been",
+      "being",
+      "to be"
+    ],
+    "answer": 3,
+    "explain": "Were + sujeito + to be... é a forma formal de If your flight were to be cancelled."
+  },
+  {
+    "id": "tr-c1-20",
+    "cat": "travel",
+    "level": "C1",
+    "q": "A guest says: \"The room was, shall we say, not quite what I'd expected.\" She means:",
+    "options": [
+      "The room was better than expected.",
+      "The room was worse than she expected.",
+      "She hadn't seen the room yet.",
+      "She loved the room."
+    ],
+    "answer": 1,
+    "explain": "Shall we say e not quite são atenuadores: ela critica de forma indireta e educada."
+  }
+]

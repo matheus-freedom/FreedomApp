@@ -20,6 +20,7 @@ import MyActivitiesScreen from './components/MyActivitiesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminPanel from './components/AdminPanel';
 import ChallengesScreen from './components/ChallengesScreen';
+import { duelApi, duelsNeedingMe } from './services/duelApi';
 import ChatScreen from './components/ChatScreen';
 import RankingHistoryScreen from './components/RankingHistoryScreen';
 import JourneyScreen from './components/JourneyScreen';
@@ -136,6 +137,16 @@ const App: React.FC = () => {
   const [showExtraModal, setShowExtraModal] = useState(false);
   const [buyingExtra, setBuyingExtra] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
+  // Quantos duelos esperam uma ação do aluno (convite ou "sua vez").
+  // Vira a bolinha no botão Desafios da tela inicial.
+  const [duelBadge, setDuelBadge] = useState(0);
+  useEffect(() => {
+    const u = state.user;
+    if (!u || !isApproved(u)) { setDuelBadge(0); return; }
+    let alive = true;
+    duelApi.hub().then(r => { if (alive) setDuelBadge(duelsNeedingMe(r.duels, u.userId)); }).catch(() => { /* só um enfeite */ });
+    return () => { alive = false; };
+  }, [state.user?.userId]); // eslint-disable-line react-hooks/exhaustive-deps
   // Resultado que não conseguiu ser registrado (queda de internet no
   // fim do exercício): fica guardado para o botão "Tentar de novo".
   const pendingFinishRef = useRef<{ score: number; total: number } | null>(null);
@@ -755,10 +766,11 @@ const App: React.FC = () => {
             hasActivePlan={!!state.studyPlan}
             onUserUpdate={handleUserUpdate}
             onBuyExtra={() => setShowExtraModal(true)}
+            duelBadge={duelBadge}
           />
         )}
         {state.status === 'ranking_history' && <RankingHistoryScreen onHome={handleHome} />}
-        {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} />}
+        {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} onBadgeChange={setDuelBadge} />}
         {state.status === 'chat' && state.user && <ChatScreen user={state.user} onHome={handleHome} activeChatUserId={state.activeChatUserId} />}
         {state.status === 'admin_panel' && (state.user?.username.toLowerCase() === 'admin' || state.user?.isAdmin) && <AdminPanel onBack={handleHome} />}
         {state.status === 'profile' && state.user && <ProfileScreen user={state.user} onHome={handleHome} onUpdate={handleUserUpdate} />}

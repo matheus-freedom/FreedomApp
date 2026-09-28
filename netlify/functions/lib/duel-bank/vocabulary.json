@@ -1,0 +1,1402 @@
+[
+  {
+    "id": "vo-a1-01",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which is the opposite of 'hot'?",
+    "options": [
+      "warm",
+      "cold",
+      "wet",
+      "big"
+    ],
+    "answer": 1,
+    "explain": "O oposto de hot (quente) é cold (frio). Warm significa morno, não frio."
+  },
+  {
+    "id": "vo-a1-02",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "What do you use to write?",
+    "options": [
+      "a fork",
+      "a towel",
+      "a pen",
+      "a cup"
+    ],
+    "answer": 2,
+    "explain": "Pen é caneta, usada para escrever. Fork é garfo, towel é toalha e cup é xícara."
+  },
+  {
+    "id": "vo-a1-03",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which of these is a day of the week?",
+    "options": [
+      "March",
+      "Thursday",
+      "Summer",
+      "Morning"
+    ],
+    "answer": 1,
+    "explain": "Thursday é quinta-feira. March é um mês, summer uma estação e morning um período do dia."
+  },
+  {
+    "id": "vo-a1-04",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "My mother's brother is my ___.",
+    "options": [
+      "cousin",
+      "nephew",
+      "grandfather",
+      "uncle"
+    ],
+    "answer": 3,
+    "explain": "O irmão da sua mãe é seu tio: uncle. Cousin é primo e nephew é sobrinho."
+  },
+  {
+    "id": "vo-a1-05",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "You sleep in a ___.",
+    "options": [
+      "bed",
+      "sink",
+      "oven",
+      "fridge"
+    ],
+    "answer": 0,
+    "explain": "Bed é cama. Sink é pia, oven é forno e fridge é geladeira."
+  },
+  {
+    "id": "vo-a1-06",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "What does 'hungry' mean?",
+    "options": [
+      "com sede",
+      "com frio",
+      "com sono",
+      "com fome"
+    ],
+    "answer": 3,
+    "explain": "Hungry = com fome. Com sede é thirsty, com sono é sleepy e com frio é cold."
+  },
+  {
+    "id": "vo-a1-07",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which is the opposite of 'young'?",
+    "options": [
+      "tall",
+      "new",
+      "short",
+      "old"
+    ],
+    "answer": 3,
+    "explain": "Young (jovem) tem como oposto old (velho). New é novo para coisas, não para pessoas."
+  },
+  {
+    "id": "vo-a1-08",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "It's raining. Take your ___.",
+    "options": [
+      "umbrella",
+      "sunglasses",
+      "swimsuit",
+      "sandals"
+    ],
+    "answer": 0,
+    "explain": "Umbrella é guarda-chuva, o que você leva quando está chovendo (raining)."
+  },
+  {
+    "id": "vo-a1-09",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "How do you write 20 in English?",
+    "options": [
+      "twelve",
+      "two",
+      "twenty",
+      "twenty-two"
+    ],
+    "answer": 2,
+    "explain": "20 é twenty. Twelve é 12, two é 2 e twenty-two é 22."
+  },
+  {
+    "id": "vo-a1-10",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "A doctor works in a ___.",
+    "options": [
+      "library",
+      "bakery",
+      "hospital",
+      "garage"
+    ],
+    "answer": 2,
+    "explain": "Médicos trabalham no hospital. Library é biblioteca, bakery é padaria e garage é garagem/oficina."
+  },
+  {
+    "id": "vo-a1-11",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which word is a fruit?",
+    "options": [
+      "carrot",
+      "banana",
+      "bread",
+      "cheese"
+    ],
+    "answer": 1,
+    "explain": "Banana é fruta. Carrot é cenoura (legume), bread é pão e cheese é queijo."
+  },
+  {
+    "id": "vo-a1-12",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Can you ___ the door, please? It's cold.",
+    "options": [
+      "close",
+      "listen",
+      "say",
+      "sit"
+    ],
+    "answer": 0,
+    "explain": "Close the door = fechar a porta. Faz sentido porque está frio (cold)."
+  },
+  {
+    "id": "vo-a1-13",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "What does 'library' mean?",
+    "options": [
+      "livraria",
+      "biblioteca",
+      "papelaria",
+      "laboratório"
+    ],
+    "answer": 1,
+    "explain": "Library é falso cognato: significa biblioteca. Livraria em inglês é bookstore."
+  },
+  {
+    "id": "vo-a1-14",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "I ___ my teeth every morning.",
+    "options": [
+      "cut",
+      "comb",
+      "paint",
+      "brush"
+    ],
+    "answer": 3,
+    "explain": "Brush your teeth = escovar os dentes. Comb é pentear (o cabelo)."
+  },
+  {
+    "id": "vo-a1-15",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which month comes after April?",
+    "options": [
+      "March",
+      "June",
+      "May",
+      "August"
+    ],
+    "answer": 2,
+    "explain": "Depois de April (abril) vem May (maio). Os meses em inglês começam com letra maiúscula."
+  },
+  {
+    "id": "vo-a1-16",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "We eat breakfast in the ___.",
+    "options": [
+      "morning",
+      "night",
+      "evening",
+      "midnight"
+    ],
+    "answer": 0,
+    "explain": "Breakfast é o café da manhã, então comemos in the morning (de manhã)."
+  },
+  {
+    "id": "vo-a1-17",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "My feet are cold. I need ___.",
+    "options": [
+      "gloves",
+      "a scarf",
+      "a hat",
+      "socks"
+    ],
+    "answer": 3,
+    "explain": "Feet são os pés, então você precisa de socks (meias). Gloves são luvas, para as mãos."
+  },
+  {
+    "id": "vo-a1-18",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "What's the English word for 'cozinha'?",
+    "options": [
+      "kitchen",
+      "chicken",
+      "bedroom",
+      "bathroom"
+    ],
+    "answer": 0,
+    "explain": "Cozinha é kitchen. Cuidado: chicken (frango) tem som parecido, mas é outra palavra."
+  },
+  {
+    "id": "vo-a1-19",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Emma is from Canada. She is ___.",
+    "options": [
+      "Canada",
+      "Canadese",
+      "Canadian",
+      "Canadish"
+    ],
+    "answer": 2,
+    "explain": "A nacionalidade de quem é do Canadá é Canadian. Canada é o nome do país."
+  },
+  {
+    "id": "vo-a1-20",
+    "cat": "vocabulary",
+    "level": "A1",
+    "q": "Which word is NOT an animal?",
+    "options": [
+      "horse",
+      "rabbit",
+      "duck",
+      "chair"
+    ],
+    "answer": 3,
+    "explain": "Chair é cadeira. Horse (cavalo), rabbit (coelho) e duck (pato) são animais."
+  },
+  {
+    "id": "vo-a2-01",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "What does 'pretend' mean?",
+    "options": [
+      "pretender",
+      "fingir",
+      "esperar",
+      "tentar"
+    ],
+    "answer": 1,
+    "explain": "Pretend é falso cognato: significa fingir. Pretender (ter intenção) é intend ou plan."
+  },
+  {
+    "id": "vo-a2-02",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Everyone can ___ mistakes.",
+    "options": [
+      "do",
+      "make",
+      "take",
+      "get"
+    ],
+    "answer": 1,
+    "explain": "Em inglês se diz make a mistake (cometer um erro). É uma collocation fixa com make."
+  },
+  {
+    "id": "vo-a2-03",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Can you ___ me a favor?",
+    "options": [
+      "make",
+      "give",
+      "take",
+      "do"
+    ],
+    "answer": 3,
+    "explain": "A expressão é do someone a favor (fazer um favor). Aqui não se usa make."
+  },
+  {
+    "id": "vo-a2-04",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Which word is a synonym of 'begin'?",
+    "options": [
+      "start",
+      "finish",
+      "stop",
+      "break"
+    ],
+    "answer": 0,
+    "explain": "Begin e start significam começar. Finish e stop têm sentido contrário."
+  },
+  {
+    "id": "vo-a2-05",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "The opposite of 'cheap' is ___.",
+    "options": [
+      "poor",
+      "free",
+      "expensive",
+      "rich"
+    ],
+    "answer": 2,
+    "explain": "Cheap (barato) é o oposto de expensive (caro). Poor e rich falam de pessoas, não de preços."
+  },
+  {
+    "id": "vo-a2-06",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "What does 'parents' mean?",
+    "options": [
+      "parentes",
+      "vizinhos",
+      "primos",
+      "pai e mãe"
+    ],
+    "answer": 3,
+    "explain": "Parents é falso cognato: significa pai e mãe. Parentes em inglês é relatives."
+  },
+  {
+    "id": "vo-a2-07",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "I'm going to the ___ to buy some bread.",
+    "options": [
+      "bakery",
+      "pharmacy",
+      "bank",
+      "gym"
+    ],
+    "answer": 0,
+    "explain": "Bakery é padaria, onde se compra pão (bread)."
+  },
+  {
+    "id": "vo-a2-08",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Lucas is very ___. He never shares anything.",
+    "options": [
+      "generous",
+      "friendly",
+      "selfish",
+      "helpful"
+    ],
+    "answer": 2,
+    "explain": "Selfish significa egoísta: quem nunca divide nada. As outras opções são qualidades positivas."
+  },
+  {
+    "id": "vo-a2-09",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "What does 'college' mean in 'She goes to college'?",
+    "options": [
+      "colégio",
+      "faculdade",
+      "creche",
+      "escritório"
+    ],
+    "answer": 1,
+    "explain": "College é falso cognato: significa faculdade. Colégio em inglês é school ou high school."
+  },
+  {
+    "id": "vo-a2-10",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Please ___ attention to the teacher.",
+    "options": [
+      "pay",
+      "give",
+      "make",
+      "do"
+    ],
+    "answer": 0,
+    "explain": "Prestar atenção em inglês é pay attention. É uma collocation fixa com pay."
+  },
+  {
+    "id": "vo-a2-11",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "I'm ___ in science. I love it!",
+    "options": [
+      "interesting",
+      "bored",
+      "boring",
+      "interested"
+    ],
+    "answer": 3,
+    "explain": "Interested descreve o que a pessoa sente (interessada). Interesting descreve a coisa (interessante)."
+  },
+  {
+    "id": "vo-a2-12",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Which word means 'a person who travels'?",
+    "options": [
+      "travel",
+      "travels",
+      "traveler",
+      "travelling"
+    ],
+    "answer": 2,
+    "explain": "O sufixo -er forma a pessoa que faz a ação: travel + er = traveler (viajante)."
+  },
+  {
+    "id": "vo-a2-13",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "The movie was so ___ that I fell asleep.",
+    "options": [
+      "exciting",
+      "scary",
+      "funny",
+      "boring"
+    ],
+    "answer": 3,
+    "explain": "Boring significa chato, entediante. Por isso a pessoa dormiu (fell asleep)."
+  },
+  {
+    "id": "vo-a2-14",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "What does 'lunch' mean?",
+    "options": [
+      "lanche",
+      "jantar",
+      "café da manhã",
+      "almoço"
+    ],
+    "answer": 3,
+    "explain": "Lunch é almoço, apesar de parecer lanche. Lanche é snack e jantar é dinner."
+  },
+  {
+    "id": "vo-a2-15",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Could you ___ the lights? I can't see anything.",
+    "options": [
+      "turn on",
+      "turn off",
+      "turn down",
+      "turn over"
+    ],
+    "answer": 0,
+    "explain": "Turn on = ligar/acender. Se a pessoa não enxerga nada, precisa acender as luzes."
+  },
+  {
+    "id": "vo-a2-16",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Which is the opposite of 'borrow'?",
+    "options": [
+      "take",
+      "lend",
+      "buy",
+      "keep"
+    ],
+    "answer": 1,
+    "explain": "Borrow é pegar emprestado; lend é emprestar para alguém. Um é o contrário do outro."
+  },
+  {
+    "id": "vo-a2-17",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "I'm going to ___ a shower before dinner.",
+    "options": [
+      "do",
+      "make",
+      "put",
+      "take"
+    ],
+    "answer": 3,
+    "explain": "Tomar banho de chuveiro é take a shower. Não se usa do nem make nessa expressão."
+  },
+  {
+    "id": "vo-a2-18",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "What does 'push' mean on a door?",
+    "options": [
+      "puxe",
+      "empurre",
+      "feche",
+      "abra"
+    ],
+    "answer": 1,
+    "explain": "Push é falso amigo pelo som: significa empurre. Puxe em inglês é pull."
+  },
+  {
+    "id": "vo-a2-19",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "Mia works at a school. She ___ children.",
+    "options": [
+      "teaches",
+      "learns",
+      "studies",
+      "borrows"
+    ],
+    "answer": 0,
+    "explain": "Teach é ensinar (o professor); learn é aprender (o aluno). Mia ensina as crianças."
+  },
+  {
+    "id": "vo-a2-20",
+    "cat": "vocabulary",
+    "level": "A2",
+    "q": "You keep food cold in the ___.",
+    "options": [
+      "oven",
+      "stove",
+      "fridge",
+      "sink"
+    ],
+    "answer": 2,
+    "explain": "Fridge é geladeira. Oven é forno, stove é fogão e sink é pia."
+  },
+  {
+    "id": "vo-b1-01",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'actually' mean?",
+    "options": [
+      "atualmente",
+      "na verdade",
+      "acidentalmente",
+      "exatamente"
+    ],
+    "answer": 1,
+    "explain": "Actually é falso cognato: significa na verdade. Atualmente em inglês é currently ou nowadays."
+  },
+  {
+    "id": "vo-b1-02",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Can you ___ my dog while I'm on vacation?",
+    "options": [
+      "look after",
+      "look for",
+      "look up",
+      "look into"
+    ],
+    "answer": 0,
+    "explain": "Look after = cuidar de. Look for é procurar, look up é pesquisar e look into é investigar."
+  },
+  {
+    "id": "vo-b1-03",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'eventually' mean?",
+    "options": [
+      "eventualmente",
+      "às vezes",
+      "no fim, finalmente",
+      "imediatamente"
+    ],
+    "answer": 2,
+    "explain": "Eventually é falso cognato: significa no fim, depois de um tempo. Não quer dizer eventualmente."
+  },
+  {
+    "id": "vo-b1-04",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Which word is a synonym of 'huge'?",
+    "options": [
+      "tiny",
+      "narrow",
+      "heavy",
+      "enormous"
+    ],
+    "answer": 3,
+    "explain": "Huge e enormous significam enorme. Tiny é o contrário (minúsculo)."
+  },
+  {
+    "id": "vo-b1-05",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "I'll ___ you up at the station at 6.",
+    "options": [
+      "take",
+      "get",
+      "bring",
+      "pick"
+    ],
+    "answer": 3,
+    "explain": "Pick someone up = buscar alguém (de carro, por exemplo). É um phrasal verb muito comum."
+  },
+  {
+    "id": "vo-b1-06",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "She ___ her homework before dinner.",
+    "options": [
+      "did",
+      "made",
+      "took",
+      "had"
+    ],
+    "answer": 0,
+    "explain": "Com tarefas e deveres usamos do: do homework. Make é mais para criar ou produzir algo."
+  },
+  {
+    "id": "vo-b1-07",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'sensible' mean?",
+    "options": [
+      "sensível",
+      "sensato",
+      "sensorial",
+      "sentimental"
+    ],
+    "answer": 1,
+    "explain": "Sensible é falso cognato: significa sensato. Sensível em inglês é sensitive."
+  },
+  {
+    "id": "vo-b1-08",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Which is the opposite of 'generous'?",
+    "options": [
+      "kind",
+      "wealthy",
+      "stingy",
+      "polite"
+    ],
+    "answer": 2,
+    "explain": "Stingy significa pão-duro, mesquinho: o contrário de generous (generoso)."
+  },
+  {
+    "id": "vo-b1-09",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "The concert was ___ because of the storm.",
+    "options": [
+      "called off",
+      "called up",
+      "called back",
+      "called in"
+    ],
+    "answer": 0,
+    "explain": "Call off = cancelar. Por causa da tempestade, o show foi cancelado."
+  },
+  {
+    "id": "vo-b1-10",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'realize' mean?",
+    "options": [
+      "realizar",
+      "relaxar",
+      "perceber, dar-se conta",
+      "lembrar"
+    ],
+    "answer": 2,
+    "explain": "Realize é falso cognato: significa perceber. Realizar (um sonho) é achieve ou fulfill."
+  },
+  {
+    "id": "vo-b1-11",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "He ___ a good salary in his new job.",
+    "options": [
+      "wins",
+      "earns",
+      "spends",
+      "costs"
+    ],
+    "answer": 1,
+    "explain": "Earn é ganhar dinheiro trabalhando. Win é ganhar prêmio ou competição."
+  },
+  {
+    "id": "vo-b1-12",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'fabric' mean?",
+    "options": [
+      "fábrica",
+      "tijolo",
+      "ferramenta",
+      "tecido"
+    ],
+    "answer": 3,
+    "explain": "Fabric é falso cognato: significa tecido. Fábrica em inglês é factory."
+  },
+  {
+    "id": "vo-b1-13",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "The opposite of 'increase' is ___.",
+    "options": [
+      "decrease",
+      "improve",
+      "raise",
+      "grow"
+    ],
+    "answer": 0,
+    "explain": "Increase é aumentar; decrease é diminuir. Raise e grow também indicam aumento."
+  },
+  {
+    "id": "vo-b1-14",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Can you ___ me how to get to the museum?",
+    "options": [
+      "say",
+      "tell",
+      "speak",
+      "talk"
+    ],
+    "answer": 1,
+    "explain": "Tell é seguido de pessoa (tell me). Say não aceita a pessoa direto: say to me."
+  },
+  {
+    "id": "vo-b1-15",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'attend' mean in 'I attend classes on Mondays'?",
+    "options": [
+      "atender",
+      "esperar",
+      "comparecer, frequentar",
+      "ensinar"
+    ],
+    "answer": 2,
+    "explain": "Attend é falso cognato: significa comparecer, frequentar. Atender (telefone) é answer."
+  },
+  {
+    "id": "vo-b1-16",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "I can't ___ this noise anymore!",
+    "options": [
+      "stand",
+      "support",
+      "suffer",
+      "hold"
+    ],
+    "answer": 0,
+    "explain": "Can't stand = não suportar, não aguentar. Support significa apoiar, não suportar."
+  },
+  {
+    "id": "vo-b1-17",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Which word is a synonym of 'quickly'?",
+    "options": [
+      "slowly",
+      "lately",
+      "quietly",
+      "rapidly"
+    ],
+    "answer": 3,
+    "explain": "Quickly e rapidly significam rapidamente. Lately quer dizer ultimamente."
+  },
+  {
+    "id": "vo-b1-18",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Don't forget to ___ the plants.",
+    "options": [
+      "wet",
+      "wash",
+      "water",
+      "rain"
+    ],
+    "answer": 2,
+    "explain": "Water também é verbo: regar. Water the plants = regar as plantas."
+  },
+  {
+    "id": "vo-b1-19",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "What does 'costume' mean?",
+    "options": [
+      "costume, hábito",
+      "casaco",
+      "roupa de banho",
+      "fantasia"
+    ],
+    "answer": 3,
+    "explain": "Costume é falso cognato: significa fantasia. Costume (hábito) em inglês é habit ou custom."
+  },
+  {
+    "id": "vo-b1-20",
+    "cat": "vocabulary",
+    "level": "B1",
+    "q": "Sophie is ___ of spiders.",
+    "options": [
+      "afraid",
+      "fear",
+      "frightening",
+      "worried"
+    ],
+    "answer": 0,
+    "explain": "Be afraid of = ter medo de. Fear é substantivo e frightening descreve o que dá medo."
+  },
+  {
+    "id": "vo-b2-01",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'deadline' mean?",
+    "options": [
+      "linha de chegada",
+      "prazo final",
+      "reunião",
+      "salário"
+    ],
+    "answer": 1,
+    "explain": "Deadline é o prazo final para entregar algo. Linha de chegada é finish line."
+  },
+  {
+    "id": "vo-b2-02",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "The company decided to ___ 50 new employees.",
+    "options": [
+      "hire",
+      "rent",
+      "lease",
+      "charge"
+    ],
+    "answer": 0,
+    "explain": "Hire = contratar pessoas. Rent e lease são alugar; charge é cobrar."
+  },
+  {
+    "id": "vo-b2-03",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "We need to ___ into account all the costs.",
+    "options": [
+      "make",
+      "put",
+      "take",
+      "get"
+    ],
+    "answer": 2,
+    "explain": "Take into account = levar em conta. É uma expressão fixa com take."
+  },
+  {
+    "id": "vo-b2-04",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'to run out of' something mean?",
+    "options": [
+      "fugir de",
+      "sair de",
+      "correr atrás de",
+      "ficar sem"
+    ],
+    "answer": 3,
+    "explain": "Run out of = acabar, ficar sem. Ex.: We ran out of milk (acabou o leite)."
+  },
+  {
+    "id": "vo-b2-05",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "Which word is a synonym of 'reluctant'?",
+    "options": [
+      "eager",
+      "relevant",
+      "reliable",
+      "unwilling"
+    ],
+    "answer": 3,
+    "explain": "Reluctant e unwilling significam relutante, sem vontade. Eager é o oposto (ansioso por)."
+  },
+  {
+    "id": "vo-b2-06",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What is the noun form of 'decide'?",
+    "options": [
+      "decisive",
+      "decision",
+      "decidedly",
+      "decided"
+    ],
+    "answer": 1,
+    "explain": "Decision é o substantivo (decisão). Decisive é adjetivo e decidedly é advérbio."
+  },
+  {
+    "id": "vo-b2-07",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "He ___ his promise and helped us move.",
+    "options": [
+      "kept",
+      "held",
+      "made",
+      "did"
+    ],
+    "answer": 0,
+    "explain": "Keep a promise = cumprir uma promessa. Make a promise é fazer a promessa, não cumpri-la."
+  },
+  {
+    "id": "vo-b2-08",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'lecture' mean?",
+    "options": [
+      "leitura",
+      "palestra, aula expositiva",
+      "letra",
+      "licença"
+    ],
+    "answer": 1,
+    "explain": "Lecture é falso cognato: significa palestra ou aula expositiva. Leitura é reading."
+  },
+  {
+    "id": "vo-b2-09",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "Which is the opposite of 'reliable'?",
+    "options": [
+      "honest",
+      "untrustworthy",
+      "responsible",
+      "famous"
+    ],
+    "answer": 1,
+    "explain": "Reliable é confiável; untrustworthy é não confiável. O prefixo un- nega o adjetivo."
+  },
+  {
+    "id": "vo-b2-10",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "I'll ___ my best to finish on time.",
+    "options": [
+      "make",
+      "take",
+      "give",
+      "do"
+    ],
+    "answer": 3,
+    "explain": "Do your best = fazer o seu melhor. É uma collocation fixa com do."
+  },
+  {
+    "id": "vo-b2-11",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'to come up with' mean?",
+    "options": [
+      "subir com",
+      "ter (uma ideia), criar",
+      "aparecer",
+      "concordar com"
+    ],
+    "answer": 1,
+    "explain": "Come up with = ter ou inventar uma ideia ou solução. Ex.: She came up with a great plan."
+  },
+  {
+    "id": "vo-b2-12",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "The heavy rain ___ serious damage to the roads.",
+    "options": [
+      "put",
+      "made",
+      "caused",
+      "gave"
+    ],
+    "answer": 2,
+    "explain": "A collocation natural é cause damage (causar estragos). Make damage não é usado."
+  },
+  {
+    "id": "vo-b2-13",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "Rafael has a great ___ of humor.",
+    "options": [
+      "sense",
+      "feeling",
+      "sensation",
+      "taste"
+    ],
+    "answer": 0,
+    "explain": "Senso de humor em inglês é sense of humor. É uma expressão fixa."
+  },
+  {
+    "id": "vo-b2-14",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'assume' mean in 'I assume you're tired after the trip'?",
+    "options": [
+      "assumir",
+      "assustar",
+      "afirmar",
+      "supor"
+    ],
+    "answer": 3,
+    "explain": "Aqui assume significa supor, presumir. É um falso cognato comum nesse contexto."
+  },
+  {
+    "id": "vo-b2-15",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "The flight was delayed, so we had to ___ the night in a hotel.",
+    "options": [
+      "spend",
+      "expend",
+      "lose",
+      "take"
+    ],
+    "answer": 0,
+    "explain": "Passar a noite em algum lugar é spend the night. Expend significa gastar energia ou recursos."
+  },
+  {
+    "id": "vo-b2-16",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "Which word is a synonym of 'obvious'?",
+    "options": [
+      "hidden",
+      "doubtful",
+      "obscure",
+      "evident"
+    ],
+    "answer": 3,
+    "explain": "Obvious e evident significam claro, óbvio. Hidden e obscure indicam o contrário."
+  },
+  {
+    "id": "vo-b2-17",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'nevertheless' mean?",
+    "options": [
+      "nunca mais",
+      "portanto",
+      "no entanto",
+      "além disso"
+    ],
+    "answer": 2,
+    "explain": "Nevertheless = no entanto, mesmo assim. Introduz um contraste, como however."
+  },
+  {
+    "id": "vo-b2-18",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "I don't ___ with your opinion.",
+    "options": [
+      "agree",
+      "accept",
+      "concord",
+      "approve"
+    ],
+    "answer": 0,
+    "explain": "Concordar com alguém é agree with. Concord não é verbo usual e accept não leva with."
+  },
+  {
+    "id": "vo-b2-19",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "What does 'to figure out' mean?",
+    "options": [
+      "figurar",
+      "desenhar",
+      "fingir",
+      "entender, descobrir"
+    ],
+    "answer": 3,
+    "explain": "Figure out = entender ou descobrir algo depois de pensar. Ex.: I can't figure out this puzzle."
+  },
+  {
+    "id": "vo-b2-20",
+    "cat": "vocabulary",
+    "level": "B2",
+    "q": "Phones are ___ during the exam, so leave them in your bag.",
+    "options": [
+      "allowed",
+      "forbidden",
+      "required",
+      "welcome"
+    ],
+    "answer": 1,
+    "explain": "Forbidden = proibido. Se é para deixar o celular na bolsa, ele é proibido na prova."
+  },
+  {
+    "id": "vo-c1-01",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'to take something for granted' mean?",
+    "options": [
+      "não valorizar algo",
+      "agradecer muito",
+      "conceder algo",
+      "pegar emprestado"
+    ],
+    "answer": 0,
+    "explain": "Take for granted = achar que algo sempre estará lá e por isso não dar valor."
+  },
+  {
+    "id": "vo-c1-02",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "The new policy had a ___ effect on sales, which dropped by 30%.",
+    "options": [
+      "beneficial",
+      "detrimental",
+      "negligible",
+      "favorable"
+    ],
+    "answer": 1,
+    "explain": "Detrimental = prejudicial. Uma queda de 30% mostra efeito negativo, não pequeno nem positivo."
+  },
+  {
+    "id": "vo-c1-03",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Which word means 'found everywhere'?",
+    "options": [
+      "ubiquitous",
+      "unanimous",
+      "ambiguous",
+      "obsolete"
+    ],
+    "answer": 0,
+    "explain": "Ubiquitous = onipresente. Ex.: Smartphones are ubiquitous today."
+  },
+  {
+    "id": "vo-c1-04",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "There is a growing ___ that we need to protect the oceans.",
+    "options": [
+      "aware",
+      "awareness",
+      "awarely",
+      "awaring"
+    ],
+    "answer": 1,
+    "explain": "Depois de a growing precisa de substantivo: aware (adjetivo) + -ness = awareness (consciência)."
+  },
+  {
+    "id": "vo-c1-05",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'to pull someone's leg' mean?",
+    "options": [
+      "derrubar alguém",
+      "criticar duramente",
+      "ajudar alguém",
+      "brincar, zoar alguém"
+    ],
+    "answer": 3,
+    "explain": "Pull someone's leg é uma expressão idiomática: brincar com alguém, contar uma mentira de brincadeira."
+  },
+  {
+    "id": "vo-c1-06",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Which word is closest in meaning to 'meticulous'?",
+    "options": [
+      "careless",
+      "ridiculous",
+      "thorough",
+      "hasty"
+    ],
+    "answer": 2,
+    "explain": "Meticulous e thorough descrevem alguém muito cuidadoso e detalhista. Careless e hasty são o oposto."
+  },
+  {
+    "id": "vo-c1-07",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Priya ___ a strong case for changing the rules.",
+    "options": [
+      "made",
+      "did",
+      "took",
+      "held"
+    ],
+    "answer": 0,
+    "explain": "Make a case (for) = argumentar a favor de algo. É uma collocation fixa com make."
+  },
+  {
+    "id": "vo-c1-08",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "His explanation was so ___ that nobody understood it.",
+    "options": [
+      "concise",
+      "convoluted",
+      "lucid",
+      "straightforward"
+    ],
+    "answer": 1,
+    "explain": "Convoluted = complicado, confuso. Concise, lucid e straightforward indicam clareza."
+  },
+  {
+    "id": "vo-c1-09",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'eventual' mean in 'the eventual winner'?",
+    "options": [
+      "ocasional",
+      "temporário",
+      "provável",
+      "final (que acabou vencendo)"
+    ],
+    "answer": 3,
+    "explain": "Eventual é falso cognato: significa final, que aconteceu no fim. Ocasional é occasional."
+  },
+  {
+    "id": "vo-c1-10",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "The results were totally ___: nobody was surprised.",
+    "options": [
+      "unpredictable",
+      "predictably",
+      "predictable",
+      "prediction"
+    ],
+    "answer": 2,
+    "explain": "Depois de were vem adjetivo. Predictable (previsível) combina com ninguém ter se surpreendido."
+  },
+  {
+    "id": "vo-c1-11",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'to be at a loss for words' mean?",
+    "options": [
+      "perder uma aposta",
+      "falar demais",
+      "ficar sem palavras",
+      "esquecer um idioma"
+    ],
+    "answer": 2,
+    "explain": "Be at a loss for words = ficar sem palavras, sem saber o que dizer (de surpresa ou emoção)."
+  },
+  {
+    "id": "vo-c1-12",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "We need to ___ the risks before we invest.",
+    "options": [
+      "access",
+      "assert",
+      "assess",
+      "assist"
+    ],
+    "answer": 2,
+    "explain": "Assess = avaliar. Cuidado com access (acessar), que tem pronúncia parecida."
+  },
+  {
+    "id": "vo-c1-13",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'compelling' mean in 'a compelling argument'?",
+    "options": [
+      "convincente",
+      "compulsório",
+      "complicado",
+      "competitivo"
+    ],
+    "answer": 0,
+    "explain": "Compelling = convincente, que prende a atenção. Compulsório em inglês é compulsory."
+  },
+  {
+    "id": "vo-c1-14",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Which is the opposite of 'scarce'?",
+    "options": [
+      "rare",
+      "abundant",
+      "scared",
+      "limited"
+    ],
+    "answer": 1,
+    "explain": "Scarce = escasso; abundant = abundante. Não confunda com scared (com medo)."
+  },
+  {
+    "id": "vo-c1-15",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Diego has a ___ interest in marine biology.",
+    "options": [
+      "hungry",
+      "quick",
+      "hard",
+      "keen"
+    ],
+    "answer": 3,
+    "explain": "Keen interest = grande interesse. É uma collocation típica: have a keen interest in."
+  },
+  {
+    "id": "vo-c1-16",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'to cut corners' mean?",
+    "options": [
+      "pegar um atalho na rua",
+      "fazer algo malfeito para poupar esforço",
+      "dividir tarefas",
+      "virar a esquina"
+    ],
+    "answer": 1,
+    "explain": "Cut corners = fazer algo do jeito mais fácil ou barato, sacrificando a qualidade."
+  },
+  {
+    "id": "vo-c1-17",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Which verb means 'to make a problem worse'?",
+    "options": [
+      "alleviate",
+      "mitigate",
+      "aggravate",
+      "eliminate"
+    ],
+    "answer": 2,
+    "explain": "Aggravate = agravar, piorar. Alleviate e mitigate significam aliviar, reduzir."
+  },
+  {
+    "id": "vo-c1-18",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Which word means 'lasting for a very short time'?",
+    "options": [
+      "eternal",
+      "gradual",
+      "perennial",
+      "ephemeral"
+    ],
+    "answer": 3,
+    "explain": "Ephemeral = efêmero, passageiro. Eternal e perennial indicam algo duradouro."
+  },
+  {
+    "id": "vo-c1-19",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "Her ___ to detail made her the best editor on the team.",
+    "options": [
+      "attentive",
+      "attend",
+      "attention",
+      "attentively"
+    ],
+    "answer": 2,
+    "explain": "Depois de her vem substantivo: attention. A collocation é attention to detail."
+  },
+  {
+    "id": "vo-c1-20",
+    "cat": "vocabulary",
+    "level": "C1",
+    "q": "What does 'to hit the nail on the head' mean?",
+    "options": [
+      "acertar em cheio",
+      "machucar-se",
+      "trabalhar muito",
+      "errar feio"
+    ],
+    "answer": 0,
+    "explain": "Hit the nail on the head = acertar em cheio, dizer exatamente a coisa certa."
+  }
+]

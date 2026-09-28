@@ -1,0 +1,1502 @@
+[
+  {
+    "id": "re-a1-01",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Where is Ana now?",
+    "passage": "Hi Leo! I'm at the library now. Meet me at the café at 4 p.m. — Ana",
+    "options": [
+      "At the café",
+      "At the library",
+      "At school",
+      "At home"
+    ],
+    "answer": 1,
+    "explain": "Ana escreve \"I'm at the library now\"; o café é onde eles vão se encontrar depois."
+  },
+  {
+    "id": "re-a1-02",
+    "cat": "reading",
+    "level": "A1",
+    "q": "When is the shop closed?",
+    "passage": "SHOP HOURS: Monday to Friday 9:00–18:00. Saturday 9:00–13:00. Sunday: closed.",
+    "options": [
+      "On Saturday",
+      "On Monday",
+      "On Sunday",
+      "On Friday"
+    ],
+    "answer": 2,
+    "explain": "\"Closed\" significa fechado, e o aviso diz \"Sunday: closed\"."
+  },
+  {
+    "id": "re-a1-03",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Who is Max?",
+    "passage": "My name is Kenji. I am 14. I have two sisters and one dog. My dog's name is Max.",
+    "options": [
+      "Kenji's dog",
+      "Kenji's brother",
+      "Kenji's sister",
+      "Kenji's cat"
+    ],
+    "answer": 0,
+    "explain": "O texto diz \"My dog's name is Max\": o nome do cachorro é Max."
+  },
+  {
+    "id": "re-a1-04",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What must you do before you swim?",
+    "passage": "Pool rules: No food. No running. Please take a shower before you swim.",
+    "options": [
+      "Eat something",
+      "Take a shower",
+      "Run",
+      "Buy a ticket"
+    ],
+    "answer": 1,
+    "explain": "\"Take a shower before you swim\" = tome banho antes de nadar."
+  },
+  {
+    "id": "re-a1-05",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What should guests bring?",
+    "passage": "Tom's birthday party is on Saturday at 7 p.m. at his house. Please bring a snack!",
+    "options": [
+      "A gift",
+      "A snack",
+      "A book",
+      "A friend"
+    ],
+    "answer": 1,
+    "explain": "O convite pede \"bring a snack\": um lanchinho ou petisco."
+  },
+  {
+    "id": "re-a1-06",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What does Clara do at 7:00?",
+    "passage": "Clara gets up at 6:30. She has breakfast at 7:00 and takes the bus to work at 7:30.",
+    "options": [
+      "She has breakfast",
+      "She gets up",
+      "She takes the bus",
+      "She starts work"
+    ],
+    "answer": 0,
+    "explain": "\"Has breakfast at 7:00\": às 7h ela toma café da manhã. Às 6:30 ela acorda."
+  },
+  {
+    "id": "re-a1-07",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What color are Luna's feet?",
+    "passage": "LOST: small black cat with white feet. Her name is Luna. Please call 555-0192.",
+    "options": [
+      "Black",
+      "Brown",
+      "Gray",
+      "White"
+    ],
+    "answer": 3,
+    "explain": "\"Black cat with white feet\": a gata é preta, mas as patas (feet) são brancas."
+  },
+  {
+    "id": "re-a1-08",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Why can't Pedro come to dinner?",
+    "passage": "Dear Mom, I'm sorry, but I can't come to dinner tonight. I'm very tired. Love, Pedro",
+    "options": [
+      "He is busy at work",
+      "He has a class",
+      "He doesn't like the food",
+      "He is very tired"
+    ],
+    "answer": 3,
+    "explain": "Pedro explica o motivo: \"I'm very tired\" (estou muito cansado)."
+  },
+  {
+    "id": "re-a1-09",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What is the weather like in the afternoon?",
+    "passage": "Today in Belo Horizonte: sunny in the morning, rain in the afternoon. Take an umbrella!",
+    "options": [
+      "Sunny",
+      "Snowy",
+      "Rainy",
+      "Windy"
+    ],
+    "answer": 2,
+    "explain": "\"Rain in the afternoon\": chuva à tarde. O sol (sunny) é só de manhã."
+  },
+  {
+    "id": "re-a1-10",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What food doesn't Sofia like?",
+    "passage": "Sofia likes pizza, ice cream and salad, but she doesn't like fish.",
+    "options": [
+      "Pizza",
+      "Salad",
+      "Fish",
+      "Ice cream"
+    ],
+    "answer": 2,
+    "explain": "\"She doesn't like fish\": ela não gosta de peixe. \"But\" marca o contraste."
+  },
+  {
+    "id": "re-a1-11",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Where is the English class today?",
+    "passage": "Class change: today the English class is in Room 12, not Room 8.",
+    "options": [
+      "Room 12",
+      "Room 8",
+      "Room 2",
+      "Room 18"
+    ],
+    "answer": 0,
+    "explain": "\"In Room 12, not Room 8\": a sala mudou hoje para a 12."
+  },
+  {
+    "id": "re-a1-12",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Where does Amara live now?",
+    "passage": "Hello! I'm Amara. I'm from Nigeria, but I live in Brazil now. I'm a nurse.",
+    "options": [
+      "In Brazil",
+      "In Nigeria",
+      "In England",
+      "In the USA"
+    ],
+    "answer": 0,
+    "explain": "\"From\" indica a origem (Nigéria); \"I live in Brazil now\" diz onde ela mora hoje."
+  },
+  {
+    "id": "re-a1-13",
+    "cat": "reading",
+    "level": "A1",
+    "q": "What time is the first bus?",
+    "passage": "Bus 34 to the city center: every 20 minutes. First bus: 5:40. Last bus: 23:00.",
+    "options": [
+      "23:00",
+      "5:40",
+      "5:20",
+      "4:40"
+    ],
+    "answer": 1,
+    "explain": "\"First bus: 5:40\": o primeiro ônibus sai às 5h40. \"Last\" é o último."
+  },
+  {
+    "id": "re-a1-14",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Who has the tickets?",
+    "passage": "Hi Bia, the movie starts at 8. I have the tickets. See you at the door! — Rafa",
+    "options": [
+      "Bia",
+      "Bia's brother",
+      "The cinema staff",
+      "Rafa"
+    ],
+    "answer": 3,
+    "explain": "Quem assina a mensagem é Rafa, e ele diz \"I have the tickets\"."
+  },
+  {
+    "id": "re-a1-15",
+    "cat": "reading",
+    "level": "A1",
+    "q": "How much is a T-shirt?",
+    "passage": "SALE! All T-shirts $10. Jeans $25. Shoes 50% off. This weekend only.",
+    "options": [
+      "$25",
+      "$50",
+      "$10",
+      "$5"
+    ],
+    "answer": 2,
+    "explain": "\"All T-shirts $10\": todas as camisetas custam 10 dólares."
+  },
+  {
+    "id": "re-a1-16",
+    "cat": "reading",
+    "level": "A1",
+    "q": "When does Lucas play volleyball?",
+    "passage": "I'm Lucas. I have English class on Tuesdays and Thursdays. On Fridays, I play volleyball with my friends.",
+    "options": [
+      "On Tuesdays",
+      "On Thursdays",
+      "On Saturdays",
+      "On Fridays"
+    ],
+    "answer": 3,
+    "explain": "\"On Fridays, I play volleyball\": às sextas. Terça e quinta são dias de inglês."
+  },
+  {
+    "id": "re-a1-17",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Why must people be quiet?",
+    "passage": "Please be quiet. Students are taking a test in this room.",
+    "options": [
+      "A baby is sleeping",
+      "There is a test in the room",
+      "It's a hospital",
+      "The teacher is sick"
+    ],
+    "answer": 1,
+    "explain": "\"Taking a test\" = fazendo uma prova; por isso é preciso silêncio."
+  },
+  {
+    "id": "re-a1-18",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Where is Julia's guitar?",
+    "passage": "Julia's bedroom is small. It has a bed, a desk and a big window. Her guitar is under the bed.",
+    "options": [
+      "Under the bed",
+      "On the desk",
+      "Next to the window",
+      "In the closet"
+    ],
+    "answer": 0,
+    "explain": "\"Under\" significa embaixo de: o violão está embaixo da cama."
+  },
+  {
+    "id": "re-a1-19",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Where is breakfast?",
+    "passage": "Welcome to Green Park Hotel! Breakfast is in the restaurant on the first floor, from 7 to 10 a.m.",
+    "options": [
+      "In your room",
+      "By the pool",
+      "In the restaurant",
+      "In the lobby"
+    ],
+    "answer": 2,
+    "explain": "\"Breakfast is in the restaurant\": o café da manhã é servido no restaurante."
+  },
+  {
+    "id": "re-a1-20",
+    "cat": "reading",
+    "level": "A1",
+    "q": "Why does Marco like Sunday?",
+    "passage": "Hi, I'm Marco. My favorite day is Sunday because I don't go to school and I visit my grandparents.",
+    "options": [
+      "He has English class",
+      "He plays soccer",
+      "He goes to school",
+      "He visits his grandparents"
+    ],
+    "answer": 3,
+    "explain": "\"Because\" introduz o motivo: não tem escola e ele visita os avós."
+  },
+  {
+    "id": "re-a2-01",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What does Gabi want Nina to do?",
+    "passage": "Hi Nina, I can't find my blue jacket. I think I left it in your car on Saturday. Can you check? Thanks! — Gabi",
+    "options": [
+      "Look for the jacket in her car",
+      "Buy her a new jacket",
+      "Drive her home on Saturday",
+      "Wash the blue jacket"
+    ],
+    "answer": 0,
+    "explain": "\"Can you check?\" é um pedido para Nina procurar a jaqueta no carro."
+  },
+  {
+    "id": "re-a2-02",
+    "cat": "reading",
+    "level": "A2",
+    "q": "How much does a student pay on a Monday?",
+    "passage": "The city museum is free on Wednesdays. On other days, tickets cost $12 for adults and $6 for students. Children under 5 don't pay.",
+    "options": [
+      "$12",
+      "$6",
+      "Nothing",
+      "$5"
+    ],
+    "answer": 1,
+    "explain": "Só às quartas é grátis; nos outros dias, estudante paga $6."
+  },
+  {
+    "id": "re-a2-03",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What is the notice about?",
+    "passage": "Dear customers, our store is moving! From March 1st, you can find us at 45 Park Street, next to the bank.",
+    "options": [
+      "A sale at the bank",
+      "New opening hours",
+      "A job offer",
+      "The store's new address"
+    ],
+    "answer": 3,
+    "explain": "\"Moving\" aqui é mudar de endereço: a loja vai para a Park Street."
+  },
+  {
+    "id": "re-a2-04",
+    "cat": "reading",
+    "level": "A2",
+    "q": "Why did Diego walk to school?",
+    "passage": "Yesterday Diego missed the bus, so he walked to school. He arrived late and missed the first part of the math test.",
+    "options": [
+      "He likes walking",
+      "His bike was broken",
+      "The school is near his house",
+      "He missed the bus"
+    ],
+    "answer": 3,
+    "explain": "\"So\" indica consequência: ele perdeu o ônibus, então foi a pé."
+  },
+  {
+    "id": "re-a2-05",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What is the job?",
+    "passage": "Help wanted: we need a friendly person to walk our two dogs every afternoon, Monday to Friday. Good pay. Call Mrs. Park.",
+    "options": [
+      "Cleaning a house",
+      "Teaching English",
+      "Walking dogs",
+      "Babysitting children"
+    ],
+    "answer": 2,
+    "explain": "\"Help wanted\" é anúncio de vaga; o trabalho é \"walk our two dogs\"."
+  },
+  {
+    "id": "re-a2-06",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What does Camila do every weekend?",
+    "passage": "Camila started guitar lessons last year. At first it was hard, but now she plays in a band with her cousins every weekend.",
+    "options": [
+      "She plays in a band",
+      "She has guitar lessons",
+      "She visits her teacher",
+      "She studies for tests"
+    ],
+    "answer": 0,
+    "explain": "\"Now she plays in a band ... every weekend\": ela toca numa banda com os primos."
+  },
+  {
+    "id": "re-a2-07",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What does \"sharp\" mean in the text?",
+    "passage": "Reminder: the school trip to the science museum is on Friday. The bus leaves at 8:00 sharp. Bring your lunch and a signed form.",
+    "options": [
+      "A little later",
+      "Very early in the morning",
+      "Exactly at that time",
+      "Quickly"
+    ],
+    "answer": 2,
+    "explain": "Depois de um horário, \"sharp\" significa em ponto: 8:00 sharp = 8h em ponto."
+  },
+  {
+    "id": "re-a2-08",
+    "cat": "reading",
+    "level": "A2",
+    "q": "Why is Helen cycling this week?",
+    "passage": "I usually take the train to work, but this week the train workers are on strike, so I'm cycling. It's slower, but I'm enjoying it! — Helen",
+    "options": [
+      "The trains aren't running",
+      "She wants to get fit",
+      "Her car is broken",
+      "It's faster than the train"
+    ],
+    "answer": 0,
+    "explain": "\"On strike\" = em greve; sem trens, ela vai de bicicleta. Ela diz que é mais lento."
+  },
+  {
+    "id": "re-a2-09",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What should you do with your food in the fridge?",
+    "passage": "Kitchen rules: wash your own dishes, label your food in the fridge and take out the trash when the bin is full.",
+    "options": [
+      "Eat it the same day",
+      "Share it with everyone",
+      "Put your name on it",
+      "Throw it away"
+    ],
+    "answer": 2,
+    "explain": "\"Label\" é etiquetar: colocar uma identificação (como seu nome) na comida."
+  },
+  {
+    "id": "re-a2-10",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What are drivers asked to do?",
+    "passage": "Heavy rain caused flooding on several streets downtown this morning. Drivers are asked to avoid the area until the evening.",
+    "options": [
+      "Drive faster",
+      "Stay away from downtown",
+      "Help clean the streets",
+      "Park downtown"
+    ],
+    "answer": 1,
+    "explain": "\"Avoid the area\" = evitar a região, ou seja, ficar longe do centro."
+  },
+  {
+    "id": "re-a2-11",
+    "cat": "reading",
+    "level": "A2",
+    "q": "Is Omar going to the dinner?",
+    "passage": "Thanks for the invitation, Priya! I'd love to come to your birthday dinner, but I'm visiting my aunt in Recife that weekend. Have fun! — Omar",
+    "options": [
+      "Yes, with his aunt",
+      "No, he'll be away",
+      "Yes, but he'll be late",
+      "He hasn't decided yet"
+    ],
+    "answer": 1,
+    "explain": "\"I'd love to ..., but\" é um jeito educado de recusar: ele vai estar em Recife."
+  },
+  {
+    "id": "re-a2-12",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What is new at the café?",
+    "passage": "Our café now has vegan options! Try the new chickpea burger or the chocolate cake made without eggs or milk.",
+    "options": [
+      "Food without animal products",
+      "Lower prices",
+      "A new chef",
+      "Longer opening hours"
+    ],
+    "answer": 0,
+    "explain": "Comida \"vegan\" não tem nenhum produto de origem animal, como ovos e leite."
+  },
+  {
+    "id": "re-a2-13",
+    "cat": "reading",
+    "level": "A2",
+    "q": "How long is the break?",
+    "passage": "Please switch off your phone during the show. Photos and videos are not allowed. The show lasts about two hours, with a 15-minute break.",
+    "options": [
+      "Two hours",
+      "30 minutes",
+      "There is no break",
+      "15 minutes"
+    ],
+    "answer": 3,
+    "explain": "\"Break\" é o intervalo: \"a 15-minute break\" = intervalo de 15 minutos."
+  },
+  {
+    "id": "re-a2-14",
+    "cat": "reading",
+    "level": "A2",
+    "q": "Where does Ahmed live now?",
+    "passage": "Ahmed used to live in a big city, but last year he moved to a small town by the sea. He says life is quieter and he sleeps better now.",
+    "options": [
+      "In a big city",
+      "In the mountains",
+      "In a small town by the sea",
+      "On a farm"
+    ],
+    "answer": 2,
+    "explain": "\"Used to live\" indica passado; hoje ele mora na cidadezinha à beira-mar."
+  },
+  {
+    "id": "re-a2-15",
+    "cat": "reading",
+    "level": "A2",
+    "q": "Where can the owner get the glasses?",
+    "passage": "Found in Room 3: a pair of glasses in a red case. The owner can pick them up at the reception desk until Friday.",
+    "options": [
+      "In Room 3",
+      "At the reception desk",
+      "At an optician",
+      "In the classroom next door"
+    ],
+    "answer": 1,
+    "explain": "Os óculos foram achados na sala 3, mas \"pick them up\" (retirar) é na recepção."
+  },
+  {
+    "id": "re-a2-16",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What did Mia decide to do?",
+    "passage": "Mia wanted to buy the new video game, but it was too expensive. So she decided to save part of her allowance every week.",
+    "options": [
+      "Save money",
+      "Borrow the game",
+      "Buy a cheaper game",
+      "Ask her parents to pay"
+    ],
+    "answer": 0,
+    "explain": "\"Save\" aqui é economizar; \"allowance\" é a mesada."
+  },
+  {
+    "id": "re-a2-17",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What is changing?",
+    "passage": "Gym news: from next Monday, the gym will open at 5:30 a.m. instead of 6:00 a.m. Closing time stays the same.",
+    "options": [
+      "The closing time",
+      "The price",
+      "The opening time",
+      "The address"
+    ],
+    "answer": 2,
+    "explain": "\"Instead of\" = em vez de: só o horário de abertura muda. O de fechar \"stays the same\"."
+  },
+  {
+    "id": "re-a2-18",
+    "cat": "reading",
+    "level": "A2",
+    "q": "When will the team meet?",
+    "passage": "Hi team, tomorrow's meeting is cancelled because our manager is travelling. We'll meet on Thursday at the same time. — Laura",
+    "options": [
+      "Tomorrow",
+      "Next week",
+      "They won't meet again",
+      "On Thursday"
+    ],
+    "answer": 3,
+    "explain": "A reunião de amanhã foi cancelada e remarcada: \"We'll meet on Thursday\"."
+  },
+  {
+    "id": "re-a2-19",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What does \"starving\" mean here?",
+    "passage": "When Tiago arrived at the restaurant, it was full. He waited 40 minutes for a table, so he was starving when the food came.",
+    "options": [
+      "Very tired",
+      "Very hungry",
+      "Very angry",
+      "Very cold"
+    ],
+    "answer": 1,
+    "explain": "No dia a dia, \"I'm starving\" significa estar morrendo de fome."
+  },
+  {
+    "id": "re-a2-20",
+    "cat": "reading",
+    "level": "A2",
+    "q": "What is the main idea?",
+    "passage": "Health tip: drink water before you feel thirsty. When you feel thirsty, your body already needs more water.",
+    "options": [
+      "Drink only when you're thirsty",
+      "Water is better than juice",
+      "You should drink less water",
+      "Don't wait until you're thirsty to drink"
+    ],
+    "answer": 3,
+    "explain": "A dica é beber água antes da sede, porque a sede já é sinal de falta de água."
+  },
+  {
+    "id": "re-b1-01",
+    "cat": "reading",
+    "level": "B1",
+    "q": "How can someone new take part?",
+    "passage": "Our online English club meets every Wednesday evening. Each week, one member chooses a topic and leads the conversation. New members are welcome — no need to register, just use the link.",
+    "options": [
+      "Just use the link",
+      "Register online first",
+      "Pay a monthly fee",
+      "Get an invitation from a member"
+    ],
+    "answer": 0,
+    "explain": "\"No need to register, just use the link\": não precisa se inscrever, basta entrar pelo link."
+  },
+  {
+    "id": "re-b1-02",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What problem does the app help solve?",
+    "passage": "A group of students in Curitiba has created an app that connects restaurants with charities. Food that isn't sold by the end of the day is collected and given to people in need.",
+    "options": [
+      "Restaurants' low sales",
+      "Slow food deliveries",
+      "Wasting leftover food",
+      "Students' lack of jobs"
+    ],
+    "answer": 2,
+    "explain": "O app leva a comida que sobrou (não vendida) para quem precisa, evitando desperdício."
+  },
+  {
+    "id": "re-b1-03",
+    "cat": "reading",
+    "level": "B1",
+    "q": "Why does the writer go to a coworking space?",
+    "passage": "I've been working from home for two years. I love skipping the traffic, but I sometimes miss chatting with colleagues over coffee. Now I go to a coworking space twice a week.",
+    "options": [
+      "To avoid the traffic",
+      "To have more contact with people",
+      "Because the internet at home is bad",
+      "Because the company requires it"
+    ],
+    "answer": 1,
+    "explain": "O \"but\" mostra o problema: sente falta de conversar com colegas; o coworking resolve isso."
+  },
+  {
+    "id": "re-b1-04",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What is the purpose of the email?",
+    "passage": "Dear Mr. Silva, I'm writing to ask whether the course fee includes the books. The website doesn't mention it, and I'd like to know before I enroll. Best regards, Hana Kim",
+    "options": [
+      "To ask for information",
+      "To complain about a course",
+      "To cancel an enrollment",
+      "To order some books"
+    ],
+    "answer": 0,
+    "explain": "\"I'm writing to ask whether...\" deixa claro o objetivo: tirar uma dúvida antes de se matricular."
+  },
+  {
+    "id": "re-b1-05",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What can we infer about the fans?",
+    "passage": "Before the concert, fans waited in the rain for hours. When the singer finally appeared, nobody seemed to care about their wet clothes anymore.",
+    "options": [
+      "They left before the show",
+      "They were angry with the singer",
+      "They were too excited to mind the rain",
+      "They had umbrellas"
+    ],
+    "answer": 2,
+    "explain": "Se ninguém ligava mais para a roupa molhada, a empolgação era maior que o incômodo."
+  },
+  {
+    "id": "re-b1-06",
+    "cat": "reading",
+    "level": "B1",
+    "q": "Who should be careful with this product?",
+    "passage": "Warning: this product contains nuts. It is made in a factory that also handles milk and wheat.",
+    "options": [
+      "People on a diet",
+      "Children under three",
+      "Vegetarians",
+      "People who can't eat nuts"
+    ],
+    "answer": 3,
+    "explain": "O aviso diz que o produto contém castanhas (nuts), então é um alerta para quem não pode comê-las."
+  },
+  {
+    "id": "re-b1-07",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What is the writer's main point?",
+    "passage": "Many people think bats are dangerous, but most species eat insects or fruit. By eating mosquitoes, they actually help to control diseases.",
+    "options": [
+      "Bats are very dangerous",
+      "Bats are more useful than people think",
+      "Bats only eat fruit",
+      "Mosquitoes help control bats"
+    ],
+    "answer": 1,
+    "explain": "O texto contraria uma crença (\"many people think... but\") e mostra que morcegos ajudam."
+  },
+  {
+    "id": "re-b1-08",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What will happen in July?",
+    "passage": "The library has extended its opening hours during exam season. Until June 30, it will stay open until midnight on weekdays. Regular hours will return in July.",
+    "options": [
+      "The library will close for holidays",
+      "The library will close earlier again",
+      "Exams will start",
+      "It will open at midnight"
+    ],
+    "answer": 1,
+    "explain": "\"Regular hours will return\": em julho volta o horário normal, que fecha mais cedo."
+  },
+  {
+    "id": "re-b1-09",
+    "cat": "reading",
+    "level": "B1",
+    "q": "How did the presentation go?",
+    "passage": "Joana was nervous about her first presentation at work. She practised in front of the mirror for days, and in the end her boss said it was the clearest talk of the meeting.",
+    "options": [
+      "It went very well",
+      "It was too long",
+      "Her boss didn't like it",
+      "She forgot what to say"
+    ],
+    "answer": 0,
+    "explain": "O chefe disse que foi a apresentação mais clara (\"the clearest\") da reunião: foi um sucesso."
+  },
+  {
+    "id": "re-b1-10",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What is Caio NOT worried about?",
+    "passage": "Wanted: second-hand bicycle in good condition, preferably with gears. I don't mind a few scratches. Budget up to R$600. Message Caio.",
+    "options": [
+      "Small marks on the bike",
+      "The price",
+      "The general condition",
+      "Whether it has gears"
+    ],
+    "answer": 0,
+    "explain": "\"Scratches\" são arranhões, e \"I don't mind\" significa não me importo."
+  },
+  {
+    "id": "re-b1-11",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What do experts recommend?",
+    "passage": "Recent studies show that teenagers who sleep less than eight hours tend to have more trouble concentrating in class. Experts suggest avoiding screens an hour before bed.",
+    "options": [
+      "Sleeping less than eight hours",
+      "Studying late at night",
+      "Using phones to relax",
+      "Not using screens before sleeping"
+    ],
+    "answer": 3,
+    "explain": "\"Avoiding screens an hour before bed\" = evitar telas uma hora antes de dormir."
+  },
+  {
+    "id": "re-b1-12",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What was the only problem mentioned?",
+    "passage": "Although the hotel was far from the beach, we didn't regret staying there. The staff were incredibly helpful and the breakfast was the best we had on the whole trip.",
+    "options": [
+      "The staff",
+      "The breakfast",
+      "The price",
+      "Its location"
+    ],
+    "answer": 3,
+    "explain": "\"Although\" introduz a desvantagem: o hotel era longe da praia. O resto foi elogiado."
+  },
+  {
+    "id": "re-b1-13",
+    "cat": "reading",
+    "level": "B1",
+    "q": "Can people use the Block B elevator at 2 p.m. on Tuesday?",
+    "passage": "Due to maintenance, the elevator in Block B will be out of service from 9 a.m. to 3 p.m. on Tuesday. We apologize for any inconvenience.",
+    "options": [
+      "Yes, maintenance ends at noon",
+      "No, it will be under maintenance",
+      "Yes, but only staff can use it",
+      "No, it is closed all week"
+    ],
+    "answer": 1,
+    "explain": "A manutenção vai das 9h às 15h (3 p.m.); às 14h o elevador está \"out of service\", ou seja, sem funcionar."
+  },
+  {
+    "id": "re-b1-14",
+    "cat": "reading",
+    "level": "B1",
+    "q": "How has Lucas changed?",
+    "passage": "When Lucas started his new job, he barely spoke to anyone. Six months later, he's the one organizing the team's lunches and birthday parties.",
+    "options": [
+      "He has become shyer",
+      "He now prefers working alone",
+      "He has changed jobs",
+      "He has become more sociable"
+    ],
+    "answer": 3,
+    "explain": "\"Barely\" = quase não. Antes quase não falava; agora organiza os eventos da equipe."
+  },
+  {
+    "id": "re-b1-15",
+    "cat": "reading",
+    "level": "B1",
+    "q": "How did researchers find the frog?",
+    "passage": "Scientists have discovered a new species of frog in the Amazon. It is smaller than a fingernail and was found only after researchers recorded its unusual call at night.",
+    "options": [
+      "By using a microscope",
+      "By following its tracks",
+      "By catching insects",
+      "By hearing the sound it makes"
+    ],
+    "answer": 3,
+    "explain": "\"Call\", falando de animais, é o som/canto que eles fazem. Gravaram o canto para achá-lo."
+  },
+  {
+    "id": "re-b1-16",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What does \"heads-up\" mean?",
+    "passage": "Hi Renata, just a heads-up: the client moved the call to 10 a.m., so we'll need the slides ready an hour earlier than planned. Can you manage? — Victor",
+    "options": [
+      "A warning in advance",
+      "A request for money",
+      "A complaint",
+      "A thank-you note"
+    ],
+    "answer": 0,
+    "explain": "\"A heads-up\" é um aviso prévio, para a pessoa se preparar para algo."
+  },
+  {
+    "id": "re-b1-17",
+    "cat": "reading",
+    "level": "B1",
+    "q": "Which benefit is NOT mentioned?",
+    "passage": "Many cities are turning empty rooftops into gardens. Besides producing vegetables, these gardens keep buildings cooler in summer and give residents a place to relax.",
+    "options": [
+      "Growing food",
+      "Reducing traffic",
+      "Cooling buildings",
+      "Offering a place to relax"
+    ],
+    "answer": 1,
+    "explain": "O texto cita comida, prédios mais frescos e lazer; trânsito não aparece."
+  },
+  {
+    "id": "re-b1-18",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What does the writer suggest?",
+    "passage": "The first time I tried sushi, I hated it. My friends kept insisting, and now it's my favourite food. I guess some tastes take time.",
+    "options": [
+      "First impressions are always right",
+      "Friends shouldn't insist",
+      "You can learn to like a food",
+      "Sushi is easy to make"
+    ],
+    "answer": 2,
+    "explain": "\"Some tastes take time\": alguns gostos se desenvolvem com o tempo."
+  },
+  {
+    "id": "re-b1-19",
+    "cat": "reading",
+    "level": "B1",
+    "q": "What is the writer suggesting?",
+    "passage": "Registration for the city marathon closes on Friday. Only 200 places are left, and last year all spots were taken two days before the deadline.",
+    "options": [
+      "Wait until Friday",
+      "Register as soon as possible",
+      "Train for next year",
+      "The race is cancelled"
+    ],
+    "answer": 1,
+    "explain": "Poucas vagas e, no ano passado, acabaram antes do prazo: a mensagem implícita é se inscrever já."
+  },
+  {
+    "id": "re-b1-20",
+    "cat": "reading",
+    "level": "B1",
+    "q": "Ana bought a full-price jacket 10 days ago and kept the receipt. Can she get a refund?",
+    "passage": "Please note: refunds are only possible within 30 days of purchase and with the original receipt. Items on sale cannot be returned.",
+    "options": [
+      "No, it's been too long",
+      "No, sale items can't be returned",
+      "Yes, she can",
+      "Only if she exchanges it"
+    ],
+    "answer": 2,
+    "explain": "Ela cumpre as regras: menos de 30 dias, tem o recibo e não comprou em promoção."
+  },
+  {
+    "id": "re-b2-01",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What does the passage suggest about the café?",
+    "passage": "When the café on our corner closed after thirty years, neighbours left flowers and notes at the door. For many, it hadn't just been a place for coffee; it had been where they met friends and felt at home.",
+    "options": [
+      "It closed because of bad coffee",
+      "It was the newest café in the area",
+      "Neighbours were glad it closed",
+      "It meant much more than coffee to people"
+    ],
+    "answer": 3,
+    "explain": "\"It hadn't just been a place for coffee\": o café tinha um valor afetivo para o bairro."
+  },
+  {
+    "id": "re-b2-02",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What is the reviewer's overall opinion?",
+    "passage": "Critics praised the film's stunning photography, but many felt the plot dragged in the second half. Still, it's worth seeing on a big screen, if only for the visuals.",
+    "options": [
+      "It's a perfect film",
+      "It's not worth seeing at all",
+      "It's better on a small screen",
+      "Worth watching despite a slow plot"
+    ],
+    "answer": 3,
+    "explain": "\"Dragged\" = ficou arrastado; mas \"still, it's worth seeing\" mostra que vale a pena ver."
+  },
+  {
+    "id": "re-b2-03",
+    "cat": "reading",
+    "level": "B2",
+    "q": "Why is the company changing its travel policy?",
+    "passage": "Our company is committed to reducing its carbon footprint. From next month, trips under 500 km will be made by train instead of plane, and meetings with international partners will be held online whenever possible.",
+    "options": [
+      "To save time on trips",
+      "Because trains are more comfortable",
+      "To lower its environmental impact",
+      "Because partners asked for it"
+    ],
+    "answer": 2,
+    "explain": "\"Carbon footprint\" é a pegada de carbono, ou seja, o impacto ambiental das emissões."
+  },
+  {
+    "id": "re-b2-04",
+    "cat": "reading",
+    "level": "B2",
+    "q": "According to the text, what helped Marisa most?",
+    "passage": "Despite having no formal training, Marisa built a successful bakery by learning from online videos and, above all, from her own mistakes. She now runs workshops for people starting small food businesses.",
+    "options": [
+      "A cooking degree",
+      "Advice from investors",
+      "Learning from her mistakes",
+      "Her family's recipes"
+    ],
+    "answer": 2,
+    "explain": "\"Above all\" = acima de tudo: destaca os próprios erros como o principal aprendizado."
+  },
+  {
+    "id": "re-b2-05",
+    "cat": "reading",
+    "level": "B2",
+    "q": "Why is the situation described as ironic?",
+    "passage": "The new system at city hall was meant to cut waiting times. Ironically, the extra paperwork it introduced has made queues longer than ever, and residents are losing patience.",
+    "options": [
+      "The system was never used",
+      "The system had the opposite effect",
+      "Residents like the paperwork",
+      "Waiting times disappeared"
+    ],
+    "answer": 1,
+    "explain": "Há ironia quando o resultado é o contrário do esperado: era para reduzir filas e elas aumentaram."
+  },
+  {
+    "id": "re-b2-06",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What does \"I'm a convert\" mean here?",
+    "passage": "I'll admit I was sceptical about the four-day week. But after six months, our team is delivering the same results, and absences have fallen sharply. I'm a convert.",
+    "options": [
+      "I want to change jobs",
+      "I changed my mind and now support it",
+      "I still have doubts about it",
+      "I now work more days"
+    ],
+    "answer": 1,
+    "explain": "\"A convert\" é alguém que mudou de opinião e passou a defender algo que antes duvidava."
+  },
+  {
+    "id": "re-b2-07",
+    "cat": "reading",
+    "level": "B2",
+    "q": "Why could towns face water shortages?",
+    "passage": "Scientists warn that the glacier is melting faster than predicted. If the trend continues, towns downstream could face water shortages within two decades, as the glacier feeds the region's main river.",
+    "options": [
+      "It will rain less in the region",
+      "Their river depends on the glacier",
+      "The towns are growing too fast",
+      "The river is polluted"
+    ],
+    "answer": 1,
+    "explain": "\"The glacier feeds the region's main river\": o rio depende da água da geleira."
+  },
+  {
+    "id": "re-b2-08",
+    "cat": "reading",
+    "level": "B2",
+    "q": "Who is the exhibition mainly aimed at?",
+    "passage": "The museum's new exhibition invites visitors to touch, smell and even listen to the artworks. Organisers hope it will attract people who usually find museums dull and distant.",
+    "options": [
+      "People who don't usually enjoy museums",
+      "Art experts",
+      "Young children only",
+      "Artists looking for work"
+    ],
+    "answer": 0,
+    "explain": "\"Dull and distant\" = chatos e distantes; a meta é atrair quem normalmente não curte museus."
+  },
+  {
+    "id": "re-b2-09",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What does \"tweaks\" mean?",
+    "passage": "Hi Daniel, thanks for sending the report so quickly. I've made a few tweaks to the conclusion — nothing major — so could you take a look before we send it to the client? Cheers, Yuki",
+    "options": [
+      "Serious mistakes",
+      "New sections",
+      "Small changes",
+      "Translations"
+    ],
+    "answer": 2,
+    "explain": "\"Tweaks\" são pequenos ajustes; o \"nothing major\" (nada grande) confirma."
+  },
+  {
+    "id": "re-b2-10",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What is the writer's advice?",
+    "passage": "Online reviews can be misleading. Some businesses pay for positive comments, while unhappy customers are more likely to write than satisfied ones. It's wise to read a range of opinions before deciding.",
+    "options": [
+      "Trust only positive reviews",
+      "Ignore all online reviews",
+      "Write a review after every purchase",
+      "Read many different reviews"
+    ],
+    "answer": 3,
+    "explain": "\"Read a range of opinions\" = ler opiniões variadas antes de decidir."
+  },
+  {
+    "id": "re-b2-11",
+    "cat": "reading",
+    "level": "B2",
+    "q": "Why are young adults playing board games?",
+    "passage": "Once seen as a hobby for older people, board games are enjoying a revival among young adults, who say that sitting around a table with friends is a welcome break from screens.",
+    "options": [
+      "They're cheaper than video games",
+      "To take a break from screens",
+      "To learn from older people",
+      "For school projects"
+    ],
+    "answer": 1,
+    "explain": "Os jovens dizem que jogar à mesa é \"a welcome break from screens\", uma pausa das telas."
+  },
+  {
+    "id": "re-b2-12",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What is still uncertain?",
+    "passage": "Tickets for the festival sold out in minutes, leaving thousands of fans frustrated. The organisers have apologised and promised to add a second date, although they haven't said when.",
+    "options": [
+      "Whether fans are frustrated",
+      "How fast the tickets sold",
+      "When the extra date will be",
+      "Whether organisers apologised"
+    ],
+    "answer": 2,
+    "explain": "\"Although they haven't said when\": ainda não se sabe quando será a data extra."
+  },
+  {
+    "id": "re-b2-13",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What was the school's approach?",
+    "passage": "Rather than banning phones in class, the school decided to teach students how to use them responsibly — for research, note-taking and even recording presentations.",
+    "options": [
+      "Teaching responsible phone use",
+      "Banning phones completely",
+      "Buying phones for students",
+      "Allowing phones only at break"
+    ],
+    "answer": 0,
+    "explain": "\"Rather than banning\" = em vez de proibir: a escola escolheu ensinar o uso responsável."
+  },
+  {
+    "id": "re-b2-14",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What does \"the gist\" mean?",
+    "passage": "Having worked as a translator for fifteen years, Kenji insists that machine translation won't replace humans anytime soon. \"It's great for getting the gist,\" he says, \"but it still misses tone and humour.\"",
+    "options": [
+      "The general meaning",
+      "The exact words",
+      "The author's name",
+      "The funny parts"
+    ],
+    "answer": 0,
+    "explain": "\"Get the gist\" = pegar a ideia geral de um texto, sem todos os detalhes."
+  },
+  {
+    "id": "re-b2-15",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What does \"for now\" suggest?",
+    "passage": "Although the startup's app gained millions of users in its first year, it has yet to make a profit. Investors remain patient — for now.",
+    "options": [
+      "Investors are completely satisfied",
+      "The app is already profitable",
+      "Investors may lose patience later",
+      "Users will leave the app soon"
+    ],
+    "answer": 2,
+    "explain": "\"For now\" = por enquanto: a paciência pode acabar. E \"has yet to\" = ainda não."
+  },
+  {
+    "id": "re-b2-16",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What is the council's position?",
+    "passage": "Residents have complained about noise from the new stadium. The council says it will monitor sound levels during events, but insists the stadium brings jobs and tourism to the area.",
+    "options": [
+      "It will check the noise but defends the stadium",
+      "It will close the stadium",
+      "It denies there is any noise",
+      "It agrees tourism is bad"
+    ],
+    "answer": 0,
+    "explain": "O conselho vai monitorar o som (\"monitor\"), mas \"insists\" que o estádio traz benefícios."
+  },
+  {
+    "id": "re-b2-17",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What can we infer?",
+    "passage": "The sign said \"Wet paint\", but Bruno, busy texting, leaned against the wall anyway. His new white shirt now has a green stripe across the back.",
+    "options": [
+      "Bruno painted the wall",
+      "The shirt was green before",
+      "The paint was already dry",
+      "Bruno didn't notice the sign"
+    ],
+    "answer": 3,
+    "explain": "Ele estava distraído no celular (\"busy texting\") e sujou a camisa: não viu o aviso."
+  },
+  {
+    "id": "re-b2-18",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What happens to the money from reusable bags?",
+    "passage": "Our store will no longer offer plastic bags. Customers can bring their own or buy a reusable one at the checkout for R$3, which will be donated to a local environmental project.",
+    "options": [
+      "It goes to an environmental project",
+      "It pays for plastic bags",
+      "It lowers other prices",
+      "It goes to the staff"
+    ],
+    "answer": 0,
+    "explain": "\"Which will be donated to a local environmental project\": o valor é doado ao projeto."
+  },
+  {
+    "id": "re-b2-19",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What do skilled readers do?",
+    "passage": "Many learners believe they must understand every word to follow a text. In fact, skilled readers skip unknown words and rely on context, going back to them only if the meaning remains unclear.",
+    "options": [
+      "Look up every unknown word",
+      "Use context instead of stopping at each word",
+      "Read each text twice",
+      "Avoid difficult texts"
+    ],
+    "answer": 1,
+    "explain": "\"Rely on context\" = se apoiar no contexto; só voltam à palavra se o sentido continuar obscuro."
+  },
+  {
+    "id": "re-b2-20",
+    "cat": "reading",
+    "level": "B2",
+    "q": "What is the compromise?",
+    "passage": "After weeks of heated debate, the neighbourhood association finally reached a compromise: the park will keep its football pitch, but part of the pitch will be turned into a playground.",
+    "options": [
+      "The pitch will be removed",
+      "A new park will be built",
+      "The playground will close",
+      "The pitch stays but gets smaller"
+    ],
+    "answer": 3,
+    "explain": "\"Compromise\" é um acordo com concessões: o campo fica, mas perde uma parte para o parquinho."
+  },
+  {
+    "id": "re-c1-01",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What is the writer's attitude to the statement?",
+    "passage": "The CEO's statement was a masterclass in saying nothing: it acknowledged \"concerns\", promised \"a thorough review\" and committed to precisely nothing. Shareholders, unsurprisingly, were unimpressed.",
+    "options": [
+      "Critical of its vagueness",
+      "Impressed by its clarity",
+      "Neutral and uninterested",
+      "Supportive of the review"
+    ],
+    "answer": 0,
+    "explain": "\"A masterclass in saying nothing\" é irônico: critica um discurso vago, sem compromisso real."
+  },
+  {
+    "id": "re-c1-02",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What is the writer's main point?",
+    "passage": "For decades, nutritionists advised against eating eggs. Newer research paints a more nuanced picture: for most healthy people, an egg a day seems to have little effect. The lesson, perhaps, is to treat single studies with caution.",
+    "options": [
+      "Eggs are dangerous for everyone",
+      "Nutritionists are always wrong",
+      "Be cautious with conclusions from one study",
+      "Everyone should eat more eggs"
+    ],
+    "answer": 2,
+    "explain": "A conclusão do autor está em \"the lesson... is to treat single studies with caution\"."
+  },
+  {
+    "id": "re-c1-03",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does \"an awkward middle ground\" refer to?",
+    "passage": "Remote work was hailed as the end of the office. Yet many firms now find themselves in an awkward middle ground: employees want flexibility, managers want presence, and nobody quite knows what the office is for anymore.",
+    "options": [
+      "An uneasy situation with no clear answer",
+      "A compromise everyone is happy with",
+      "A new office location",
+      "The end of remote work"
+    ],
+    "answer": 0,
+    "explain": "\"Awkward\" = desconfortável: é um meio-termo incômodo, com interesses opostos e sem solução clara."
+  },
+  {
+    "id": "re-c1-04",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does the reviewer suggest about the novel?",
+    "passage": "Her debut novel is, on the surface, a quiet story about a family bakery. Underneath, it is a sharp meditation on inheritance — of recipes, of debts, and of silences no one dares to break.",
+    "options": [
+      "It is mainly a cookbook",
+      "It is deeper than it first appears",
+      "It is loud and action-packed",
+      "It is only about money problems"
+    ],
+    "answer": 1,
+    "explain": "O contraste \"on the surface... underneath\" indica que há temas profundos sob a história simples."
+  },
+  {
+    "id": "re-c1-05",
+    "cat": "reading",
+    "level": "C1",
+    "q": "Where does the disagreement lie?",
+    "passage": "Few would dispute that the city needs more housing. The question is not whether to build, but where and for whom — and on that point, consensus quickly evaporates.",
+    "options": [
+      "On whether housing is needed",
+      "On which materials to use",
+      "On where to build and for whom",
+      "On how big the city is"
+    ],
+    "answer": 2,
+    "explain": "\"Consensus evaporates\" = o consenso some; a divergência é sobre onde e para quem construir."
+  },
+  {
+    "id": "re-c1-06",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does \"burned\" mean here?",
+    "passage": "Having been burned by an earlier investment, Ravi approached the offer with healthy scepticism. He asked for independent data, spoke to former clients and only then agreed to a modest trial.",
+    "options": [
+      "Injured by fire",
+      "Very successful",
+      "Harmed by a bad experience",
+      "Extremely busy"
+    ],
+    "answer": 2,
+    "explain": "\"Get burned\" em sentido figurado é se dar mal numa experiência, por isso a desconfiança."
+  },
+  {
+    "id": "re-c1-07",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What is the writer's view of the app?",
+    "passage": "The app promises to \"revolutionise the way you learn\". Beneath the marketing gloss, however, lies a fairly conventional flashcard system — useful, certainly, but hardly revolutionary.",
+    "options": [
+      "Truly innovative",
+      "Useful but overhyped",
+      "Completely useless",
+      "Too difficult to use"
+    ],
+    "answer": 1,
+    "explain": "\"Hardly revolutionary\" = nada revolucionário; o autor admite que é útil, mas critica o exagero."
+  },
+  {
+    "id": "re-c1-08",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What is implied about local traditions?",
+    "passage": "Tourism has brought undeniable wealth to the island. Yet locals increasingly complain that rents have soared, beaches are overcrowded and the traditions visitors come to see are being turned into shows staged for them.",
+    "options": [
+      "They are losing their authenticity",
+      "They are disappearing for lack of money",
+      "Tourists aren't interested in them",
+      "Locals refuse to share them"
+    ],
+    "answer": 0,
+    "explain": "Tradições \"staged for them\" (encenadas para turistas) viram espetáculo e perdem a autenticidade."
+  },
+  {
+    "id": "re-c1-09",
+    "cat": "reading",
+    "level": "C1",
+    "q": "Why is multitasking inefficient, according to the text?",
+    "passage": "Contrary to popular belief, multitasking rarely saves time. What feels like doing two things at once is usually rapid switching, and each switch carries a small cost in attention and accuracy.",
+    "options": [
+      "Each switch between tasks costs attention",
+      "People get bored too quickly",
+      "It requires expensive tools",
+      "Tasks become more interesting"
+    ],
+    "answer": 0,
+    "explain": "O texto diz que cada troca de tarefa (\"each switch\") tem um custo de atenção e precisão."
+  },
+  {
+    "id": "re-c1-10",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What is the purpose of this message?",
+    "passage": "Thank you for your application. While we were impressed by your experience, we have decided to proceed with candidates whose profiles more closely match the role. We will keep your CV on file for future openings.",
+    "options": [
+      "To invite a candidate to an interview",
+      "To offer a job",
+      "To ask for an updated CV",
+      "To politely reject a candidate"
+    ],
+    "answer": 3,
+    "explain": "\"Proceed with other candidates\" é a forma educada e padrão de recusar alguém num processo seletivo."
+  },
+  {
+    "id": "re-c1-11",
+    "cat": "reading",
+    "level": "C1",
+    "q": "How does the documentary present its topic?",
+    "passage": "The documentary never tells viewers what to think. Instead, it lays out the evidence, gives both farmers and scientists room to speak, and trusts the audience to draw their own conclusions.",
+    "options": [
+      "By pushing one strong opinion",
+      "Only from scientists' point of view",
+      "In a humorous, light way",
+      "In a balanced, non-directive way"
+    ],
+    "answer": 3,
+    "explain": "Ele mostra os dois lados e deixa o público tirar conclusões: é equilibrado, sem direcionar."
+  },
+  {
+    "id": "re-c1-12",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does \"curt\" mean?",
+    "passage": "After three weeks of silence, Marta finally answered the team's long proposal. Her reply was curt: \"Noted.\" It was hardly the enthusiastic response they had been hoping for.",
+    "options": [
+      "Very detailed",
+      "Warm and friendly",
+      "Short to the point of rudeness",
+      "Late but polite"
+    ],
+    "answer": 2,
+    "explain": "\"Curt\" descreve uma resposta seca, curta demais, quase grosseira, como o \"Noted.\" dela."
+  },
+  {
+    "id": "re-c1-13",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What do critics propose?",
+    "passage": "Supporters argue that the new high-speed rail line will ease congestion and cut emissions. Critics counter that its costs have already doubled and that the money would be better spent upgrading existing lines.",
+    "options": [
+      "Cancelling all rail projects",
+      "Improving the current rail lines",
+      "Building more roads",
+      "Doubling the budget"
+    ],
+    "answer": 1,
+    "explain": "\"Upgrading existing lines\" = modernizar as linhas que já existem, em vez da nova."
+  },
+  {
+    "id": "re-c1-14",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What impressed the writer most?",
+    "passage": "What struck me most about the village was not its beauty, though it was undeniably beautiful, but the fact that no one seemed to be in a hurry. Even the buses, it seemed, ran on a different kind of time.",
+    "options": [
+      "The beautiful scenery",
+      "The punctual buses",
+      "The modern transport",
+      "The relaxed pace of life"
+    ],
+    "answer": 3,
+    "explain": "A estrutura \"not X... but Y\" destaca Y: o que mais marcou foi ninguém ter pressa."
+  },
+  {
+    "id": "re-c1-15",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does the writer imply?",
+    "passage": "The report stops short of blaming the software for the outage, but it notes that the problem began within minutes of the update — a coincidence few engineers are likely to overlook.",
+    "options": [
+      "The software is certainly not to blame",
+      "Engineers caused it on purpose",
+      "The update probably caused the outage",
+      "The report blames the engineers"
+    ],
+    "answer": 2,
+    "explain": "\"Stops short of\" = não chega a afirmar; mas a \"coincidência\" sugere que a atualização foi a causa."
+  },
+  {
+    "id": "re-c1-16",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What concern do some researchers raise?",
+    "passage": "Grit, the ability to persevere towards long-term goals, has become a buzzword in education. Yet some researchers caution that praising grit alone risks overlooking the conditions — time, support, resources — that make perseverance possible.",
+    "options": [
+      "Grit is impossible to teach",
+      "Focusing on grit may ignore outside conditions",
+      "Students get too much support",
+      "Long-term goals are harmful"
+    ],
+    "answer": 1,
+    "explain": "\"Overlooking the conditions\" = ignorar as condições (tempo, apoio, recursos) que permitem perseverar."
+  },
+  {
+    "id": "re-c1-17",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What was the unexpected effect of the signs?",
+    "passage": "Bilingual signs were introduced as a courtesy to visitors, but they have had an unexpected side effect: residents report picking up dozens of words in the second language simply by walking to work.",
+    "options": [
+      "Locals learned words in the other language",
+      "Visitors stopped coming",
+      "The signs became hard to read",
+      "Residents complained about them"
+    ],
+    "answer": 0,
+    "explain": "\"Pick up words\" = aprender palavras de forma natural, sem estudar, só vendo as placas."
+  },
+  {
+    "id": "re-c1-18",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What mistake does the writer say the leadership made?",
+    "passage": "In hindsight, the warning signs were there: sales had plateaued, key staff were leaving and competitors were moving online. The company's leadership, however, preferred to read the dip as temporary.",
+    "options": [
+      "Moving the business online too fast",
+      "Hiring too many new staff",
+      "Treating a real decline as temporary",
+      "Lowering prices to beat competitors"
+    ],
+    "answer": 2,
+    "explain": "A liderança preferiu ler a queda (the dip) como temporária, apesar dos sinais. In hindsight = olhando para trás."
+  },
+  {
+    "id": "re-c1-19",
+    "cat": "reading",
+    "level": "C1",
+    "q": "Why does the approach feel \"almost radical\"?",
+    "passage": "The chef's philosophy is disarmingly simple: buy what is in season, cook it with restraint and let the ingredients speak for themselves. In an age of foams and gels, it feels almost radical.",
+    "options": [
+      "It uses rare ingredients",
+      "Simplicity is rare in modern cooking",
+      "It relies on new technology",
+      "It is very expensive"
+    ],
+    "answer": 1,
+    "explain": "Numa era de espumas e géis (cozinha elaborada), cozinhar de forma simples virou algo incomum."
+  },
+  {
+    "id": "re-c1-20",
+    "cat": "reading",
+    "level": "C1",
+    "q": "What does the writer present as rare about libraries?",
+    "passage": "Libraries, once written off as relics of a pre-digital age, have quietly reinvented themselves. Many now lend tools, host coding clubs and offer a rare commodity: a warm, free public space where no one expects you to buy anything.",
+    "options": [
+      "Lending printed books",
+      "Having the latest technology",
+      "Being quiet and old-fashioned",
+      "A free space with no pressure to spend"
+    ],
+    "answer": 3,
+    "explain": "\"A rare commodity\" é o espaço público gratuito \"where no one expects you to buy anything\"."
+  }
+]

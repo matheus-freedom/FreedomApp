@@ -15,3 +15,19 @@ pasta; só `vite.preview.config.ts` a usa).
 (o app real usa o CDN do Tailwind, que não estava acessível no ambiente
 de testes). Se criar classes novas nas telas, regere-o ou o preview fica
 sem estilo nessas classes.
+
+
+# Preview dos Desafios (Duelo da Roleta)
+
+Roda a function `duel.js` DE VERDADE contra um Firestore falso em
+memória, com um robô (@bia.bot) jogando do outro lado.
+
+    node preview/duel-server.cjs                         # porta 8888
+    npx vite serve --config vite.duel-preview.config.ts  # porta 3100
+    # http://localhost:3100/duels.html            → aba Desafios como @matheus
+    # http://localhost:3100/duels.html?as=leo     → como @leo
+
+Depois de mexer nas telas, regere o CSS:
+
+    npx tailwindcss@3 -i <arquivo com @tailwind base/components/utilities> \
+      -o preview/tailwind.css --content "./components/**/*.tsx,./preview/*.tsx,./App.tsx"
