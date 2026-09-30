@@ -54,7 +54,18 @@ console.log('\n── Regras do jogo ──');
   let ev = core.applyAnswer(d, A, { ok: true, choice: 0, correctIndex: 0, explain: 'x', qid: 'q1' }, 3000);
   check('Acerto enche 1/3 do medidor e continua a vez', ev === 'correct' && d.meter[A] === 1 && d.turn === A && d.phase === 'spin');
   core.setQuestion(d, { kind: 'normal', cat: 'reading', level: 'B1', pub, now: 4000 });
-  check('Reading ganha 40s', d.question.limitMs === core.LONG_ANSWER_MS);
+  check('Reading ganha 60s', d.question.limitMs === 60000);
+  {
+    const L = mk(); core.accept(L, 0);
+    core.setQuestion(L, { kind: 'normal', cat: 'listening', level: 'B1', pub: { ...pub, audio: 'Hello there.' }, now: 1000 });
+    check('Listening: relógio parado até ouvir o áudio', L.question.waitingAudio === true && L.question.deadline === 1000 + core.LISTEN_WINDOW_MS + core.LISTENING_MS + core.GRACE_MS);
+    check('Listening: audioDone com número errado não vale', core.startAnswerClock(L, 99, 5000) === false);
+    check('Listening: ao terminar de ouvir, começam os 40s', core.startAnswerClock(L, L.question.n, 9000) && L.question.deadline === 9000 + core.LISTENING_MS + core.GRACE_MS && !L.question.waitingAudio);
+    check('Listening: só inicia o relógio uma vez', core.startAnswerClock(L, L.question.n, 20000) === false && L.question.deadline === 9000 + core.LISTENING_MS + core.GRACE_MS);
+    const L2 = mk(); core.accept(L2, 0);
+    core.setQuestion(L2, { kind: 'normal', cat: 'listening', level: 'B1', pub: { ...pub, audio: 'Hi.' }, now: 0 });
+    check('Listening: sem ouvir, a janela de 2 min vence e conta como erro', core.sweep(L2, L2.question.deadline + 1).includes('question_timeout'));
+  }
   core.applyAnswer(d, A, { ok: true }, 5000);
   core.setQuestion(d, { kind: 'normal', cat: 'vocabulary', level: 'B1', pub, now: 6000 });
   ev = core.applyAnswer(d, A, { ok: true }, 7000);
@@ -344,6 +355,26 @@ console.log('\n── Function duel.js (Firestore em memória) ──');
     check('Ninguém passa do limite de vezes', x.turns.eva <= core.MAX_TURNS && x.turns.fil <= core.MAX_TURNS);
   }
 
+  // Listening com áudio de verdade: sem arquivo → pergunta sai sem áudio;
+  // quando o arquivo fica pronto, o "get" coloca na pergunta; o relógio
+  // só começa com audioDone.
+  {
+    let r3 = await call('eva', { action: 'create', opponentId: 'fil', stake: 0 });
+    const idL = r3.duel.id;
+    await call('fil', { action: 'respond', duelId: idL, accept: true });
+    const x = store.get(`duels/${idL}`); x.phase = 'crown_pick'; x.crownSource = 'wheel'; store.set(`duels/${idL}`, x);
+    r3 = await call('eva', { action: 'pickCrown', duelId: idL, cat: 'listening' });
+    const ql = r3.duel.question;
+    check('Listening sem áudio pronto: sai sem arquivo e com o relógio parado', ql.cat === 'listening' && !ql.audioUrl && ql.waitingAudio === true);
+    write('duel_audio', ql.id, { status: 'ready', url: 'https://example.com/a.wav' });
+    r3 = await call('eva', { action: 'get', duelId: idL });
+    check('Quando o áudio fica pronto, o get coloca na pergunta', r3.duel.question.audioUrl === 'https://example.com/a.wav');
+    r3 = await call('fil', { action: 'audioDone', duelId: idL, n: ql.n });
+    check('Só quem está jogando pode marcar "terminei de ouvir"', r3.status === 409);
+    r3 = await call('eva', { action: 'audioDone', duelId: idL, n: ql.n });
+    check('audioDone começa os 40s de resposta', r3.duel.question.waitingAudio === false && r3.duel.question.deadline - Date.now() <= core.LISTENING_MS + core.GRACE_MS + 50);
+  }
+
   // Recusa, cancelamento e expiração devolvem a aposta
   const before = bal('ana');
   r = await call('ana', { action: 'create', opponentId: 'bia', stake: 1 });
@@ -364,9 +395,10 @@ console.log('\n── Function duel.js (Firestore em memória) ──');
   const d4 = r.duel.id;
   await call('caio', { action: 'respond', duelId: d4, accept: true });
   r = await call('ana', { action: 'spin', duelId: d4 });
+  const spunCrown = r.target === 'crown';
   while (r.target === 'crown') { r = await call('ana', { action: 'pickCrown', duelId: d4, cat: 'grammar' }); }
   let q4 = store.get(`duels/${d4}`).question;
-  check('Relógio da pergunta só começa depois da animação da roleta', r.target === 'crown' || q4.askedAt >= Date.now() + 3000);
+  check('Relógio da pergunta só começa depois da animação da roleta', spunCrown || q4.askedAt >= Date.now() + 3000);
   check('Resposta traz a hora do servidor (acerto do cronômetro)', typeof r.serverNow === 'number');
   const oldId = q4.id;
   r = await call('ana', { action: 'help', duelId: d4, kind: 'skip' });

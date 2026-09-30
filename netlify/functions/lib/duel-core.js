@@ -35,7 +35,14 @@ const MAX_TURNS = 15;          // vezes por jogador
 const CROWNS_TO_WIN = 6;
 const METER_MAX = 3;
 const ANSWER_MS = 25000;       // tempo para responder
-const LONG_ANSWER_MS = 40000;  // reading/listening (tem texto/áudio antes)
+const READING_MS = 60000;      // reading: tem o texto para ler antes (pedido do Matheus, 30/09)
+const LISTENING_MS = 40000;    // listening: conta só DEPOIS que o áudio termina
+const LONG_ANSWER_MS = READING_MS; // (nome antigo, mantido para compatibilidade)
+// Listening: enquanto o aluno não terminou de ouvir o áudio pela 1ª
+// vez, o relógio da resposta não corre. Mas não pode ficar parado
+// para sempre (senão bastaria nunca apertar o play): esta é a janela
+// máxima para ouvir. Passou dela sem ouvir, o relógio começa sozinho.
+const LISTEN_WINDOW_MS = 120000;
 const GRACE_MS = 5000;         // folga de rede entre clicar e o servidor receber
 const TURN_MS = 48 * 3600000;  // prazo para jogar a sua vez
 const INVITE_MS = 72 * 3600000;// prazo para aceitar o convite
@@ -137,7 +144,7 @@ const accept = (d, now) => {
 // ── Roleta ───────────────────────────────────────────────────
 const spinSlot = (rand = Math.random) => Math.floor(rand() * WHEEL.length) % WHEEL.length;
 
-const answerMsFor = (cat) => (cat === "reading" || cat === "listening" ? LONG_ANSWER_MS : ANSWER_MS);
+const answerMsFor = (cat) => (cat === "reading" ? READING_MS : cat === "listening" ? LISTENING_MS : ANSWER_MS);
 
 // Coloca uma pergunta na mesa. `pub` é a versão SEM gabarito.
 // `delayMs`: quando a pergunta sai de um giro, a tela ainda passa ~5s
@@ -148,16 +155,41 @@ const setQuestion = (d, { kind, cat, level, pub, now, delayMs = 0 }) => {
   d.qSeq = (d.qSeq || 0) + 1;
   const ms = answerMsFor(cat);
   const start = now + delayMs;
+  const waitAudio = cat === "listening";
   d.question = {
     n: d.qSeq, kind, cat, level,
     q: pub.q, options: pub.options, passage: pub.passage || null, audio: pub.audio || null, id: pub.id,
-    askedAt: start, limitMs: ms, deadline: start + ms + GRACE_MS, removed: [],
+    audioUrl: pub.audioUrl || null,
+    askedAt: start, limitMs: ms, removed: [],
+    // Listening: o prazo inclui a janela para ouvir; ele é encurtado
+    // para "agora + tempo de resposta" quando o áudio termina
+    // (startAnswerClock, chamado pela ação audioDone).
+    waitingAudio: waitAudio,
+    deadline: start + (waitAudio ? LISTEN_WINDOW_MS : 0) + ms + GRACE_MS,
   };
   // Uma pergunta aberta nunca vira W.O. antes do tempo dela acabar.
   if (d.turnDeadline && d.turnDeadline < d.question.deadline) d.turnDeadline = d.question.deadline;
   d.phase = "question";
   d.updatedAt = now;
   return syncDeadline(d);
+};
+
+// Listening: o aluno terminou de ouvir o áudio pela 1ª vez → agora
+// sim começa o tempo de resposta. Só vale uma vez por pergunta e só
+// dentro da janela de escuta. Devolve true se o relógio foi iniciado.
+const startAnswerClock = (d, n, now) => {
+  const q = d.question;
+  if (!q || q.n !== n || !q.waitingAudio) return false;
+  const limitEnd = now + q.limitMs + GRACE_MS;
+  if (now > q.deadline) return false;
+  q.waitingAudio = false;
+  q.audioDoneAt = now;
+  q.askedAt = now;
+  q.deadline = Math.min(q.deadline, limitEnd);
+  if (d.turnDeadline && d.turnDeadline < q.deadline) d.turnDeadline = q.deadline;
+  d.updatedAt = now;
+  syncDeadline(d);
+  return true;
 };
 
 const availableCrowns = (d, uid) => CATEGORIES.filter((c) => !(d.crowns[uid] || []).includes(c));
@@ -418,7 +450,7 @@ const validateItem = (q, cat, level) => {
 module.exports = {
   CATEGORIES, WHEEL, LEVELS, MAX_TURNS, CROWNS_TO_WIN, METER_MAX, ANSWER_MS, LONG_ANSWER_MS, GRACE_MS,
   TURN_MS, INVITE_MS, STAKES, MAX_OPEN_DUELS, HELPS, REWARDS, DAILY_CAP, TROPHIES, LEAGUES,
-  SEEN_KEEP, LOW_STOCK, AI_BUCKET_CAP, SPIN_ANIM_MS,
+  SEEN_KEEP, LOW_STOCK, AI_BUCKET_CAP, SPIN_ANIM_MS, READING_MS, LISTENING_MS, LISTEN_WINDOW_MS, startAnswerClock,
   other, spDay, levelFrom, leagueFor, newDuel, accept, startTurn, spinSlot, answerMsFor, setQuestion,
   availableCrowns, applySpin, applyAnswer, applyCrownPick, endTurn, finish, outcomeByScore, sweep,
   rewardsFor, applyDailyCap, applyStats, bucketKey, pickQuestion, markSeen, shuffleItem, fiftyFifty,

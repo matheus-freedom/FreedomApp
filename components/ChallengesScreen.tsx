@@ -549,7 +549,7 @@ const RulesModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
       </div>
       <ol className="space-y-4 text-sm text-gray-300">
         <Rule n={1} title="Gire a roleta">Ela cai em uma das 6 categorias ou na <b className="text-[#f7931e]">Coroa 👑</b>.</Rule>
-        <Rule n={2} title="Responda">Você tem 25 segundos (40 em Leitura e Listening). Acertou, gira de novo. Errou, a vez passa.</Rule>
+        <Rule n={2} title="Responda">Você tem 25 segundos (60 na Leitura). No Listening, o tempo só começa depois que o áudio termina. Acertou, gira de novo. Errou, a vez passa.</Rule>
         <Rule n={3} title="3 acertos = chance de coroa">O medidor enche a cada acerto. Cheio, você escolhe uma categoria e responde a pergunta da coroa. Cair na fatia Coroa também dá essa chance.</Rule>
         <Rule n={4} title="Junte as 6 coroas">Quem conquistar todas primeiro vence. Se ninguém conseguir em {MAX_TURNS} rodadas, vence quem tiver mais coroas (desempate: mais acertos).</Rule>
         <Rule n={5} title="Ajudas">Em cada duelo você tem um <b className="text-white">50/50</b> (tira duas erradas) e uma <b className="text-white">troca de pergunta</b>.</Rule>
