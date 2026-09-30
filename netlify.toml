@@ -63,6 +63,12 @@
 [functions.duel-bank-background]
   timeout = 900
 
+# Áudio (TTS) das perguntas de Listening do duelo: gera uma vez por
+# pergunta e guarda no Storage. O lote inicial (100 áudios) cabe com
+# folga nos 15 minutos de uma background function.
+[functions.duel-audio-background]
+  timeout = 900
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -19,6 +19,7 @@
 //   spin       → girar a roleta
 //   pickCrown  → escolher a categoria da pergunta da coroa
 //   answer     → responder (o servidor corrige)
+//   audioDone  → listening: terminou de ouvir, começa o tempo
 //   help       → ajudas grátis: 50/50 e pular
 //   forfeit    → desistir
 //   report     → reportar pergunta com problema
@@ -31,6 +32,8 @@
 //   duel_bank/{cat_lv}  perguntas geradas pela IA (reuso da escola toda)
 //   duel_reports/{id}   perguntas reportadas pelos alunos
 //   duel_pairs/{a_b}    trava: um duelo aberto por dupla de jogadores
+//   duel_audio/{qid}    áudio (TTS) de cada pergunta de listening
+//   duel_meta/audio     controle da geração em lote dos áudios
 // ============================================================
 
 const { initializeApp, getApps, cert } = require("firebase-admin/app");
@@ -265,8 +268,19 @@ const pickFor = async (tx, db, uid, cat, level, excludeId = null) => {
   const pool = [...staticPool(cat, level), ...ai];
   const { item, unseenLeft } = core.pickQuestion(pool, (seenDoc.buckets || {})[bucket], Math.random, excludeId);
   const shuffled = core.shuffleItem(item);
+  // Listening: o áudio de verdade (arquivo gerado uma vez pela IA e
+  // guardado no Storage). Se ainda não existe, a pergunta sai sem ele
+  // e o chamador pede a geração; a tela espera alguns segundos e, em
+  // último caso, usa a voz do navegador.
+  let needAudio = null;
+  if (cat === "listening") {
+    const aSnap = await tx.get(db.collection("duel_audio").doc(item.id));
+    const a = aSnap.exists ? aSnap.data() : null;
+    if (a && a.status === "ready" && a.url) shuffled.pub.audioUrl = a.url;
+    else needAudio = item.id;
+  }
   return {
-    shuffled, bucket, item,
+    shuffled, bucket, item, needAudio,
     needMore: unseenLeft < core.LOW_STOCK && ai.length < core.AI_BUCKET_CAP,
     commitSeen: () => {
       const buckets = { ...(seenDoc.buckets || {}) };
@@ -306,6 +320,58 @@ const requestMore = async (db, bucket) => {
     });
   } catch (e) { console.error("duel: falha ao pedir perguntas", bucket, e?.message); }
   finally { clearTimeout(t); }
+};
+
+// ── Áudio do Listening ────────────────────────────────────────
+// Dispara a background function que gera o áudio (TTS) de UMA
+// pergunta — ou de todas as do banco fixo (warm). Trava no próprio doc
+// de duel_audio para não pedir de novo enquanto está gerando, e
+// desiste depois de 3 falhas (aí a tela usa a voz do navegador).
+const callAudioFn = async (payload) => {
+  const base = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL;
+  if (!base) return;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 2500);
+  try {
+    await fetch(`${base}/.netlify/functions/duel-audio-background`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload), signal: ctrl.signal,
+    });
+  } catch (e) { console.error("duel: falha ao pedir áudio", e?.message); }
+  finally { clearTimeout(t); }
+};
+
+const requestAudio = async (db, qid) => {
+  const ref = db.collection("duel_audio").doc(qid);
+  let go = false;
+  await db.runTransaction(async (tx) => {
+    go = false;
+    const s = await tx.get(ref);
+    const a = s.exists ? s.data() : {};
+    if (a.status === "ready" || (a.fails || 0) >= 3) return;
+    if (a.lockAt && Date.now() - a.lockAt < 3 * 60000) return;
+    tx.set(ref, { status: "generating", lockAt: Date.now() }, { merge: true });
+    go = true;
+  }).catch(() => {});
+  if (go) await callAudioFn({ qid, signature: signScoped("duel-audio", qid) });
+};
+
+// Uma vez só (e de novo se travar): gera os áudios das 100 perguntas
+// de listening do banco fixo em segundo plano, para que nenhum aluno
+// precise esperar o áudio ficar pronto.
+const warmAudio = async (db) => {
+  const ref = db.collection("duel_meta").doc("audio");
+  let go = false;
+  await db.runTransaction(async (tx) => {
+    go = false;
+    const s = await tx.get(ref);
+    const m = s.exists ? s.data() : {};
+    if (m.warmDoneAt && m.version === 1) return;
+    if (m.warmStartedAt && Date.now() - m.warmStartedAt < 20 * 60000) return;
+    tx.set(ref, { warmStartedAt: Date.now(), version: 1 }, { merge: true });
+    go = true;
+  }).catch(() => {});
+  if (go) await callAudioFn({ warm: true, signature: signScoped("duel-audio", "warm") });
 };
 
 // ── Visão "eu" (perfil de duelista) ──────────────────────────
@@ -350,15 +416,49 @@ actions.hub = async (db, uid) => {
   const [u2, p2] = changed
     ? await Promise.all([db.collection("users").doc(uid).get(), db.collection("duel_players").doc(uid).get()])
     : [userSnap, playerSnap];
+  await warmAudio(db);
   const finished = list.filter((d) => d && !isOpen(d)).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 15);
   const open = list.filter((d) => d && isOpen(d));
   return { me: meView(uid, u2.data(), p2.exists ? p2.data() : null), duels: [...open, ...finished] };
 };
 
 actions.get = async (db, uid, body) => {
-  const d = await sweepDuel(db, String(body.duelId || ""));
+  let d = await sweepDuel(db, String(body.duelId || ""));
   if (!d || !d.players.includes(uid)) throw new DuelError("Duelo não encontrado.", "NOT_FOUND", 404);
+  // Listening esperando o áudio ficar pronto: a tela consulta a cada
+  // 2s; quando o arquivo aparece em duel_audio, entra na pergunta.
+  const q = d.question;
+  if (d.status === "active" && q && q.cat === "listening" && !q.audioUrl && q.id) {
+    const a = (await db.collection("duel_audio").doc(q.id).get()).data() || {};
+    if (a.status === "ready" && a.url) {
+      const ref = db.collection("duels").doc(d.id);
+      await db.runTransaction(async (tx) => {
+        const s = await tx.get(ref);
+        const cur = s.data();
+        if (cur.question && cur.question.n === q.n) { cur.question.audioUrl = a.url; tx.set(ref, cur); d = cur; }
+      });
+    } else {
+      await requestAudio(db, q.id);
+    }
+  }
   return { duel: d };
+};
+
+// Listening: o aluno terminou de ouvir o áudio pela 1ª vez. Só agora
+// começa o tempo de resposta (regra pedida pelo Matheus em 30/09).
+actions.audioDone = async (db, uid, body) => {
+  const ref = db.collection("duels").doc(String(body.duelId || ""));
+  let out;
+  await db.runTransaction(async (tx) => {
+    out = undefined;
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new DuelError("Duelo não encontrado.", "NOT_FOUND", 404);
+    const d = snap.data();
+    assertMyTurn(d, uid, "question");
+    if (core.startAnswerClock(d, Number(body.n), Date.now())) tx.set(ref, d);
+    out = { duel: d };
+  });
+  return out;
 };
 
 actions.setLevel = async (db, uid, body) => {
@@ -521,9 +621,9 @@ actions.spin = async (db, uid, body) => {
   const duelId = String(body.duelId || "");
   await sweepDuel(db, duelId);
   const ref = db.collection("duels").doc(duelId);
-  let out, needMore = null;
+  let out, needMore = null, needAudio = null;
   await db.runTransaction(async (tx) => {
-    out = undefined; needMore = null;
+    out = undefined; needMore = null; needAudio = null;
     const snap = await tx.get(ref);
     if (!snap.exists) throw new DuelError("Duelo não encontrado.", "NOT_FOUND", 404);
     const d = snap.data();
@@ -538,12 +638,14 @@ actions.spin = async (db, uid, body) => {
       tx.set(db.collection("duel_secrets").doc(d.id), { answer: pick.shuffled.answer, explain: pick.shuffled.explain, qid: pick.item.id, n: d.question.n });
       pick.commitSeen();
       if (pick.needMore) needMore = pick.bucket;
+      needAudio = pick.needAudio;
     }
     core.syncDeadline(d);
     tx.set(ref, d);
     out = { slot, target: core.WHEEL[slot], duel: d };
   });
   if (needMore) await requestMore(db, needMore);
+  if (needAudio) await requestAudio(db, needAudio);
   return out;
 };
 
@@ -551,12 +653,12 @@ actions.pickCrown = async (db, uid, body) => {
   const duelId = String(body.duelId || "");
   await sweepDuel(db, duelId);
   const ref = db.collection("duels").doc(duelId);
-  let out, needMore = null;
+  let out, needMore = null, needAudio = null;
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new DuelError("Duelo não encontrado.", "NOT_FOUND", 404);
     const d = snap.data();
-    out = undefined; needMore = null;
+    out = undefined; needMore = null; needAudio = null;
     assertMyTurn(d, uid, "crown_pick");
     const cat = String(body.cat || "");
     const level = d.info[uid].level || "A1";
@@ -567,10 +669,12 @@ actions.pickCrown = async (db, uid, body) => {
     tx.set(db.collection("duel_secrets").doc(d.id), { answer: pick.shuffled.answer, explain: pick.shuffled.explain, qid: pick.item.id, n: d.question.n });
     pick.commitSeen();
     if (pick.needMore) needMore = pick.bucket;
+    needAudio = pick.needAudio;
     tx.set(ref, d);
     out = { duel: d };
   });
   if (needMore) await requestMore(db, needMore);
+  if (needAudio) await requestAudio(db, needAudio);
   return out;
 };
 
@@ -620,12 +724,12 @@ actions.help = async (db, uid, body) => {
   const kind = body.kind;
   if (!["fifty", "skip"].includes(kind)) throw new DuelError("Ajuda inválida.");
   const ref = db.collection("duels").doc(String(body.duelId || ""));
-  let out, needMore = null;
+  let out, needMore = null, needAudio = null;
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new DuelError("Duelo não encontrado.", "NOT_FOUND", 404);
     const d = snap.data();
-    out = undefined; needMore = null;
+    out = undefined; needMore = null; needAudio = null;
     assertMyTurn(d, uid, "question");
     const now = Date.now();
     if (now > d.question.deadline) throw new DuelError("O tempo dessa pergunta acabou.", "STALE", 409);
@@ -645,6 +749,7 @@ actions.help = async (db, uid, body) => {
       tx.set(secretRef, { answer: pick.shuffled.answer, explain: pick.shuffled.explain, qid: pick.item.id, n: d.question.n });
       pick.commitSeen();
       if (pick.needMore) needMore = pick.bucket;
+      needAudio = pick.needAudio;
     }
     helps[kind] -= 1;
     d.helps[uid] = helps;
@@ -653,6 +758,7 @@ actions.help = async (db, uid, body) => {
     out = { duel: d };
   });
   if (needMore) await requestMore(db, needMore);
+  if (needAudio) await requestAudio(db, needAudio);
   return out;
 };
 

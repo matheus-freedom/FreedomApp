@@ -18,6 +18,9 @@ export interface DuelQuestion {
   n: number; kind: 'normal' | 'crown'; cat: DuelCategory; level: string;
   q: string; options: string[]; passage: string | null; audio: string | null; id: string;
   askedAt: number; limitMs: number; deadline: number; removed: number[];
+  // Listening: arquivo de áudio (null enquanto está sendo gerado) e se
+  // o relógio ainda espera o aluno terminar de ouvir.
+  audioUrl?: string | null; waitingAudio?: boolean; audioDoneAt?: number;
 }
 export interface DuelResult {
   uid: string; n: number; ok: boolean; choice: number; correctIndex: number | null;
@@ -91,6 +94,7 @@ export const duelApi = {
   pickCrown: (duelId: string, cat: DuelCategory) => call<{ duel: Duel }>({ action: 'pickCrown', duelId, cat }),
   answer: (duelId: string, n: number, choice: number) =>
     call<{ result: DuelResult; event: string; timedOut?: boolean; duel: Duel }>({ action: 'answer', duelId, n, choice }),
+  audioDone: (duelId: string, n: number) => call<{ duel: Duel }>({ action: 'audioDone', duelId, n }),
   help: (duelId: string, kind: 'fifty' | 'skip') => call<{ duel: Duel }>({ action: 'help', duelId, kind }),
   forfeit: (duelId: string) => call<{ duel: Duel }>({ action: 'forfeit', duelId }),
   report: (duelId: string, qid: string, reason: string) => call<{ ok: boolean }>({ action: 'report', duelId, qid, reason }),

@@ -271,6 +271,7 @@ const DuelGame: React.FC<Props> = ({ duelId, initial, uid, onBack, onChanged, on
 
         {((myTurn && duel.phase === 'question' && duel.question && !spinning) || feedback) && (
           <QuestionCard
+            onDuelUpdate={(d) => { if (!feedback) setDuel(d); }}
             key={(feedback ? feedback.result.n : duel.question?.n) || 0}
             duel={duel}
             me={me}
@@ -427,49 +428,119 @@ const CrownPicker: React.FC<{ duel: Duel; me: string; busy: boolean; onPick: (c:
 const QuestionCard: React.FC<{
   duel: Duel; me: string; picked: number | null; feedback: Feedback | null; busy: boolean; oppName: string;
   onAnswer: (i: number) => void; onHelp: (k: 'fifty' | 'skip') => void; onContinue: () => void;
-}> = ({ duel, me, picked, feedback, busy, oppName, onAnswer, onHelp, onContinue }) => {
+  onDuelUpdate: (d: Duel) => void;
+}> = ({ duel, me, picked, feedback, busy, oppName, onAnswer, onHelp, onContinue, onDuelUpdate }) => {
   const q = duel.question;
   const result = feedback?.result;
   const cat = (result?.cat || q?.cat) as DuelCategory;
   const color = CAT_META[cat].color;
   const isCrown = (result?.kind || q?.kind) === 'crown';
 
-  // Cronômetro local. Começa do que sobra segundo o servidor (útil ao
-  // recarregar a página no meio da pergunta), limitado ao tempo total.
-  const [left, setLeft] = useState(() => {
-    if (!q) return 0;
-    // Pergunta que saiu de um giro começa a contar depois da animação
-    // (o servidor já soma esse tempo em askedAt/deadline).
-    const byServer = q.deadline - GRACE_MS - serverNow();
-    return Math.max(0, Math.min(q.limitMs, byServer));
-  });
+  // ── Cronômetro ───────────────────────────────────────────────
+  // Começa do que sobra segundo o servidor (útil ao recarregar a
+  // página no meio da pergunta), limitado ao tempo total. No Listening
+  // o relógio fica PARADO até o aluno terminar de ouvir o áudio pela
+  // 1ª vez (regra do Matheus): o servidor só marca o início quando a
+  // tela avisa "terminei de ouvir" (duelApi.audioDone).
+  const started = !!q && !q.waitingAudio;
+  const [left, setLeft] = useState(() => (q ? q.limitMs : 0));
   const fired = useRef(false);
   useEffect(() => {
     if (!q || feedback || picked !== null) return;
-    const end = Date.now() + left;
-    const t = setInterval(() => {
-      const rest = Math.max(0, end - Date.now());
+    const check = () => {
+      if (!started) {
+        // Janela máxima para ouvir (2 min). Passou, o servidor já
+        // considera a pergunta vencida: a tela responde "tempo esgotado".
+        if (serverNow() > q.deadline - GRACE_MS && !fired.current) { fired.current = true; onAnswer(-1); }
+        return;
+      }
+      const rest = Math.max(0, Math.min(q.limitMs, q.deadline - GRACE_MS - serverNow()));
       setLeft(rest);
-      if (rest <= 0 && !fired.current) { fired.current = true; clearInterval(t); onAnswer(-1); }
-    }, 100);
+      if (rest <= 0 && !fired.current) { fired.current = true; onAnswer(-1); }
+    };
+    check();
+    const t = setInterval(check, 100);
     return () => clearInterval(t);
-  }, [q?.n, feedback, picked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q?.n, started, q?.deadline, feedback, picked]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Listening: o sintetizador de voz do navegador lê a frase (em inglês
-  // americano, um pouco mais devagar). Até 2 vezes, como numa prova.
+  // ── Áudio do Listening ───────────────────────────────────────
+  // 1º caminho: arquivo de áudio gerado pela IA (toca em qualquer
+  // aparelho, inclusive iPhone no silencioso). Se ainda não ficou
+  // pronto, a tela pergunta ao servidor a cada 2s; depois de 15s sem
+  // arquivo, oferece a voz do navegador como plano B.
+  const isListening = !!q?.audio;
   const [plays, setPlays] = useState(0);
-  const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window;
-  const speak = () => {
-    if (!q?.audio || !canSpeak || plays >= 2) return;
-    const u = new SpeechSynthesisUtterance(q.audio);
-    u.lang = 'en-US'; u.rate = 0.9;
-    const voice = pickEnglishVoice();
-    if (voice) u.voice = voice;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    setPlays(p => p + 1);
+  const [playing, setPlaying] = useState(false);
+  const [waitedLong, setWaitedLong] = useState(false);
+  const [showText, setShowText] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const doneSent = useRef(false);
+
+  const markHeard = useCallback(async () => {
+    if (!q || doneSent.current || !q.waitingAudio) return;
+    doneSent.current = true;
+    try { const { duel: d } = await duelApi.audioDone(duel.id, q.n); onDuelUpdate(d); }
+    catch { doneSent.current = false; }
+  }, [q, duel.id, onDuelUpdate]);
+
+  useEffect(() => {
+    if (!isListening || q?.audioUrl || feedback) return;
+    let alive = true;
+    const t0 = Date.now();
+    const t = setInterval(async () => {
+      if (Date.now() - t0 > 15000) setWaitedLong(true);
+      try {
+        const { duel: d } = await duelApi.get(duel.id);
+        if (alive && d.question && d.question.n === q?.n && d.question.audioUrl) onDuelUpdate(d);
+      } catch { /* tenta de novo no próximo ciclo */ }
+    }, 2000);
+    return () => { alive = false; clearInterval(t); };
+  }, [isListening, q?.audioUrl, q?.n, feedback]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Plano B: voz do navegador. Correções do teste de 30/09: não chamar
+  // speak() logo depois de cancel() (o Chrome descarta a fala), esperar
+  // as vozes carregarem e ter um relógio de segurança caso o evento
+  // "terminou" nunca chegue.
+  const speakFallback = () => {
+    const synth = window.speechSynthesis;
+    if (!q?.audio || !synth) { setShowText(true); markHeard(); return; }
+    const run = () => {
+      const u = new SpeechSynthesisUtterance(q.audio!);
+      u.lang = 'en-US'; u.rate = 0.9;
+      const v = pickEnglishVoice(); if (v) u.voice = v;
+      const est = 1500 + q.audio!.split(/\s+/).length * 450;
+      const safety = setTimeout(() => { setPlaying(false); markHeard(); }, est + 4000);
+      u.onend = () => { clearTimeout(safety); setPlaying(false); markHeard(); };
+      u.onerror = () => { clearTimeout(safety); setPlaying(false); setShowText(true); markHeard(); };
+      setPlaying(true);
+      synth.speak(u);
+    };
+    if (synth.speaking || synth.pending) synth.cancel();
+    if (synth.getVoices().length === 0) {
+      let went = false;
+      const go = () => { if (!went) { went = true; setTimeout(run, 50); } };
+      synth.addEventListener?.('voiceschanged', go, { once: true } as AddEventListenerOptions);
+      setTimeout(go, 800);
+    } else setTimeout(run, 50);
   };
-  useEffect(() => () => { window.speechSynthesis?.cancel(); }, []);
+
+  const play = () => {
+    if (!q || plays >= 2 || playing) return;
+    setPlays(p => p + 1);
+    if (q.audioUrl) {
+      const a = audioRef.current || new Audio();
+      audioRef.current = a;
+      a.src = q.audioUrl;
+      a.onended = () => { setPlaying(false); markHeard(); };
+      a.onerror = () => { setPlaying(false); speakFallback(); };
+      setPlaying(true);
+      a.play().catch(() => { setPlaying(false); speakFallback(); });
+    } else {
+      speakFallback();
+    }
+  };
+  useEffect(() => () => { audioRef.current?.pause(); window.speechSynthesis?.cancel(); }, []);
+  useEffect(() => { if (feedback || picked !== null) { audioRef.current?.pause(); } }, [feedback, picked]);
 
   const [reported, setReported] = useState(false);
   const report = async (reason: string) => {
@@ -520,7 +591,7 @@ const QuestionCard: React.FC<{
           {!answered && (
             <div className="flex items-center gap-1.5 bg-black/25 rounded-full px-3 py-1">
               <Clock className="w-4 h-4 text-white" />
-              <span className="text-white font-black tabular-nums">{Math.ceil(left / 1000)}s</span>
+              <span className="text-white font-black tabular-nums">{started ? `${Math.ceil(left / 1000)}s` : '⏸'}</span>
             </div>
           )}
         </div>
@@ -538,16 +609,23 @@ const QuestionCard: React.FC<{
           )}
           {view.audio && (
             <div className="mb-4">
-              {canSpeak ? (
-                <button onClick={speak} disabled={plays >= 2 || answered}
-                  className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all ${plays === 0 && !answered ? 'duel-pulse' : ''} disabled:opacity-40`}
-                  style={{ background: `${color}33`, color: '#fff', border: `2px solid ${color}` }}>
-                  <Headphones className="w-5 h-5" /> {plays === 0 ? 'Ouvir o áudio' : plays === 1 ? 'Ouvir de novo (última vez)' : 'Áudio ouvido 2×'}
-                </button>
-              ) : (
-                <p className="text-xs text-gray-400 bg-[#222222] rounded-xl p-3">Seu navegador não fala em voz alta. Texto do áudio: <span className="text-white">“{view.audio}”</span></p>
+              {(() => {
+                const ready = !!view.audioUrl || waitedLong;
+                const label = playing ? 'Tocando…'
+                  : !ready && plays === 0 ? 'Preparando o áudio…'
+                  : plays === 0 ? 'Ouvir o áudio' : plays === 1 ? 'Ouvir de novo (última vez)' : 'Áudio ouvido 2×';
+                return (
+                  <button onClick={play} disabled={plays >= 2 || answered || playing || (!ready && plays === 0)}
+                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all ${ready && plays === 0 && !answered ? 'duel-pulse' : ''} disabled:opacity-60`}
+                    style={{ background: `${color}33`, color: '#fff', border: `2px solid ${color}` }}>
+                    {(!ready && plays === 0) || playing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Headphones className="w-5 h-5" />} {label}
+                  </button>
+                );
+              })()}
+              {view.waitingAudio && !answered && (
+                <p className="text-[11px] text-gray-400 text-center mt-2">⏸ O tempo para responder ({Math.round(view.limitMs / 1000)}s) só começa quando o áudio terminar.</p>
               )}
-              {answered && <p className="text-xs text-gray-400 mt-3">Áudio: <span className="text-white italic">“{view.audio}”</span></p>}
+              {(showText || answered) && <p className="text-xs text-gray-400 mt-3">{answered ? 'Áudio' : 'O áudio não tocou neste aparelho. Texto'}: <span className="text-white italic">“{view.audio}”</span></p>}
             </div>
           )}
 

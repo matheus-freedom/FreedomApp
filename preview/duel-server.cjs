@@ -25,9 +25,9 @@ const core = require('../netlify/functions/lib/duel-core.js');
 
 const user = (uid, username, name, g = {}) => write('users', uid, { userId: uid, username, fullName: name, gamification: { xp: 2400, frBalance: 12.5, placementResults: { grammar: { level: 'B1' } }, lastLoginDate: '2026-09-27', ...g } });
 user('me', '@matheus', 'Matheus');
-user('bia', '@bia.bot', 'Bia Robô', { placementResults: { grammar: { level: 'A2' } } });
-user('leo', '@leo', 'Leonardo Costa');
-user('carla', '@carla.m', 'Carla Mendes', { placementResults: { reading: { level: 'B2' } } });
+user('bia', '@ana.souza', 'Ana Souza', { placementResults: { grammar: { level: 'A2' } } });
+user('leo', '@pedro.lima', 'Pedro Lima');
+user('carla', '@julia.m', 'Júlia Martins', { placementResults: { reading: { level: 'B2' } } });
 user('new', '@novato', 'Novato', { placementResults: {} });
 write('duel_players', 'me', { wins: 7, losses: 3, draws: 1, played: 11, streak: 2, bestStreak: 4, trophies: 180, crownsTotal: 41,
   catStats: { grammar: { c: 18, t: 22 }, vocabulary: { c: 15, t: 19 }, reading: { c: 9, t: 14 }, listening: { c: 6, t: 13 }, travel: { c: 11, t: 15 }, everyday: { c: 14, t: 16 } } });
@@ -64,6 +64,15 @@ http.createServer(async (req, res) => {
   if (req.url.startsWith('/__cheat')) {
     const u = new URL(req.url, 'http://x'); const d = store.get(`duels/${u.searchParams.get('duel')}`);
     if (d) { d.crowns[u.searchParams.get('who')] = core.CATEGORIES.slice(0, 5); store.set(`duels/${d.id}`, d); }
+    res.writeHead(200, cors); return res.end('ok');
+  }
+  if (req.url.startsWith('/__audio')) {
+    for (const q of require('../netlify/functions/lib/duel-bank.js').FILES.listening) write('duel_audio', q.id, { status: 'ready', url: 'http://localhost:3100/test-tone.wav' });
+    res.writeHead(200, cors); return res.end('ok');
+  }
+  if (req.url.startsWith('/__set')) {
+    const u = new URL(req.url, 'http://x'); const d = store.get(`duels/${u.searchParams.get('duel')}`);
+    if (d) { Object.assign(d, JSON.parse(u.searchParams.get('json'))); store.set(`duels/${d.id}`, d); }
     res.writeHead(200, cors); return res.end('ok');
   }
   if (req.url.startsWith('/__secret')) {
