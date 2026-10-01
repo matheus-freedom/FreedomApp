@@ -55,12 +55,37 @@ const slugify = (text) =>
 
 const lessonId = (level, topic) => `${level}_${slugify(topic)}`;
 
-// Catálogo completo: [{ id, level, topic, order }]
+// ── Temas EXTRAS só do Fred (fredExtras no mesmo JSON) ────────
+// Alguns temas merecem uma aula do Fred mas NÃO um Step na Journey
+// (ex.: "Advérbios de frequência", que no currículo vive dentro do
+// Simple Present). Inserir direto em `grammar` criaria um Step novo e
+// deslocaria o número de todos os Steps seguintes — e o progresso dos
+// alunos é guardado por posição. Por isso ficam numa lista à parte,
+// com "after": o tema atrás do qual entram no catálogo. Se o tema de
+// referência não existir (currículo mudou), vão para o fim do nível.
+// "focus" (opcional) orienta a IA sobre o que a aula precisa cobrir.
+const topicsForLevel = (curriculum, level) => {
+  const list = [...(curriculum.grammar[level] || [])].map((topic) => ({ topic }));
+  for (const x of curriculum.fredExtras || []) {
+    if (x.level !== level || !x.topic) continue;
+    const at = list.findIndex((t) => t.topic === x.after);
+    const item = { topic: x.topic, extra: true, focus: x.focus || "" };
+    if (at >= 0) list.splice(at + 1, 0, item);
+    else list.push(item);
+  }
+  return list;
+};
+
+// Catálogo completo: [{ id, level, topic, order, extra?, focus? }]
+// `order` é a posição FINAL (já com os extras no lugar), porque é
+// o número que aparece na lista e o que decide a "próxima aula".
 const buildCatalog = () => {
   const out = [];
   for (const level of LEVELS) {
-    (CURRICULUM.grammar[level] || []).forEach((topic, order) => {
-      out.push({ id: lessonId(level, topic), level, topic, order });
+    topicsForLevel(CURRICULUM, level).forEach(({ topic, extra, focus }, order) => {
+      const entry = { id: lessonId(level, topic), level, topic, order };
+      if (extra) { entry.extra = true; entry.focus = focus; }
+      out.push(entry);
     });
   }
   return out;
@@ -114,10 +139,10 @@ const DEPTH = {
   C1: "Aluno avançado. Trate como quem já domina a base: sutilezas de estilo, ênfase, formalidade, usos escritos x falados, o que soa nativo e o que soa 'traduzido'. Exemplos sofisticados (artigos, e-mails formais, debates). 5 a 6 seções.",
 };
 
-const buildPrompt = ({ level, topic }) => `Escreva a AULA COMPLETA do "Fred explica" sobre o tema gramatical: "${topic}" — nível CEFR ${level}.
+const buildPrompt = ({ level, topic, focus }) => `Escreva a AULA COMPLETA do "Fred explica" sobre o tema gramatical: "${topic}" — nível CEFR ${level}.
 
 PÚBLICO E PROFUNDIDADE: ${DEPTH[level]}
-
+${focus ? `\nO QUE ESTA AULA PRECISA COBRIR: ${focus}\n` : ""}
 ESTRUTURA OBRIGATÓRIA (JSON):
 - "title": título curto e chamativo em português (pode manter o nome do tema em inglês). Sem emoji.
 - "hook": abertura do Fred em 2 a 4 frases: uma situação real ou pergunta que mostra POR QUE esse tema importa. Nada de "hoje vamos aprender".
@@ -300,7 +325,7 @@ const publicLesson = (lesson) => lesson;
 
 module.exports = {
   LEVELS, LESSON_XP, LESSON_PASS_PCT, MODELS, MOODS,
-  slugify, lessonId, buildCatalog, CATALOG, resolveLesson,
+  slugify, lessonId, buildCatalog, CATALOG, resolveLesson, _topicsForLevel: topicsForLevel,
   FRED_PERSONA, buildPrompt, LESSON_SCHEMA,
   normalizeLesson, normalizeQuiz, scoreFinalQuiz, publicLesson, fixEscapedText,
 };

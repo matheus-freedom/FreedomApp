@@ -38,14 +38,35 @@ export interface CatalogEntry {
   level: Level;
   topic: string;
   order: number;
+  // true para temas que existem SÓ no Fred (fredExtras do JSON),
+  // sem Step correspondente na Journey.
+  extra?: boolean;
 }
+
+interface FredExtra { level: string; topic: string; after?: string; focus?: string }
+
+// Mesma regra do servidor (fred-core.js): os temas extras do Fred
+// entram logo depois do tema "after" do mesmo nível, sem mexer na
+// lista `grammar` — que também define os Steps da Journey.
+const topicsForLevel = (level: Level): { topic: string; extra?: boolean }[] => {
+  const grammar = (CURRICULUM as any).grammar as Record<string, string[]>;
+  const extras = ((CURRICULUM as any).fredExtras || []) as FredExtra[];
+  const list: { topic: string; extra?: boolean }[] = (grammar[level] || []).map(topic => ({ topic }));
+  for (const x of extras) {
+    if (x.level !== level || !x.topic) continue;
+    const at = list.findIndex(t => t.topic === x.after);
+    const item = { topic: x.topic, extra: true };
+    if (at >= 0) list.splice(at + 1, 0, item);
+    else list.push(item);
+  }
+  return list;
+};
 
 const buildCatalog = (): CatalogEntry[] => {
   const out: CatalogEntry[] = [];
-  const grammar = (CURRICULUM as any).grammar as Record<string, string[]>;
   for (const level of FRED_LEVELS) {
-    (grammar[level] || []).forEach((topic, order) => {
-      out.push({ id: lessonId(level, topic), level, topic, order });
+    topicsForLevel(level).forEach(({ topic, extra }, order) => {
+      out.push({ id: lessonId(level, topic), level, topic, order, ...(extra ? { extra: true } : {}) });
     });
   }
   return out;
@@ -190,6 +211,7 @@ const SEARCH_ALIASES: Array<[RegExp, string[]]> = [
   [/\b(compara[cç][aã]o|comparar|comparativo|superlativo)\b/, ['Comparativos', 'Superlativos', 'Comparações', 'as...as']],
   [/\b(quantidade|quantificador|quantificadores)\b/, ['Some and Any', 'Little / Few', 'How much', 'Much, Many', 'All, Most', 'Both', 'Each', 'No, None']],
   [/\b(discurso|reported|indireto)\b/, ['Reported', 'Reporting']],
+  [/\b(always|never|usually|often|sometimes|rarely|how often|adverb|adverbs|adverbio|adverbios|rotina)\b/, ['Advérbios de frequência']],
 ];
 
 export const searchCatalog = (query: string, level: Level | 'ALL'): CatalogEntry[] => {

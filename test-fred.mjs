@@ -21,8 +21,29 @@ const check = (name, cond, extra = '') => {
 };
 
 console.log('\n── Catálogo ──');
-check('Catálogo tem os 117 temas do currículo (A1→C1)', core.CATALOG.length === 117, `(${core.CATALOG.length})`);
+check('Catálogo tem os 117 temas do currículo + 2 extras do Fred (A1→C1)', core.CATALOG.length === 119, `(${core.CATALOG.length})`);
 check('Ids são únicos', new Set(core.CATALOG.map(c => c.id)).size === core.CATALOG.length);
+{
+  // Extras do Fred: entram no catálogo sem virar Step da Journey.
+  const curriculum = require('./netlify/functions/lib/journey-curriculum.json');
+  const a1 = core.CATALOG.filter(c => c.level === 'A1').map(c => c.topic);
+  const b1 = core.CATALOG.filter(c => c.level === 'B1').map(c => c.topic);
+  check('A1: "Advérbios de frequência" vem depois do Simple Present e antes do Was / Were',
+    a1.indexOf('Advérbios de frequência') === a1.indexOf('Simple Present') + 1 && a1.indexOf('Was / Were') === a1.indexOf('Advérbios de frequência') + 1);
+  check('B1: "Advérbios de frequência" vem depois do Simple Present e antes do Simple Past',
+    b1.indexOf('Advérbios de frequência') === b1.indexOf('Simple Present') + 1 && b1.indexOf('Simple Past') === b1.indexOf('Advérbios de frequência') + 1);
+  check('Extra NÃO entra na lista grammar (não cria Step na Journey)', !curriculum.grammar.A1.includes('Advérbios de frequência') && !curriculum.grammar.B1.includes('Advérbios de frequência'));
+  check('order é contínuo por nível (0,1,2...) mesmo com o extra no meio',
+    ['A1', 'B1'].every(l => core.CATALOG.filter(c => c.level === l).every((c, i) => c.order === i)));
+  const extra = core.resolveLesson({ id: 'A1_adverbios-de-frequencia' });
+  check('Extra resolve pelo id e carrega o foco da aula', extra?.extra === true && /always/.test(extra.focus));
+  check('Prompt do extra inclui o foco; tema comum não ganha a linha', core.buildPrompt(extra).includes('O QUE ESTA AULA PRECISA COBRIR') && !core.buildPrompt(core.resolveLesson({ id: 'A1_simple-present' })).includes('O QUE ESTA AULA PRECISA COBRIR'));
+  check('Extra com "after" inexistente vai para o fim do nível', (() => {
+    const fake = { grammar: { A1: ['X', 'Y'] }, fredExtras: [{ level: 'A1', topic: 'Z', after: 'Nada' }] };
+    const list = core._topicsForLevel(fake, 'A1').map(t => t.topic);
+    return list.join(',') === 'X,Y,Z';
+  })());
+}
 check('Slug tira acento e símbolos', core.slugify('In, On, At (preposições)') === 'in-on-at-preposicoes', core.slugify('In, On, At (preposições)'));
 check('Slug trata "&"', core.slugify('Do & Make') === 'do-e-make', core.slugify('Do & Make'));
 check('Mesmo tema em níveis diferentes vira ids diferentes',
@@ -41,6 +62,7 @@ console.log('\n── Paridade front (fredExplains.ts) x servidor ──');
   check('Front e servidor montam o MESMO catálogo (ids, níveis, ordem)', a === b);
   check('Busca sem acento acha "preposições"', front.searchCatalog('preposicoes', 'ALL').some(c => c.topic.includes('preposições')));
   check('Busca "passado" acha Simple Past via sinônimo', front.searchCatalog('passado', 'A1').some(c => c.topic === 'Simple Past'));
+  check('Busca "always" acha Advérbios de frequência (extra do Fred)', front.searchCatalog('always', 'A1').some(c => c.topic === 'Advérbios de frequência') && front.FRED_CATALOG.filter(c => c.extra).length === 2);
   check('Filtro de nível restringe', front.searchCatalog('', 'C1').every(c => c.level === 'C1') && front.searchCatalog('', 'C1').length === 29);
   check('parseBold separa negrito', JSON.stringify(front.parseBold('a **b** c')) === JSON.stringify([{ text: 'a ', bold: false }, { text: 'b', bold: true }, { text: ' c', bold: false }]));
   check('LESSON_XP igual nos dois lados', front.LESSON_XP === core.LESSON_XP && front.LESSON_PASS_PCT === core.LESSON_PASS_PCT);
