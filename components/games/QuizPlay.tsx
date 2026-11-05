@@ -97,7 +97,7 @@ const QuizPlay: React.FC<Props> = ({ room, uid, accept }) => {
       {/* Pergunta */}
       <div className="gz-card p-5 md:p-7" style={{ background: GZ.cream, color: GZ.ink }}>
         {q.passage && (
-          <div className="gz-read mb-4 p-4 rounded-2xl text-[15px] md:text-base leading-relaxed max-h-56 overflow-y-auto gz-scroll" style={{ background: '#f0e6d2', border: `2px solid ${GZ.ink}` }}>
+          <div className="gz-read mb-4 p-4 rounded-2xl text-[15px] md:text-base leading-relaxed max-h-56 overflow-y-auto gz-scroll" style={{ background: '#f3ede0', border: `2px solid ${GZ.ink}` }}>
             {q.passage}
           </div>
         )}
@@ -129,13 +129,13 @@ const QuizPlay: React.FC<Props> = ({ room, uid, accept }) => {
                 className="gz-tile relative text-left flex items-center gap-3 p-4 md:p-5 min-h-[76px] gz-pop"
                 style={{ background: st.color, color: GZ.ink, opacity: faded ? 0.35 : 1, animationDelay: `${i * 60}ms`, transform: isRight ? 'scale(1.02)' : undefined }}
                 aria-label={`Alternativa ${st.name}: ${opt}`}>
-                <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: 'rgba(15,10,31,.18)' }} aria-hidden>{st.shape}</span>
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ background: 'rgba(34,34,34,.15)' }} aria-hidden>{st.shape}</span>
                 <span className={`gz-read font-extrabold flex-1 ${presenter ? 'text-xl md:text-2xl' : 'text-base md:text-lg'}`}>{opt}</span>
                 {reveal && (
                   <span className="flex items-center gap-1.5 shrink-0">
                     {isRight && <Check className="w-7 h-7" strokeWidth={3.5} />}
                     {!isRight && isMine && <X className="w-6 h-6" strokeWidth={3.5} />}
-                    {(presenter || room.mode === 'party') && <span className="gz-num font-semibold text-sm px-2 py-0.5 rounded-lg" style={{ background: 'rgba(15,10,31,.2)' }}>{reveal.dist[i]}</span>}
+                    {(presenter || room.mode === 'party') && <span className="gz-num font-semibold text-sm px-2 py-0.5 rounded-lg" style={{ background: 'rgba(34,34,34,.18)' }}>{reveal.dist[i]}</span>}
                   </span>
                 )}
                 {reveal && (presenter || room.mode === 'party') && (
@@ -166,12 +166,12 @@ const QuizPlay: React.FC<Props> = ({ room, uid, accept }) => {
                   <p className="text-2xl font-bold">{myResult.ok ? `+${myResult.pts}` : myResult.choice === null ? 'O tempo acabou' : 'Não foi dessa vez'}</p>
                   {myResult.ok && myResult.streak >= 2 && <p className="text-sm flex items-center gap-1" style={{ color: GZ.orange }}><Flame className="w-4 h-4" /> {myResult.streak} acertos seguidos</p>}
                 </div>
-                {myResult.ok && <span className="absolute right-6 top-4 text-3xl font-bold gz-rise" style={{ color: GZ.lime }} aria-hidden>+{myResult.pts}</span>}
+                {myResult.ok && <span className="absolute right-6 top-4 text-3xl font-bold gz-rise" style={{ color: GZ.green }} aria-hidden>+{myResult.pts}</span>}
               </div>
             )}
             {reveal.explain && (
-              <p className="gz-read text-[15px] md:text-base leading-relaxed" style={{ color: GZ.cream }}>
-                <b style={{ color: GZ.cyan }}>Por quê? </b>{reveal.explain}
+              <p className="gz-read text-[15px] md:text-base leading-relaxed" style={{ color: GZ.text }}>
+                <b style={{ color: '#0e7490' }}>Por quê? </b>{reveal.explain}
               </p>
             )}
           </div>
@@ -231,7 +231,7 @@ export const MiniBoard: React.FC<{ room: GameRoom; rows: { uid: string; place: n
             <span className={`w-8 text-center font-bold gz-num ${big ? 'text-2xl' : 'text-lg'}`}>{medal[r.place - 1] || `${r.place}º`}</span>
             <Avatar photo={p.photo} name={p.username || p.name} size={big ? 44 : 34} />
             <span className={`flex-1 truncate font-semibold ${big ? 'text-lg' : ''}`}>{p.username || p.name}</span>
-            {d > 0 && <span className="text-xs font-semibold gz-num" style={{ color: GZ.lime }}>+{d}</span>}
+            {d > 0 && <span className="text-xs font-semibold gz-num" style={{ color: GZ.green }}>+{d}</span>}
             <span className={`font-bold gz-num ${big ? 'text-xl' : ''}`}>{r.score.toLocaleString('pt-BR')}</span>
           </li>
         );

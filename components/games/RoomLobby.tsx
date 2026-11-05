@@ -66,7 +66,7 @@ const RoomLobby: React.FC<Props> = ({ room, uid, onLeave, accept }) => {
         </p>
         {room.code && (
           <>
-            <p className="mt-3 text-base md:text-lg" style={{ color: GZ.muted }}>Entre em <b style={{ color: GZ.cream }}>Games → Entrar com código</b> e digite</p>
+            <p className="mt-3 text-base md:text-lg" style={{ color: GZ.muted }}>Entre em <b style={{ color: GZ.text }}>Games → Entrar com código</b> e digite</p>
             <div className="mt-3 flex items-center justify-center gap-2 md:gap-3" aria-label={`Código ${room.code.split('').join(' ')}`}>
               {room.code.split('').map((ch, i) => (
                 <span key={i} className="gz-num font-bold flex items-center justify-center"
@@ -175,7 +175,7 @@ const Setting: React.FC<{ label: string; disabled?: boolean; children: React.Rea
 
 export const Pill: React.FC<{ on: boolean; disabled?: boolean; onClick: () => void; children: React.ReactNode }> = ({ on, disabled, onClick, children }) => (
   <button onClick={onClick} disabled={disabled} aria-pressed={on}
-    className="gz-btn gz-btn-sm" style={{ background: on ? GZ.lime : GZ.grapeDeep, color: on ? GZ.ink : GZ.cream, opacity: disabled && !on ? 0.55 : 1 }}>
+    className="gz-btn gz-btn-sm" style={{ background: on ? GZ.lime : GZ.grapeDeep, color: on ? GZ.ink : GZ.text, opacity: disabled && !on ? 0.55 : 1 }}>
     {children}
   </button>
 );
@@ -202,7 +202,7 @@ const InviteModal: React.FC<{ roomId: string; uid: string; inRoom: string[]; onC
     catch (e) { showToast(e instanceof Error ? e.message : 'Não deu para convidar.', 'error'); }
   };
   return (
-    <div className="fixed inset-0 z-[650] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(15,10,31,.85)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-[650] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(34,34,34,.55)' }} onClick={onClose}>
       <div className="gz gz-card w-full max-w-md p-5 gz-pop max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Convidar colega">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xl font-semibold">Convidar colega</h3>

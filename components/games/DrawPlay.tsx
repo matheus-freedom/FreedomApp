@@ -152,7 +152,7 @@ const DrawPlay: React.FC<Props> = ({ room, uid, accept }) => {
             <span key={f.id} className="absolute bottom-6 text-4xl gz-rise pointer-events-none" style={{ left: `${f.left}%` }} aria-hidden>{f.e}</span>
           ))}
           {room.phase === 'choose' && isDrawer && choices && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 rounded-[22px]" style={{ background: 'rgba(33,24,63,.92)' }}>
+            <div className="absolute inset-0 flex items-center justify-center p-4 rounded-[22px]" style={{ background: 'rgba(250,250,248,.95)' }}>
               <div className="w-full max-w-lg space-y-3">
                 <p className="text-center text-lg font-semibold">Qual você quer desenhar?</p>
                 {choices.map((c, i) => (
@@ -166,7 +166,7 @@ const DrawPlay: React.FC<Props> = ({ room, uid, accept }) => {
             </div>
           )}
           {room.phase === 'choose' && !isDrawer && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[22px] gap-3" style={{ background: 'rgba(33,24,63,.8)' }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[22px] gap-3" style={{ background: 'rgba(250,250,248,.88)' }}>
               {drawer && <Avatar photo={drawer.photo} name={drawer.username || drawer.name} size={72} ring={GZ.cyan} />}
               <p className="text-lg font-semibold gz-float">{drawer?.username} vai desenhar…</p>
             </div>
@@ -222,12 +222,12 @@ const DrawPlay: React.FC<Props> = ({ room, uid, accept }) => {
               const p = room.players[u];
               const g = room.guessed?.[u];
               return (
-                <li key={u} className="gz-inset flex items-center gap-2.5 p-2" style={{ background: g ? 'rgba(182,242,74,.15)' : undefined, outline: u === uid ? `2px solid ${GZ.orange}` : undefined }}>
+                <li key={u} className="gz-inset flex items-center gap-2.5 p-2" style={{ background: g ? 'rgba(182,242,74,.3)' : undefined, outline: u === uid ? `2px solid ${GZ.orange}` : undefined }}>
                   <span className="w-5 text-center font-semibold gz-num text-sm">{i + 1}</span>
                   <Avatar photo={p.photo} name={p.username || p.name} size={32} />
                   <span className="flex-1 truncate font-semibold text-sm">{p.username || p.name}</span>
                   {u === room.drawer && <Pencil className="w-4 h-4" style={{ color: GZ.cyan }} aria-label="Desenhando" />}
-                  {g && <Check className="w-4 h-4" style={{ color: GZ.lime }} aria-label="Acertou" />}
+                  {g && <Check className="w-4 h-4" style={{ color: GZ.green }} aria-label="Acertou" />}
                   <span className="font-bold gz-num text-sm">{p.score}</span>
                 </li>
               );
@@ -238,7 +238,7 @@ const DrawPlay: React.FC<Props> = ({ room, uid, accept }) => {
           <p className="font-semibold mb-2">Na sala</p>
           <ul className="space-y-1.5 text-sm max-h-48 overflow-y-auto gz-scroll" aria-live="polite">
             {[...(room.feed || [])].reverse().slice(0, 10).map((f) => (
-              <li key={`${f.t}${f.uid}${f.k}`} style={{ color: f.k === 'guess' ? GZ.lime : GZ.muted }}>
+              <li key={`${f.t}${f.uid}${f.k}`} style={{ color: f.k === 'guess' ? GZ.green : GZ.muted }}>
                 {f.k === 'guess' && <>✅ <b>{f.name}</b> acertou!</>}
                 {f.k === 'join' && <>👋 {f.name} entrou</>}
                 {f.k === 'leave' && <>🚪 {f.name} saiu</>}
@@ -256,7 +256,7 @@ const DrawPlay: React.FC<Props> = ({ room, uid, accept }) => {
 const WordMask: React.FC<{ mask: (string | null)[] }> = ({ mask }) => (
   <div className="flex flex-wrap gap-1" aria-label={`${mask.filter((c) => c === null).length} letras escondidas`}>
     {mask.map((ch, i) => (ch === ' ' ? <span key={i} className="w-3" /> : ch === '-' ? <span key={i} className="text-xl font-bold">-</span> : (
-      <span key={i} className="w-6 md:w-7 h-8 flex items-end justify-center text-xl font-bold" style={{ borderBottom: `3px solid ${GZ.cream}`, color: GZ.orange }}>{ch || ''}</span>
+      <span key={i} className="w-6 md:w-7 h-8 flex items-end justify-center text-xl font-bold" style={{ borderBottom: `3px solid ${GZ.ink}`, color: GZ.orange }}>{ch || ''}</span>
     )))}
   </div>
 );
@@ -274,14 +274,14 @@ const TurnEnd: React.FC<{ room: GameRoom }> = ({ room }) => {
   const list = Object.entries(r.guessed || {}) as [string, { order: number; pts: number }][];
   list.sort((a, b) => a[1].order - b[1].order);
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-4 rounded-[22px]" style={{ background: r.reason === 'reported' ? GZ.grape : 'rgba(33,24,63,.93)' }}>
+    <div className="absolute inset-0 flex items-center justify-center p-4 rounded-[22px]" style={{ background: r.reason === 'reported' ? GZ.grape : 'rgba(250,250,248,.95)' }}>
       <div className="text-center gz-pop max-w-md w-full">
         <p style={{ color: GZ.muted }}>{REASONS[r.reason] || ''}</p>
         {r.word && (
           <>
             <p className="mt-2 text-sm" style={{ color: GZ.muted }}>A palavra era</p>
             <p className="text-4xl md:text-5xl font-bold" style={{ color: GZ.orange }}>{r.word}</p>
-            <p className="text-lg" style={{ color: GZ.cream }}>{r.pt}</p>
+            <p className="text-lg" style={{ color: GZ.text }}>{r.pt}</p>
           </>
         )}
         {list.length > 0 && (
@@ -451,19 +451,19 @@ const DrawCanvas: React.FC<{ roomId: string; uid: string; turn: number; canDraw:
           <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Cor">
             {COLORS.map((c, i) => i === ERASER ? null : (
               <button key={c} onClick={() => setColor(i)} role="radio" aria-checked={color === i} aria-label={`Cor ${i + 1}`}
-                className="w-8 h-8 rounded-full gz-focus" style={{ background: c, border: `3px solid ${GZ.ink}`, boxShadow: color === i ? `0 0 0 3px ${GZ.cream}` : undefined }} />
+                className="w-8 h-8 rounded-full gz-focus" style={{ background: c, border: `3px solid ${GZ.ink}`, boxShadow: color === i ? `0 0 0 3px ${GZ.orange}` : undefined }} />
             ))}
           </div>
           <div className="flex gap-1.5 ml-1" role="radiogroup" aria-label="Espessura">
             {WIDTHS.map((w, i) => (
               <button key={w} onClick={() => setWidth(i)} role="radio" aria-checked={width === i} aria-label={['Fino', 'Médio', 'Grosso'][i]}
-                className="w-9 h-9 rounded-xl flex items-center justify-center gz-focus" style={{ background: width === i ? GZ.cream : GZ.grapeDeep, border: `2px solid ${GZ.ink}` }}>
-                <span className="rounded-full" style={{ width: 4 + i * 6, height: 4 + i * 6, background: width === i ? GZ.ink : GZ.cream }} />
+                className="w-9 h-9 rounded-xl flex items-center justify-center gz-focus" style={{ background: width === i ? GZ.orange : GZ.grapeDeep, border: `2px solid ${GZ.ink}` }}>
+                <span className="rounded-full" style={{ width: 4 + i * 6, height: 4 + i * 6, background: width === i ? GZ.ink : GZ.text }} />
               </button>
             ))}
           </div>
           <div className="flex gap-1.5 ml-auto">
-            <button onClick={() => setColor(ERASER)} aria-pressed={color === ERASER} className="gz-btn gz-btn-sm" style={{ background: color === ERASER ? GZ.cream : GZ.panelHi, color: color === ERASER ? GZ.ink : GZ.cream }} aria-label="Borracha"><Eraser className="w-4 h-4" /></button>
+            <button onClick={() => setColor(ERASER)} aria-pressed={color === ERASER} className="gz-btn gz-btn-sm" style={{ background: color === ERASER ? GZ.orange : GZ.panelHi, color: color === ERASER ? GZ.ink : GZ.text }} aria-label="Borracha"><Eraser className="w-4 h-4" /></button>
             <button onClick={undo} className="gz-btn gz-btn-ghost gz-btn-sm" aria-label="Desfazer"><Undo2 className="w-4 h-4" /></button>
             <button onClick={clear} className="gz-btn gz-btn-ghost gz-btn-sm" aria-label="Limpar tudo"><Trash2 className="w-4 h-4" /></button>
           </div>

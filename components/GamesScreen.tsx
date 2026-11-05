@@ -109,8 +109,10 @@ const GamesScreen: React.FC<Props> = ({ user, onHome, onUserUpdate, onBadgeChang
     </div>
   );
   if (view.kind === 'room') return shell(<GameRoomScreen key={view.id} roomId={view.id} seed={view.seed} uid={uid} onExit={backToHub} onOpenRoom={openRoom} />);
-  if (view.kind === 'duel') return <div className="gz gz-bg min-h-[calc(100vh-80px)]"><GameStyles /><ChallengesScreen user={user} onHome={backToHub} onUserUpdate={onUserUpdate} onBadgeChange={(n) => { setDuelBadge(n); onBadgeChange?.(n); }} /></div>;
-  if (view.kind === 'league') return <div className="gz gz-bg min-h-[calc(100vh-80px)]"><GameStyles /><LeagueSection user={user} onHome={backToHub} /></div>;
+  // Duelo e Liga mantêm o visual escuro original do app (foram
+  // desenhados para ele: título branco, cartões #2a2a2a).
+  if (view.kind === 'duel') return <div><ChallengesScreen user={user} onHome={backToHub} onUserUpdate={onUserUpdate} onBadgeChange={(n) => { setDuelBadge(n); onBadgeChange?.(n); }} /></div>;
+  if (view.kind === 'league') return <div><LeagueSection user={user} onHome={backToHub} /></div>;
 
   const me: GamesMe | undefined = hub?.me;
   const title = 'Game Zone';
@@ -123,7 +125,7 @@ const GamesScreen: React.FC<Props> = ({ user, onHome, onUserUpdate, onBadgeChang
           <button onClick={onHome} className="gz-btn gz-btn-ghost gz-btn-sm" aria-label="Voltar para o início"><ArrowLeft className="w-5 h-5" /></button>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight" aria-label={title}>
             {title.split('').map((ch, i) => (
-              <span key={i} className="gz-hop" aria-hidden style={{ animationDelay: `${i * 45}ms`, color: ch === ' ' ? undefined : [GZ.orange, GZ.cyan, GZ.pink, GZ.lime][i % 4], textShadow: `0 3px 0 ${GZ.ink}` }}>
+              <span key={i} className="gz-hop" aria-hidden style={{ animationDelay: `${i * 45}ms`, color: GZ.orange, textShadow: `0 3px 0 ${GZ.ink}` }}>
                 {ch === ' ' ? ' ' : ch}
               </span>
             ))}
@@ -173,7 +175,7 @@ const GamesScreen: React.FC<Props> = ({ user, onHome, onUserUpdate, onBadgeChang
             </button>
           </form>
 
-          {/* Jogos ao vivo */}
+          {/* Os 4 modos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <GameCard color={GZ.orange} art={<QuizArt />} title="Quiz Party" open={hub?.open.quiz || 0}
               desc="Todo mundo responde a mesma pergunta ao mesmo tempo. Quem acerta mais rápido ganha mais pontos.">
@@ -190,14 +192,14 @@ const GamesScreen: React.FC<Props> = ({ user, onHome, onUserUpdate, onBadgeChang
               </button>
               <button onClick={() => needLevelThen(() => setCreate({ game: 'draw', mode: 'party' }))} className="gz-btn gz-btn-ghost"><Users className="w-4 h-4" /> Criar sala</button>
             </GameCard>
-          </div>
-
-          {/* Modos por turno */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <SmallCard color={GZ.pink} icon={<Swords className="w-7 h-7" />} title="Duelo da Roleta" badge={duelBadge > 0 ? `${duelBadge} sua vez` : null}
-              desc="Gire, acerte e junte as 6 coroas. Cada um joga na sua hora." onClick={() => setView({ kind: 'duel' })} />
-            <SmallCard color={GZ.lime} icon={<Trophy className="w-7 h-7" />} title="Liga em Grupo" badge={null}
-              desc="Corrida de XP com os amigos por alguns dias." onClick={() => setView({ kind: 'league' })} />
+            <GameCard color={GZ.pink} art={<DuelArt />} title="Duelo da Roleta" badge={duelBadge > 0 ? `${duelBadge} duelo${duelBadge > 1 ? 's' : ''} na sua vez` : null}
+              desc="Gire a roleta, acerte as perguntas e junte as 6 coroas antes do adversário. Cada um joga na sua hora.">
+              <button onClick={() => setView({ kind: 'duel' })} className="gz-btn gz-btn-pink"><Swords className="w-4 h-4" /> Abrir duelos</button>
+            </GameCard>
+            <GameCard color={GZ.lime} art={<LeagueArt />} title="Liga em Grupo"
+              desc="Uma corrida de XP com os amigos por alguns dias. Cada exercício feito no app conta pontos no ranking.">
+              <button onClick={() => setView({ kind: 'league' })} className="gz-btn gz-btn-lime"><Trophy className="w-4 h-4" /> Abrir ligas</button>
+            </GameCard>
           </div>
 
           {me && <TodayStrip me={me} />}
@@ -218,14 +220,17 @@ const GamesScreen: React.FC<Props> = ({ user, onHome, onUserUpdate, onBadgeChang
 };
 
 // ── Cartões ──────────────────────────────────────────────────────
-const GameCard: React.FC<{ color: string; art: React.ReactNode; title: string; desc: string; open: number; children: React.ReactNode }> = ({ color, art, title, desc, open, children }) => (
+const GameCard: React.FC<{ color: string; art: React.ReactNode; title: string; desc: string; open?: number; badge?: string | null; children: React.ReactNode }> = ({ color, art, title, desc, open = 0, badge, children }) => (
   <section className="gz-card overflow-hidden" aria-label={title}>
     <div className="relative h-36 md:h-44 flex items-center justify-center overflow-hidden" style={{ background: color, borderBottom: `3px solid ${GZ.ink}` }}>
       {art}
       {open > 0 && (
-        <span className="absolute top-3 right-3 gz-chip flex items-center gap-1" style={{ background: GZ.ink, color: GZ.cream }}>
+        <span className="absolute top-3 right-3 gz-chip flex items-center gap-1" style={{ background: GZ.ink, color: '#ffffff' }}>
           <Zap className="w-3.5 h-3.5" style={{ color: GZ.lime }} /> {open} sala{open > 1 ? 's' : ''} abrindo agora
         </span>
+      )}
+      {badge && (
+        <span className="absolute top-3 right-3 gz-chip" style={{ background: GZ.orange, color: GZ.ink }}>{badge}</span>
       )}
     </div>
     <div className="p-5">
@@ -236,20 +241,9 @@ const GameCard: React.FC<{ color: string; art: React.ReactNode; title: string; d
   </section>
 );
 
-const SmallCard: React.FC<{ color: string; icon: React.ReactNode; title: string; desc: string; badge: string | null; onClick: () => void }> = ({ color, icon, title, desc, badge, onClick }) => (
-  <button onClick={onClick} className="gz-tile text-left p-5 flex items-center gap-4 gz-focus" style={{ background: GZ.panel }}>
-    <span className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: color, color: GZ.ink, border: `3px solid ${GZ.ink}` }}>{icon}</span>
-    <span className="flex-1 min-w-0">
-      <span className="flex items-center gap-2 flex-wrap">
-        <span className="text-xl font-semibold" style={{ color: GZ.cream }}>{title}</span>
-        {badge && <span className="gz-chip" style={{ background: GZ.orange, color: GZ.ink }}>{badge}</span>}
-      </span>
-      <span className="gz-read block text-sm mt-0.5" style={{ color: GZ.muted }}>{desc}</span>
-    </span>
-  </button>
-);
-
-// Ilustrações: as 4 peças do quiz e um rabisco a lápis.
+// Ilustrações: as 4 peças do quiz, um rabisco a lápis, a roleta do
+// duelo (as 6 categorias com seus ícones, coroa no meio) e um placar
+// de liga.
 const QuizArt: React.FC = () => (
   <div className="grid grid-cols-2 gap-2.5 -rotate-6" aria-hidden>
     {ANSWER_STYLES.map((s, i) => (
@@ -269,6 +263,62 @@ const DrawArt: React.FC = () => (
     </g>
   </svg>
 );
+
+const DuelArt: React.FC = () => {
+  const cats = ['grammar', 'vocabulary', 'reading', 'listening', 'travel', 'everyday'] as const;
+  const cx = 130, cy = 64, r = 54;
+  const pt = (deg: number, rad: number) => [cx + rad * Math.cos((deg - 90) * Math.PI / 180), cy + rad * Math.sin((deg - 90) * Math.PI / 180)];
+  return (
+    <svg viewBox="0 0 260 128" className="w-64 md:w-72" aria-hidden>
+      <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: 'rotate(-12deg)' }}>
+        <circle cx={cx} cy={cy} r={r + 6} fill={GZ.ink} />
+        {cats.map((c, i) => {
+          const [x1, y1] = pt(i * 60, r), [x2, y2] = pt((i + 1) * 60, r);
+          const [tx, ty] = pt(i * 60 + 30, r * 0.64);
+          return (
+            <g key={c}>
+              <path d={`M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2} Z`} fill={CAT_META[c].color} stroke={GZ.ink} strokeWidth="2.5" />
+              <text x={tx} y={ty} textAnchor="middle" dominantBaseline="central" fontSize="17">{CAT_META[c].emoji}</text>
+            </g>
+          );
+        })}
+      </g>
+      <circle cx={cx} cy={cy} r="15" fill="#fff" stroke={GZ.ink} strokeWidth="3" />
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central" fontSize="15">👑</text>
+      <path d={`M${cx - 10} 2 L${cx + 10} 2 L${cx} 20 Z`} fill={GZ.orange} stroke={GZ.ink} strokeWidth="3" strokeLinejoin="round" />
+    </svg>
+  );
+};
+const LeagueArt: React.FC = () => {
+  const rows = [
+    { medal: '#ffc93c', bar: 96, pts: '1.240' },
+    { medal: '#c7cbd6', bar: 74, pts: '980' },
+    { medal: '#f59e7b', bar: 52, pts: '715' },
+  ];
+  return (
+    <svg viewBox="0 0 260 128" className="w-64 md:w-72" aria-hidden>
+      <g transform="rotate(-3 130 64)">
+        <rect x="22" y="8" width="216" height="112" rx="14" fill="#fff" stroke={GZ.ink} strokeWidth="4" />
+        <rect x="22" y="8" width="216" height="24" rx="14" fill={GZ.ink} />
+        <rect x="22" y="22" width="216" height="10" fill={GZ.ink} />
+        <text x="40" y="21" dominantBaseline="central" fontSize="11" fontWeight="700" fill="#fff" fontFamily="Fredoka, system-ui">Ranking</text>
+        <text x="220" y="21" dominantBaseline="central" textAnchor="end" fontSize="11" fontWeight="700" fill={GZ.lime} fontFamily="Fredoka, system-ui">XP</text>
+        {rows.map((r, i) => {
+          const y = 48 + i * 25;
+          return (
+            <g key={i}>
+              <circle cx="44" cy={y} r="9" fill={r.medal} stroke={GZ.ink} strokeWidth="2.5" />
+              <text x="44" y={y + 0.5} textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="700" fill={GZ.ink} fontFamily="Fredoka, system-ui">{i + 1}</text>
+              <circle cx="68" cy={y} r="8" fill={[GZ.orange, GZ.cyan, GZ.pink][i]} stroke={GZ.ink} strokeWidth="2" />
+              <rect x="82" y={y - 5} width={r.bar} height="10" rx="5" fill={i === 0 ? GZ.orange : '#e3e3df'} stroke={GZ.ink} strokeWidth="1.5" />
+              <text x="220" y={y + 0.5} textAnchor="end" dominantBaseline="central" fontSize="11" fontWeight="700" fill={GZ.ink} fontFamily="Fredoka, system-ui">{r.pts}</text>
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
+};
 
 const TodayStrip: React.FC<{ me: GamesMe }> = ({ me }) => (
   <div className="gz-card p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -323,7 +373,7 @@ const CreateModal: React.FC<{ kind: CreateKind; me: GamesMe; onClose: () => void
     ? { game: 'quiz', mode: kind.mode, level, hostPlays: solo ? true : hostPlays, settings: { count, cats } }
     : { game: 'draw', mode: 'party', level, settings: { rounds, drawMs } });
   return (
-    <div className="fixed inset-0 z-[650] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(15,10,31,.85)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-[650] flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(34,34,34,.55)' }} onClick={onClose}>
       <div className="gz gz-card w-full max-w-lg p-5 md:p-6 gz-pop max-h-[92vh] overflow-y-auto gz-scroll" onClick={(e) => e.stopPropagation()} role="dialog"
         aria-label={solo ? 'Jogar sozinho' : 'Criar sala'}>
         <div className="flex items-center justify-between mb-4">
@@ -333,10 +383,10 @@ const CreateModal: React.FC<{ kind: CreateKind; me: GamesMe; onClose: () => void
         <div className="space-y-5">
           {quiz && !solo && (
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setHostPlays(true)} aria-pressed={hostPlays} className="gz-btn flex-col py-3.5" style={{ background: hostPlays ? GZ.orange : GZ.grapeDeep, color: hostPlays ? GZ.ink : GZ.cream }}>
+              <button onClick={() => setHostPlays(true)} aria-pressed={hostPlays} className="gz-btn flex-col py-3.5" style={{ background: hostPlays ? GZ.orange : GZ.grapeDeep, color: hostPlays ? GZ.ink : GZ.text }}>
                 <Users className="w-6 h-6" /> Eu jogo também
               </button>
-              <button onClick={() => setHostPlays(false)} aria-pressed={!hostPlays} className="gz-btn flex-col py-3.5" style={{ background: !hostPlays ? GZ.orange : GZ.grapeDeep, color: !hostPlays ? GZ.ink : GZ.cream }}>
+              <button onClick={() => setHostPlays(false)} aria-pressed={!hostPlays} className="gz-btn flex-col py-3.5" style={{ background: !hostPlays ? GZ.orange : GZ.grapeDeep, color: !hostPlays ? GZ.ink : GZ.text }}>
                 <Presentation className="w-6 h-6" /> Só apresento
               </button>
               <p className="col-span-2 gz-read text-sm" style={{ color: GZ.muted }}>
@@ -390,7 +440,7 @@ const LevelModal: React.FC<{ current: string | null; onClose: () => void; onSave
     finally { setSaving(false); }
   };
   return (
-    <div className="fixed inset-0 z-[660] flex items-center justify-center p-4" style={{ background: 'rgba(15,10,31,.85)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-[660] flex items-center justify-center p-4" style={{ background: 'rgba(34,34,34,.55)' }} onClick={onClose}>
       <div className="gz gz-card w-full max-w-md p-6 gz-pop max-h-[92vh] overflow-y-auto gz-scroll" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Qual seu nível?">
         <h3 className="text-2xl font-bold">Qual seu nível?</h3>
         <p className="gz-read text-sm mt-1 mb-4" style={{ color: GZ.muted }}>Assim as perguntas e palavras ficam na medida certa. Quando você fizer o nivelamento, ele passa a valer no lugar desta escolha.</p>
@@ -398,7 +448,7 @@ const LevelModal: React.FC<{ current: string | null; onClose: () => void; onSave
           {LEVEL_OPTIONS.map((o) => (
             <button key={o.level} onClick={() => setSel(o.level)} aria-pressed={sel === o.level}
               className="w-full flex items-center gap-3 p-3 text-left gz-inset gz-focus" style={{ outline: sel === o.level ? `3px solid ${GZ.orange}` : undefined }}>
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center font-bold" style={{ background: sel === o.level ? GZ.orange : GZ.panelHi, color: sel === o.level ? GZ.ink : GZ.cream, border: `2px solid ${GZ.ink}` }}>{o.level}</span>
+              <span className="w-11 h-11 rounded-xl flex items-center justify-center font-bold" style={{ background: sel === o.level ? GZ.orange : GZ.panelHi, color: sel === o.level ? GZ.ink : GZ.text, border: `2px solid ${GZ.ink}` }}>{o.level}</span>
               <span><span className="block font-semibold">{o.title}</span><span className="gz-read block text-xs" style={{ color: GZ.muted }}>{o.desc}</span></span>
             </button>
           ))}

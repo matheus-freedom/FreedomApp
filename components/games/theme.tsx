@@ -5,9 +5,9 @@ import { gameAudio } from '../../services/gameAudio';
 // ════════════════════════════════════════════════════════════════
 // TEMA DA ABA GAMES
 // ────────────────────────────────────────────────────────────────
-// Identidade própria, diferente do resto do app (que é cinza-escuro
-// com laranja): aqui é uma "caixa de brinquedos de fliperama".
-//   • Fundo uva profundo com pontinhos; painéis lilás.
+// Identidade própria, mas dentro da marca Freedom (cinza-escuro +
+// laranja), servindo a crianças e adultos: uma "caixa de jogos" clara.
+//   • Fundo cinza bem claro com pontinhos; cartões brancos.
 //   • Peças com contorno escuro grosso e sombra DURA deslocada (sem
 //     esfumaçado), como adesivos ou blocos de brinquedo. Botões
 //     "afundam" ao toque.
@@ -19,17 +19,22 @@ import { gameAudio } from '../../services/gameAudio';
 // ════════════════════════════════════════════════════════════════
 
 export const GZ = {
-  grape: '#21183f',
-  grapeDeep: '#170f2e',
-  panel: '#33285f',
-  panelHi: '#43357a',
-  ink: '#0f0a1f',
-  cream: '#fff7e8',
-  muted: '#b9aee0',
+  // Base clara, em harmonia com a identidade da Freedom (cinza-escuro
+  // #222 + laranja #f7931e): fundo cinza bem clarinho, peças brancas,
+  // contorno e sombra no cinza-escuro da marca.
+  grape: '#f1f1ef',      // fundo da aba
+  grapeDeep: '#f5f5f3',  // áreas internas (listas, campos)
+  panel: '#ffffff',      // cartões
+  panelHi: '#ebebe8',    // botões secundários
+  ink: '#222222',        // contorno, sombra e texto sobre cor
+  text: '#222222',       // texto principal
+  cream: '#fffaf0',      // "papel": cartão da pergunta, peças do código
+  muted: '#6b6b6b',      // texto secundário
   orange: '#f7931e',
   cyan: '#3fd0ff',
   pink: '#ff5fa2',
   lime: '#b6f24a',
+  green: '#15803d',      // "acertou" escrito (o limão some no branco)
   coral: '#ff5a5f',
 };
 
@@ -56,10 +61,10 @@ export const GameStyles: React.FC = () => {
   useEffect(() => { injectFonts(); gameAudio.init(); }, []);
   return (
     <style>{`
-      .gz { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; color: ${GZ.cream}; }
+      .gz { font-family: 'Fredoka', 'Nunito', system-ui, sans-serif; color: ${GZ.text}; }
       .gz-bg {
         background-color: ${GZ.grape};
-        background-image: radial-gradient(rgba(255,255,255,.06) 1.2px, transparent 1.2px);
+        background-image: radial-gradient(rgba(34,34,34,.07) 1.2px, transparent 1.2px);
         background-size: 22px 22px;
       }
       .gz-read { font-family: 'Nunito', system-ui, sans-serif; }
@@ -79,12 +84,12 @@ export const GameStyles: React.FC = () => {
       .gz-btn:hover:not(:disabled) { filter: brightness(1.07); }
       .gz-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 ${GZ.ink}; }
       .gz-btn:disabled { opacity: .45; cursor: default; }
-      .gz-btn:focus-visible, .gz-tile:focus-visible, .gz-focus:focus-visible { outline: 3px solid ${GZ.cyan}; outline-offset: 3px; }
+      .gz-btn:focus-visible, .gz-tile:focus-visible, .gz-focus:focus-visible { outline: 3px solid ${GZ.orange}; outline-offset: 3px; }
       .gz-btn-orange { background: ${GZ.orange}; color: ${GZ.ink}; }
       .gz-btn-cyan { background: ${GZ.cyan}; color: ${GZ.ink}; }
       .gz-btn-pink { background: ${GZ.pink}; color: ${GZ.ink}; }
       .gz-btn-lime { background: ${GZ.lime}; color: ${GZ.ink}; }
-      .gz-btn-ghost { background: ${GZ.panelHi}; color: ${GZ.cream}; }
+      .gz-btn-ghost { background: ${GZ.panelHi}; color: ${GZ.text}; }
       .gz-btn-sm { padding: .45rem .8rem; border-radius: 12px; font-size: .85rem; box-shadow: 0 3px 0 ${GZ.ink}; }
       .gz-btn-sm:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 ${GZ.ink}; }
       .gz-tile {
@@ -95,10 +100,10 @@ export const GameStyles: React.FC = () => {
       .gz-tile:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 ${GZ.ink}; }
       .gz-chip { border: 2px solid ${GZ.ink}; border-radius: 999px; padding: .2rem .65rem; font-weight: 600; font-size: .78rem; }
       .gz-input {
-        background: ${GZ.grapeDeep}; border: 3px solid ${GZ.ink}; border-radius: 14px; color: ${GZ.cream};
+        background: ${GZ.grapeDeep}; border: 3px solid ${GZ.ink}; border-radius: 14px; color: ${GZ.text};
         padding: .7rem .95rem; outline: none; font-family: 'Nunito', system-ui, sans-serif; font-weight: 700;
       }
-      .gz-input:focus { border-color: ${GZ.cyan}; }
+      .gz-input:focus { border-color: ${GZ.orange}; }
       .gz-input::placeholder { color: ${GZ.muted}; opacity: .7; }
 
       @keyframes gzHop { 0% { transform: translateY(18px) scale(.8); opacity: 0; } 60% { transform: translateY(-6px) scale(1.05); opacity: 1; } 100% { transform: none; opacity: 1; } }

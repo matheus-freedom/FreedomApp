@@ -22,11 +22,11 @@ const GameInviteBanner: React.FC<Props> = ({ uid, onJoin }) => {
   const game = inv.game === 'quiz' ? 'Quiz Party' : 'Draw It!';
   return (
     <div className="fixed left-1/2 -translate-x-1/2 bottom-5 z-[800] w-[min(92vw,440px)]" role="alert">
-      <div className="flex items-center gap-3 p-3.5 rounded-[20px]" style={{ background: '#33285f', color: '#fff7e8', border: '3px solid #0f0a1f', boxShadow: '0 6px 0 #0f0a1f', fontFamily: "'Fredoka', system-ui, sans-serif" }}>
-        <span className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: inv.game === 'quiz' ? '#f7931e' : '#3fd0ff', color: '#0f0a1f', border: '3px solid #0f0a1f' }}><Gamepad2 className="w-6 h-6" /></span>
+      <div className="flex items-center gap-3 p-3.5 rounded-[20px]" style={{ background: '#ffffff', color: '#222222', border: '3px solid #222222', boxShadow: '0 6px 0 #222222', fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+        <span className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: inv.game === 'quiz' ? '#f7931e' : '#3fd0ff', color: '#222222', border: '3px solid #222222' }}><Gamepad2 className="w-6 h-6" /></span>
         <p className="flex-1 text-sm leading-snug"><b>{inv.from.username || inv.from.name}</b> te chamou para jogar <b>{game}</b> ({inv.level})</p>
-        <button onClick={() => { dismissInvite(inv.id); onJoin(inv.code!); }} className="px-3 py-2 rounded-xl font-semibold text-sm" style={{ background: '#f7931e', color: '#0f0a1f', border: '2px solid #0f0a1f' }}>Entrar</button>
-        <button onClick={() => dismissInvite(inv.id)} className="p-1.5 rounded-lg" aria-label="Agora não" style={{ color: '#b9aee0' }}><X className="w-4 h-4" /></button>
+        <button onClick={() => { dismissInvite(inv.id); onJoin(inv.code!); }} className="px-3 py-2 rounded-xl font-semibold text-sm" style={{ background: '#f7931e', color: '#222222', border: '2px solid #222222' }}>Entrar</button>
+        <button onClick={() => dismissInvite(inv.id)} className="p-1.5 rounded-lg" aria-label="Agora não" style={{ color: '#6b6b6b' }}><X className="w-4 h-4" /></button>
       </div>
     </div>
   );
