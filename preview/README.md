@@ -31,3 +31,21 @@ Depois de mexer nas telas, regere o CSS:
 
     npx tailwindcss@3 -i <arquivo com @tailwind base/components/utilities> \
       -o preview/tailwind.css --content "./components/**/*.tsx,./preview/*.tsx,./App.tsx"
+
+
+# Preview da aba Games (Quiz Party, Draw It!, Duelo, Liga)
+
+Roda as functions `games.js` e `duel.js` DE VERDADE contra o Firestore
+falso (`fake-firestore.cjs`, o mesmo do `test-games.mjs`), com robôs
+(@bia.bot, @leo.bot, @carla.bot) respondendo e desenhando. O "tempo real"
+é imitado por `gamesRealtimeMock.ts` (consulta o servidor a cada 250 ms).
+
+    node preview/games-server.cjs                         # porta 8888
+    npx vite serve --config vite.games-preview.config.ts  # porta 3100
+    # http://localhost:3100/games.html          → como @matheus
+    # http://localhost:3100/games.html?as=prof  → como professor (telão)
+    # curl "localhost:8888/__bots?room=ID"      → põe 3 robôs na sala
+    # curl "localhost:8888/__invite"            → um robô te convida
+
+As fontes vêm do npm no preview (`npm i --no-save @fontsource/fredoka
+@fontsource/nunito`); no app real vêm do Google Fonts.

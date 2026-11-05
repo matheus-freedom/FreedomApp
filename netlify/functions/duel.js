@@ -40,7 +40,6 @@ const { randomUUID } = require("crypto");
 const core = require("./lib/duel-core");
 const { staticPool } = require("./lib/duel-bank");
 const { signScoped } = require("./lib/journey-sign");
-const { weekKeyOf, monthKeyOf } = require("./lib/ranking-core");
 
 const ALLOWED_ORIGINS = [
   "https://freedom.app.br",
@@ -107,26 +106,9 @@ const myDuels = async (db, uid) => {
 const isOpen = (d) => d.status === "invited" || d.status === "active";
 
 // ── Economia: prêmios, apostas, contadores de período ─────────
-// Mesma lógica de virada de semana/mês do award-activity, para o XP
-// do duelo entrar no ranking semanal/mensal do jeito certo.
-const yearKeyOf = (ms) => `${new Date(ms - 3 * 3600000).getUTCFullYear()}`;
-const addXpFr = (user, xp, fr, now) => {
-  const g = user.gamification || (user.gamification = {});
-  const wk = weekKeyOf(now), mk = monthKeyOf(now), yk = yearKeyOf(now);
-  if (g.lastWeekKey && g.lastWeekKey !== wk) { g.weeklyXp = 0; g.weeklyActivities = 0; }
-  if (g.lastMonthKey && g.lastMonthKey !== mk) { g.monthlyXp = 0; g.monthlyActivities = 0; }
-  if (g.lastYearKey && g.lastYearKey !== yk) { g.yearlyXp = 0; }
-  g.lastWeekKey = wk; g.lastMonthKey = mk; g.lastYearKey = yk;
-  g.xp = (g.xp || 0) + xp;
-  g.weeklyXp = (g.weeklyXp || 0) + xp;
-  g.monthlyXp = (g.monthlyXp || 0) + xp;
-  g.yearlyXp = (g.yearlyXp || 0) + xp;
-  g.frBalance = core.round2((g.frBalance || 0) + fr);
-};
-const addFr = (user, fr) => {
-  const g = user.gamification || (user.gamification = {});
-  g.frBalance = core.round2((g.frBalance || 0) + fr);
-};
+// addXpFr / addFr / updateLeagueChallenges moram em lib/economy.js
+// (compartilhados com os jogos da aba Games).
+const { addXpFr, addFr, updateLeagueChallenges } = require("./lib/economy");
 
 // Paga o fim de partida DENTRO da transação. `ctx` traz os docs já
 // lidos: users[uid], players[uid]. Devolve o que precisa ser feito
@@ -187,22 +169,6 @@ const afterSettle = async (db, d, list, now) => {
     };
     await db.collection("history").doc(rec.id).set(rec).catch((e) => console.error("duel history:", e));
     await updateLeagueChallenges(db, uid, xp).catch((e) => console.error("duel challenges:", e));
-  }
-};
-
-// Cópia da regra do award-activity: XP ganho soma nas Ligas ativas.
-const updateLeagueChallenges = async (db, uid, xp) => {
-  if (xp <= 0) return;
-  const snap = await db.collection("challenges").where("participantIds", "array-contains", uid).get();
-  const now = Date.now();
-  for (const doc of snap.docs) {
-    const c = doc.data();
-    if (c.status !== "active" || now > c.endDate) continue;
-    if (!c.participantStats) c.participantStats = {};
-    if (!c.participantStats[uid]) c.participantStats[uid] = { xpGained: 0, activitiesDone: 0 };
-    c.participantStats[uid].xpGained += xp;
-    c.participantStats[uid].activitiesDone += 1;
-    await doc.ref.set(c);
   }
 };
 

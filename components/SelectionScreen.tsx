@@ -6,7 +6,7 @@ import ProfileViewModal from './ProfileViewModal';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyAllowance } from '../dailyLimit';
 import { 
   Brain, Target, Flame, Zap, Trophy, Crown, Shield, Info, Sparkles,
-  User as UserIcon, X, Calendar, Globe, BookOpen, Sword,
+  User as UserIcon, X, Calendar, Globe, BookOpen, Gamepad2,
   ArrowRight, AlertTriangle, Lock, Wallet, ShieldAlert, Compass, Play,
   Clock, Mic, Loader2, PenLine, History, Activity, GraduationCap
 } from 'lucide-react';
@@ -630,10 +630,10 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
           {duelBadge > 0 ? (
             <span className="absolute top-3 right-3 min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#f7931e] text-[#222222] text-[11px] font-black flex items-center justify-center animate-pulse" title="Duelos esperando você">{duelBadge}</span>
           ) : (
-            <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[8px] font-black uppercase tracking-widest">Roleta</span>
+            <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[8px] font-black uppercase tracking-widest">Ao vivo</span>
           )}
-          <div className="p-4 rounded-2xl bg-[#333333] text-red-400 group-hover:bg-red-500 group-hover:text-white transition-colors"><Sword className="w-6 h-6" /></div>
-          <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-white">Desafios</span>
+          <div className="p-4 rounded-2xl bg-[#333333] text-violet-300 group-hover:bg-violet-500 group-hover:text-white transition-colors"><Gamepad2 className="w-6 h-6" /></div>
+          <span className="text-xs font-black uppercase tracking-widest text-gray-400 group-hover:text-white">Games</span>
         </button>
       </div>
 

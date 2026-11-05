@@ -19,7 +19,8 @@ import PlacementResultScreen from './components/PlacementResultScreen';
 import MyActivitiesScreen from './components/MyActivitiesScreen';
 import ProfileScreen from './components/ProfileScreen';
 import AdminPanel from './components/AdminPanel';
-import ChallengesScreen from './components/ChallengesScreen';
+import GamesScreen from './components/GamesScreen';
+import GameInviteBanner from './components/GameInviteBanner';
 import { duelApi, duelsNeedingMe } from './services/duelApi';
 import ChatScreen from './components/ChatScreen';
 import RankingHistoryScreen from './components/RankingHistoryScreen';
@@ -138,7 +139,9 @@ const App: React.FC = () => {
   const [buyingExtra, setBuyingExtra] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<UserChallenge | null>(null);
   // Quantos duelos esperam uma ação do aluno (convite ou "sua vez").
-  // Vira a bolinha no botão Desafios da tela inicial.
+  // Convite de jogo aceito pelo aviso: código a entrar ao abrir Games.
+  const [gameJoin, setGameJoin] = useState<string | null>(null);
+  // Vira a bolinha no botão Games da tela inicial.
   const [duelBadge, setDuelBadge] = useState(0);
   useEffect(() => {
     const u = state.user;
@@ -629,6 +632,10 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#222222] text-white font-sans selection:bg-[#f7931e] selection:text-[#222222]">
       <ToastHost />
+      {/* Convites de jogo chegam em tempo real em qualquer tela (menos dentro da própria aba Games, que já trata). */}
+      {state.user && isApproved(state.user) && state.status !== 'challenges' && state.status !== 'access_gate' && (
+        <GameInviteBanner uid={state.user.userId} onJoin={(code) => { setGameJoin(code); setState(p => ({ ...p, status: 'challenges' })); }} />
+      )}
       {state.status !== 'admin_panel' && (
         <Header onLogout={handleLogout} onHome={handleHome} onOpenChat={(userId) => setState(p => ({ ...p, status: 'chat', activeChatUserId: userId }))} user={state.user} />
       )}
@@ -770,7 +777,7 @@ const App: React.FC = () => {
           />
         )}
         {state.status === 'ranking_history' && <RankingHistoryScreen onHome={handleHome} />}
-        {state.status === 'challenges' && state.user && <ChallengesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} onBadgeChange={setDuelBadge} />}
+        {state.status === 'challenges' && state.user && <GamesScreen user={state.user} onHome={handleHome} onUserUpdate={handleUserUpdate} onBadgeChange={setDuelBadge} initialJoin={gameJoin} onJoinConsumed={() => setGameJoin(null)} />}
         {state.status === 'chat' && state.user && <ChatScreen user={state.user} onHome={handleHome} activeChatUserId={state.activeChatUserId} />}
         {state.status === 'admin_panel' && (state.user?.username.toLowerCase() === 'admin' || state.user?.isAdmin) && <AdminPanel onBack={handleHome} />}
         {state.status === 'profile' && state.user && <ProfileScreen user={state.user} onHome={handleHome} onUpdate={handleUserUpdate} />}
