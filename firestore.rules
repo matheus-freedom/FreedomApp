@@ -96,6 +96,20 @@ service cloud.firestore {
       allow update: if ehAdmin()
         || (logado() && naoViraAdminPeloNome() && (naoMexeEmControle() || pedidoDeAcesso(userId)));
       allow delete: if ehAdmin();
+
+      // ── Histórico do chat do Fred (canto da tela) ──────────
+      // Subcoleção users/{uid}/fred_chats: cada documento é uma
+      // conversa. Só o DONO lê e grava as próprias conversas (o
+      // admin pode ler). Nenhum aluno enxerga a conversa de outro.
+      // O limite de mensagens impede alguém de inflar o documento
+      // pelo DevTools (o app guarda no máximo 80).
+      match /fred_chats/{chatId} {
+        allow read: if (logado() && request.auth.uid == userId) || ehAdmin();
+        allow create, update: if logado() && request.auth.uid == userId
+          && request.resource.data.messages is list
+          && request.resource.data.messages.size() <= 100;
+        allow delete: if logado() && request.auth.uid == userId;
+      }
     }
 
     // ── Rastreamento de uso (dashboards do admin) ─────────────
