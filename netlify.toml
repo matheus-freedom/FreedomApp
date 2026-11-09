@@ -63,6 +63,13 @@
 [functions.duel-bank-background]
   timeout = 900
 
+# Games ao vivo — Quiz Party e Draw It! Toda jogada (responder,
+# adivinhar, passar a vez, pagar prêmio) é decidida aqui, dentro de
+# transação. Não chama IA: usa o banco de perguntas do Duelo e o banco
+# de palavras fixo (lib/games/draw-words.json).
+[functions.games]
+  timeout = 26
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

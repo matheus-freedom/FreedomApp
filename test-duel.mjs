@@ -364,9 +364,13 @@ console.log('\n── Function duel.js (Firestore em memória) ──');
   const d4 = r.duel.id;
   await call('caio', { action: 'respond', duelId: d4, accept: true });
   r = await call('ana', { action: 'spin', duelId: d4 });
+  // Caiu na Coroa: a pergunta vem depois da escolha, sem animação de
+  // roleta no meio — então não há espera para conferir. (Antes o teste
+  // perdia essa informação ao sobrescrever `r` e falhava ~40% das vezes.)
+  const wasCrown = r.target === 'crown';
   while (r.target === 'crown') { r = await call('ana', { action: 'pickCrown', duelId: d4, cat: 'grammar' }); }
   let q4 = store.get(`duels/${d4}`).question;
-  check('Relógio da pergunta só começa depois da animação da roleta', r.target === 'crown' || q4.askedAt >= Date.now() + 3000);
+  check('Relógio da pergunta só começa depois da animação da roleta', wasCrown || q4.askedAt >= Date.now() + 3000);
   check('Resposta traz a hora do servidor (acerto do cronômetro)', typeof r.serverNow === 'number');
   const oldId = q4.id;
   r = await call('ana', { action: 'help', duelId: d4, kind: 'skip' });

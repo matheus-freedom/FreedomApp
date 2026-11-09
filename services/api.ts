@@ -315,7 +315,7 @@ export const api = {
     const q = query(collection(db, 'history'), where('userId', '==', userId));
     const snap = await getDocs(q);
     // Duelos não são exercícios: ficam fora da ficha do aluno no painel.
-    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel').sort((a, b) => b.date - a.date);
+    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel' && (h.type as string) !== 'game').sort((a, b) => b.date - a.date);
   },
 
   // ══════════════════════════════════════════════════════════════
@@ -392,7 +392,7 @@ export const api = {
     const snap = await getDocs(query(collection(db, 'history'), where('date', '>=', since)));
     // Duelos gravam no histórico (é de lá que sai o Hall da Fama), mas
     // não são exercícios: ficam fora das contas do painel.
-    return snap.docs.map(d => d.data()).filter((h: any) => h.type !== 'duel');
+    return snap.docs.map(d => d.data()).filter((h: any) => h.type !== 'duel' && h.type !== 'game');
   },
 
   admin_getUserSessions: async (userId: string): Promise<any[]> => {
@@ -775,8 +775,8 @@ export const api = {
   getHistory: async (userId: string): Promise<ActivityRecord[]> => {
     const q = query(collection(db, 'history'), where('userId', '==', userId));
     const snap = await getDocs(q);
-    // Duelos ficam fora de "Minhas atividades" (não dá para "Refazer" um duelo).
-    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel').sort((a, b) => b.date - a.date);
+    // Duelos e games ficam fora de "Minhas atividades" (não dá para "Refazer" uma partida).
+    return snap.docs.map(d => d.data() as ActivityRecord).filter(h => (h.type as string) !== 'duel' && (h.type as string) !== 'game').sort((a, b) => b.date - a.date);
   },
 
   saveActivity: async (userId: string, record: ActivityRecord): Promise<void> => {

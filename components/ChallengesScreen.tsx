@@ -9,7 +9,7 @@ import LeagueSection from './challenges/LeagueSection';
 import { CatDot, CrownRow, LeagueBadge, PlayerAvatar, fr, timeAgoLabel, timeLeftLabel } from './challenges/ui';
 
 // ════════════════════════════════════════════════════════════════
-// ABA DESAFIOS — hub dos modos de jogo
+// DUELO DA ROLETA — hub dos duelos (dentro da aba Games)
 // ────────────────────────────────────────────────────────────────
 // • Duelo da Roleta (estilo Perguntados): o modo principal.
 // • Liga em Grupo: a corrida de XP que já existia.
@@ -125,8 +125,8 @@ const ChallengesScreen: React.FC<ChallengesScreenProps> = ({ user, onHome, onUse
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Desafios</h2>
-            <p className="text-gray-400 text-sm font-medium">Desafie os colegas e prove seu inglês.</p>
+            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Duelo da Roleta</h2>
+            <p className="text-gray-400 text-sm font-medium">Desafie os colegas e prove seu inglês. Volte para ver todos os games.</p>
           </div>
         </div>
         {me && (
