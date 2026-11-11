@@ -7,6 +7,7 @@ import { showToast } from './Toast';
 import FredAvatar, { FredExpression } from './FredAvatar';
 import { saveFredDraft, loadFredDraft, clearFredDraft } from '../services/fredDraft';
 import { pingActivity } from '../services/activity';
+import { todayKey } from '../spDate';
 
 // ══════════════════════════════════════════════════════════════
 // FRED EXPLICA — a aula
@@ -254,7 +255,7 @@ const FredLessonScreen: React.FC<FredLessonScreenProps> = ({ user, entry, onBack
       clearFredDraft(user.userId);
       setProgress(r.progress);
       if (r.xpGained > 0 && r.totalXp !== null) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayKey();
         onUserUpdate({
           ...user,
           gamification: {

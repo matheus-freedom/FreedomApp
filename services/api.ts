@@ -173,7 +173,7 @@ export const api = {
       data.gamification = ensureNewFields(data.gamification);
 
       // ── Atualiza streak de login ──────────────────────────
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayKey();
       const lastLogin = data.gamification.lastLoginDate;
 
       if (lastLogin !== today) {
@@ -274,7 +274,7 @@ export const api = {
       const newUser: UserSession = {
         userId: uid, username: finalUsername, userName: firstName, fullName: userData.fullName,
         age: userData.age, gender: userData.gender, email: userData.email, profilePhoto: finalPhotoUrl,
-        guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: new Date().toISOString().split('T')[0], streak: 1 },
+        guide: 'Fred', gamification: { ...INITIAL_GAMIFICATION, lastLoginDate: todayKey(), streak: 1 },
         notifications: [],
         // Conta nova nasce SEM acesso: o aluno vê o botão "Solicitar
         // acesso" e só entra depois que o admin aprovar.
@@ -461,7 +461,7 @@ export const api = {
       if (!snap.exists()) throw new Error("User not found");
       const user = snap.data() as UserSession;
       user.gamification = ensureNewFields(user.gamification);
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayKey();
       if (user.gamification.lastActivityDate !== today) {
         user.gamification.dailyActivitiesCount = 1;
         user.gamification.lastActivityDate = today;
@@ -479,7 +479,7 @@ export const api = {
     if (!snap.exists()) throw new Error("User not found");
     const user = snap.data() as UserSession;
     user.gamification = ensureNewFields(user.gamification);
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayKey();
     if (user.gamification.lastChatDate !== today) {
       user.gamification.dailyChatCount = 1;
       user.gamification.lastChatDate = today;

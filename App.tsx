@@ -39,6 +39,7 @@ import { api } from './services/api';
 import { Loader2, Star, Sword, PartyPopper, Sparkles, AlertTriangle, Zap, Coins } from 'lucide-react';
 import { ToastHost, showToast } from './components/Toast';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyUsage, getDailyAllowance } from './dailyLimit';
+import { todayKey } from './spDate';
 import { listenForActivity, msSinceLastActivity, pingActivity } from './services/activity';
 import { saveDraft, loadDraft, updateDraftProgress, clearDraft, DraftScreen } from './services/activityDraft';
 import { tracker } from './services/tracker';
@@ -346,7 +347,7 @@ const App: React.FC = () => {
     if (isStartingRef.current) return false;
     isStartingRef.current = true;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayKey();
     const dailyCount = getDailyUsage(state.user.gamification);
     if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
       // Em vez do popup do navegador: oferece o pacote extra de exercícios.
@@ -425,7 +426,7 @@ const App: React.FC = () => {
     if (isStartingRef.current) return false;
     isStartingRef.current = true;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayKey();
     const dailyCount = getDailyUsage(state.user.gamification);
     if (!state.user.gamification.isPro && dailyCount >= getDailyAllowance(state.user.gamification)) {
       // Em vez do popup do navegador: oferece o pacote extra de exercícios.
@@ -540,7 +541,7 @@ const App: React.FC = () => {
       const leveledUp = newTier !== prevTier;
 
       const updatedHistory = await api.getHistory(state.user.userId);
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayKey();
       const newDailyXp = (state.user.gamification.lastXpGainDate === today ? state.user.gamification.dailyXpEarned : 0) + xpGained;
 
       const updatedUser = {

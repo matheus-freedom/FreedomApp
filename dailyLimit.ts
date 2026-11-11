@@ -8,6 +8,7 @@
 // um lugar só para mudar, zero chance de telas discordarem.
 // ════════════════════════════════════════════════════════════════
 import { UserGamification } from './types';
+import { todayKey } from './spDate';
 
 // Exercícios inclusos por dia para todo aluno (a "diária" de sempre).
 export const DAILY_LIMIT = 8;
@@ -16,7 +17,9 @@ export const DAILY_LIMIT = 8;
 // válido somente no dia da compra. Pode ser comprado mais de uma vez.
 export const EXTRA_DAILY_COST = 10;
 
-export const todayKey = (): string => new Date().toISOString().split('T')[0];
+// "Hoje" é o dia de BRASÍLIA (vira à meia-noite daqui, não às 21h
+// como acontecia quando a conta era feita em UTC). Ver spDate.ts.
+export { todayKey };
 
 // Quantos exercícios o aluno já fez HOJE. O contador guardado no
 // perfil só vale se a última atividade foi hoje — virou o dia, zera.

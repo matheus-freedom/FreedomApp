@@ -5,6 +5,7 @@ import { chatWithGuide } from '../services/geminiService';
 import { api } from '../services/api';
 import { User, MessageCircle, X, Send, Play, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { FRED_FACE } from './FredAvatar';
+import { todayKey } from '../spDate';
 
 interface GuideChatProps {
   guide: GuideCharacter;
@@ -23,7 +24,7 @@ const GuideChat: React.FC<GuideChatProps> = ({ guide, userName, user, onUserUpda
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayKey();
   const chatCount = user.gamification.lastChatDate === today ? user.gamification.dailyChatCount : 0;
   const isLimitReached = chatCount >= MAX_DAILY_CHAT;
 

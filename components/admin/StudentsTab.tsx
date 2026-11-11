@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Download, ChevronRight, Users } from 'lucide-react'
 import { UserSession } from '../../types';
 import { StudentRow, StudentStatus, STATUS_META, fmtAgo, fmtMinutes, toCsv } from '../../services/analytics';
 import { Section, Pill, Avatar, Delta, Empty, ACCESS_LABEL } from './ui';
+import { todayKey } from '../../spDate';
 
 // ════════════════════════════════════════════════════════════════
 // ABA "ALUNOS" — todos os alunos numa tabela que dá para ordenar,
@@ -49,7 +50,7 @@ const StudentsTab: React.FC<Props> = ({ rows, users, search, onSelect }) => {
     const blob = new Blob([toCsv([header, ...body])], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `alunos-freedomapp-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `alunos-freedomapp-${todayKey()}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
