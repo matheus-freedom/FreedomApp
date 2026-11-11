@@ -8,6 +8,7 @@ import { deepFixEscapedText } from '../textFix';
 import { deepShuffleQuestions } from '../shuffleOptions';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { PlacementSkill } from '../types';
+import { spDayKey } from '../spDate';
 
 const FUNCTION_URL = import.meta.env.DEV
   ? "http://localhost:8888/.netlify/functions/gemini"
@@ -297,7 +298,7 @@ export const generateStudyPlan = async (
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       const theme = themes[i % 6];
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = spDayKey(currentDate.getTime());
       const dayName = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       const tasks: StudyTask[] = [];
       const isSingleTaskTheme = theme === Theme.Writing || theme === 'Speaking';
@@ -457,7 +458,7 @@ REGRAS:
     allDays.forEach((day, i) => {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = spDayKey(date.getTime());
       const label = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
       // Garante tópicos únicos mesmo se a IA repetir entre blocos: um

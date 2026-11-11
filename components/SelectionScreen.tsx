@@ -4,6 +4,7 @@ import { TOPICS } from '../constants';
 import { api } from '../services/api';
 import ProfileViewModal from './ProfileViewModal';
 import { DAILY_LIMIT, EXTRA_DAILY_COST, getDailyAllowance } from '../dailyLimit';
+import { todayKey } from '../spDate';
 import { 
   Brain, Target, Flame, Zap, Trophy, Crown, Shield, Info, Sparkles,
   User as UserIcon, X, Calendar, Globe, BookOpen, Gamepad2,
@@ -140,7 +141,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({
 
   const isChallengeOnly = user.accessType === AccessType.CHALLENGE_ONLY;
   const isAdmin = user.username.toLowerCase() === 'admin' || user.isAdmin === true;
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayKey();
   const dailyCount = user.gamification.lastActivityDate === today ? user.gamification.dailyActivitiesCount : 0;
   // A cota do dia: 8 + pacotes extras comprados hoje (dailyLimit.ts).
   const dailyAllowance = getDailyAllowance(user.gamification);

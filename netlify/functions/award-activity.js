@@ -30,6 +30,7 @@ const { getAuth } = require("firebase-admin/auth");
 const { randomUUID } = require("crypto");
 const { weekKeyOf, monthKeyOf, SOURCE_TAG } = require("./lib/ranking-core");
 const { resolvePosition, canAccess } = require("./lib/journey-core");
+const { spDayKey } = require("./lib/sp-date");
 
 const DAILY_XP_LIMIT = 800;
 
@@ -275,7 +276,7 @@ exports.handler = async (event) => {
       const user = snap.data();
       const g = user.gamification || {};
       const now = new Date();
-      const today = now.toISOString().split("T")[0];
+      const today = spDayKey(now.getTime()); // dia de Brasília (antes: UTC, virava às 21h)
 
       if (g.lastXpGainDate !== today) { g.dailyXpEarned = 0; g.lastXpGainDate = today; }
       const remaining = Math.max(0, DAILY_XP_LIMIT - (g.dailyXpEarned || 0));

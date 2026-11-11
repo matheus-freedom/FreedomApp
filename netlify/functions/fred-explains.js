@@ -28,6 +28,7 @@ const { randomUUID } = require("crypto");
 const { resolveLesson, scoreFinalQuiz, publicLesson, LESSON_XP } = require("./lib/fred-core");
 const { signScoped } = require("./lib/journey-sign");
 const { deepShuffleQuestions } = require("./lib/shuffle");
+const { spDayKey } = require("./lib/sp-date");
 
 // Mesmo teto diário de XP do award-activity: a aula entra na conta.
 const DAILY_XP_LIMIT = 800;
@@ -195,7 +196,7 @@ const handleComplete = async (db, uid, entry, body, headers) => {
       const user = userSnap.data();
       const g = user.gamification || {};
       const d = new Date();
-      const today = d.toISOString().split("T")[0];
+      const today = spDayKey(d.getTime()); // dia de Brasília (antes: UTC, virava às 21h)
       if (g.lastXpGainDate !== today) { g.dailyXpEarned = 0; g.lastXpGainDate = today; }
       const remaining = Math.max(0, DAILY_XP_LIMIT - (g.dailyXpEarned || 0));
       xpGained = Math.min(LESSON_XP, remaining);

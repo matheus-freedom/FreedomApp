@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { StudyPlan, StudyTask, StudyWeek, StudyDay, Theme, ActivityRecord, UserSession } from '../types';
+import { todayKey } from '../spDate';
 import { Home, Download, FileSpreadsheet, FileText, CheckCircle, Circle, Trophy, Calendar, PieChart, ArrowRight, PlayCircle, RefreshCw, Trash2, Target, BarChart2, X, Play, Clock, History, Heart, Lock, Instagram, AlertTriangle } from 'lucide-react';
 
 interface DashboardScreenProps {
@@ -23,7 +24,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ plan, user, history, 
   } | null>(null);
   const [showChallengeSuccess, setShowChallengeSuccess] = useState(false);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayKey();
 
   const toggleTask = (weekIndex: number, dayIndex: number, taskIndex: number, isLateRecovery = false) => {
     if (!plan.weeks[weekIndex]?.days[dayIndex]?.tasks[taskIndex]) return;
